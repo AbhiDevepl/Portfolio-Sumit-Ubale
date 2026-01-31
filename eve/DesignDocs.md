@@ -1,8 +1,14 @@
 
 
+Below is a **clean, framework-agnostic rewrite** — **HTML + CSS + vanilla JS only**, with **GSAP via CDN**.
+Same philosophy. Same restraint. Same cinematic intent.
+No React. No Tailwind. No Framer Motion. No build step.
+
+---
+
 # 🎨 DESIGN & MOTION DOCUMENT
 
-## Project: Editorial Photographer Portfolio (Frontend Only)
+## Project: Editorial Photographer Portfolio (HTML + CSS + JS Only)
 
 ---
 
@@ -10,50 +16,48 @@
 
 This site lives or dies on **restraint**.
 
-* Asymmetric whitespace is intentional, not accidental
-* Typography does the heavy lifting
-* Motion should feel *weighted*, not reactive
-* Nothing animates without purpose
+Asymmetric whitespace is intentional, not accidental.
+Typography does the heavy lifting.
+Motion should feel *weighted*, not reactive.
+Nothing animates without purpose.
 
-Think *fashion magazine*, not *tech landing page*.
+Think **fashion magazine**, not **tech landing page**.
+
+If an element feels decorative, remove it.
 
 ---
 
-## 2. Global Theme (Tailwind – Locked In)
+## 2. Global Theme (CSS Variables – Locked In)
 
-Your config is solid. Keep it **unchanged**.
+No utility frameworks.
+All visual authority comes from **type, spacing, and restraint**.
 
-```js
-// tailwind.config.js
-theme: {
-  extend: {
-    colors: {
-      'editorial-bg': '#E8E4E1',
-      'editorial-rose': '#C68B7A',
-      'editorial-olive': '#4A483F',
-    },
-    fontFamily: {
-      serif: ['Cormorant Garamond', 'serif'],
-      sans: ['Inter', 'sans-serif'],
-    },
-    letterSpacing: {
-      'tighter-plus': '-.05em',
-    }
-  }
+```css
+/* styles/theme.css */
+:root {
+  --editorial-bg: #E8E4E1;
+  --editorial-rose: #C68B7A;
+  --editorial-olive: #4A483F;
+
+  --font-serif: "Cormorant Garamond", serif;
+  --font-sans: "Inter", sans-serif;
+
+  --tracking-tight: -0.05em;
 }
 ```
 
-Rules:
+### Typography Rules
 
 * Serif = authority (headings only)
 * Sans = clarity (body + captions)
-* Never mix weights casually
+* Never mix font weights casually
+* Uppercase serif only when hierarchy demands it
 
 ---
 
-## 3. Page Architecture (Section-by-Section)
+## 3. Page Architecture (Section by Section)
 
-### A. Navigation (Invisible Luxury)
+### A. Navigation — *Invisible Luxury*
 
 * `position: fixed; top: 0`
 * Minimal height
@@ -61,173 +65,204 @@ Rules:
 * Logo: serif, letter-spaced, understated
 * CTA: outlined pill, no fill
 
-No entrance animation. Confidence doesn’t announce itself.
+No entrance animation.
+Confidence doesn’t announce itself.
 
 ---
 
 ### B. Hero Section (GSAP-Controlled)
 
-**Layout**
+#### Layout
 
-* `h-screen`
-* Background image via CSS (not `<img>`)
-* Text overlay bottom-left or center-left
+* Full viewport height
+* Background image via `background-image`, never `<img>`
+* Text anchored bottom-left or center-left
 
-**Typography**
+#### Typography
 
 * Uppercase serif
-* `leading-[0.9]`
-* `tracking-tighter-plus`
+* Tight leading (`line-height: 0.9`)
+* Negative letter spacing
 
-This is where GSAP earns its keep.
-
----
-
-## 4. GSAP Initialization (CORE)
-
-This is the **global GSAP setup** you add once.
-
-### Install
-
-```bash
-npm install gsap
-```
-
-### `lib/gsap.ts`
-
-```ts
-import gsap from "gsap";
-import ScrollTrigger from "gsap/ScrollTrigger";
-
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
-}
-
-export { gsap, ScrollTrigger };
-```
+This is where **GSAP earns its keep**.
 
 ---
 
-## 5. Hero GSAP Animation (Pixel-Perfect)
+## 4. GSAP Setup (Global, Once)
+
+### Include GSAP
+
+```html
+<!-- index.html -->
+<script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js"></script>
+```
+
+### Register Plugin
+
+```js
+// scripts/gsap-init.js
+gsap.registerPlugin(ScrollTrigger);
+```
+
+This file is loaded once.
+All motion builds on this foundation.
+
+---
+
+## 5. Hero Animation (Pixel-Precise)
 
 ### Intent
 
 * Text arrives with gravity
 * Image moves slower than scroll (parallax)
-* No bounce, no overshoot
+* No bounce
+* No overshoot
 
-### `Hero.tsx` (Key Parts Only)
+### HTML
 
-```tsx
-"use client";
+```html
+<section class="hero">
+  <div class="hero-image"></div>
 
-import { useLayoutEffect, useRef } from "react";
-import { gsap } from "@/lib/gsap";
+  <h1 class="hero-title">
+    RANI<br />SINGH
+  </h1>
+</section>
+```
 
-export default function Hero() {
-  const container = useRef<HTMLDivElement>(null);
-  const image = useRef<HTMLDivElement>(null);
-  const heading = useRef<HTMLHeadingElement>(null);
+### CSS
 
-  useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(heading.current, {
-        y: 80,
-        opacity: 0,
-        duration: 1.2,
-        ease: "power4.out",
-        delay: 0.2,
-      });
+```css
+.hero {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--editorial-bg);
+}
 
-      gsap.to(image.current, {
-        yPercent: 10,
-        ease: "none",
-        scrollTrigger: {
-          trigger: container.current,
-          start: "top top",
-          end: "bottom top",
-          scrub: true,
-        },
-      });
-    }, container);
+.hero-image {
+  position: absolute;
+  inset: 0;
+  background-image: url("hero.jpg");
+  background-size: cover;
+  background-position: center;
+  will-change: transform;
+}
 
-    return () => ctx.revert();
-  }, []);
-
-  return (
-    <section ref={container} className="relative h-screen overflow-hidden">
-      <div
-        ref={image}
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/hero.jpg')" }}
-      />
-
-      <h1
-        ref={heading}
-        className="absolute bottom-24 left-12 text-[clamp(3rem,8vw,7rem)]
-                   font-serif tracking-tighter-plus leading-[0.9] text-white"
-      >
-        RANI<br />SINGH
-      </h1>
-    </section>
-  );
+.hero-title {
+  position: absolute;
+  bottom: 6rem;
+  left: 4rem;
+  font-family: var(--font-serif);
+  font-size: clamp(3rem, 8vw, 7rem);
+  line-height: 0.9;
+  letter-spacing: var(--tracking-tight);
+  text-transform: uppercase;
+  color: white;
 }
 ```
 
-This alone sets the tone of the entire site.
+### JS (GSAP)
+
+```js
+// scripts/hero.js
+gsap.from(".hero-title", {
+  y: 80,
+  opacity: 0,
+  duration: 1.2,
+  ease: "power4.out",
+  delay: 0.2
+});
+
+gsap.to(".hero-image", {
+  yPercent: 10,
+  ease: "none",
+  scrollTrigger: {
+    trigger: ".hero",
+    start: "top top",
+    end: "bottom top",
+    scrub: true
+  }
+});
+```
+
+This alone sets the emotional tone of the entire site.
 
 ---
 
 ## 6. About Section (Asymmetric Grid)
 
-**Rules**
+Rules are architectural, not decorative:
 
 * Image never centered
-* Text never spans full width
-* Whitespace is part of the composition
+* Text never full-width
+* Empty space is intentional
 
-GSAP usage here is minimal:
+Motion:
 
-* Fade + rise on scroll
+* Subtle fade + rise on scroll
 * No parallax
+* No delays longer than needed
+
+```js
+gsap.from(".about-block", {
+  y: 40,
+  opacity: 0,
+  duration: 0.8,
+  ease: "power3.out",
+  scrollTrigger: {
+    trigger: ".about",
+    start: "top 75%"
+  }
+});
+```
 
 ---
 
-## 7. Portraits / Headshots (Framer Motion Layer)
+## 7. Portraits / Headshots (Micro Interaction Only)
 
-GSAP handles **macro motion**
-Framer Motion handles **micro interaction**
+No libraries.
+No layout animation.
+Only **opacity and transform**.
 
-Hover logic:
+Hover behavior:
 
 * Image: grayscale → color
 * Arrow icon fades in
 * 200–300ms max
 
-Never animate layout here. Only opacity and transform.
+CSS does most of the work.
+JS is optional.
+
+This section should feel *precise*, not playful.
 
 ---
 
-## 8. Events Section (Asymmetry Engineering)
+## 8. Events Section (Asymmetry by Design)
 
-* Use `flex items-end`
-* Different `aspect-[x/y]` values
-* Bottom alignment creates intentional imbalance
+* Use flexbox with bottom alignment
+* Vary aspect ratios deliberately
+* Let imbalance feel composed, not random
 
-No animation on load.
-Animate only on scroll entry.
+Animation rules:
+
+* No animation on page load
+* Animate only on scroll entry
+* Short, controlled easing
 
 ---
 
 ## 9. Contact Footer (Stillness)
 
-This section should feel calm.
+This is where motion stops.
 
-* Background blur
-* Minimal motion
+* Soft background
+* Optional backdrop blur
 * Button hover only
 
-No GSAP here. Silence is a design choice.
+No GSAP.
+Stillness is a design decision.
 
 ---
 
@@ -235,46 +270,43 @@ No GSAP here. Silence is a design choice.
 
 Hard constraints:
 
-* No animation under 300ms except hero
-* No easing other than `power3` / `power4`
-* Never animate width/height
-* Kill ScrollTriggers on unmount
-
-If motion is noticeable, it’s already too much.
+* No animation under 300ms (except hero)
+* Only `power3` and `power4` easing
+* Never animate width or height
+* Kill ScrollTriggers when sections are removed
+* If motion is noticeable, it’s already too much
 
 ---
 
-## 11. Dev Structure (AI IDE Friendly)
+## 11. File Structure (HTML-First, Clean)
 
 ```txt
-app/
- ├─ page.tsx
-components/
- ├─ Hero.tsx
- ├─ About.tsx
- ├─ Portraits.tsx
- ├─ Events.tsx
- ├─ Contact.tsx
-lib/
- ├─ gsap.ts
+/
+├─ index.html
+├─ styles/
+│  ├─ theme.css
+│  ├─ layout.css
+│  └─ components.css
+├─ scripts/
+│  ├─ gsap-init.js
+│  ├─ hero.js
+│  └─ sections.js
+└─ assets/
+   └─ images/
 ```
 
-Your AI IDE can reason about this cleanly.
+No build tools.
+No abstraction debt.
+Everything debuggable in DevTools.
 
 ---
 
-## Final Thought (Important)
+## Final Thought
 
 This is not a “website.”
 It’s a **controlled visual narrative**.
 
-GSAP gives you *cinematography*.
-Framer Motion gives you *polish*.
-Whitespace gives you *authority*.
+GSAP gives you cinematography.
+CSS gives you discipline.
+Whitespace gives you authority.
 
-If you want, next logical step is:
-
-* **Exact Tailwind + Framer Motion code for the Portraits / Headshots grid**
-* Or **Lenis + GSAP smooth scroll integration**
-
-Both push this into serious agency territory.

@@ -1,368 +1,263 @@
+Alright, let’s **strip this PRD down to reality** and rebuild it for **HTML + CSS + Vanilla JS only**—no frameworks, no TypeScript, no Tailwind, no Framer Motion, no Next.js assumptions.
 
-
-I’ll keep it practical, not MBA fluff.
-
-
-
----
-
-
-
-\# 📸 Product Requirements Document (PRD)
-
-
-
-\## Project: Photographer Portfolio Website (Frontend Only)
-
-
-
-\### 1. Product Overview
-
-
-
-The goal is to build a \*\*high-impact, visually immersive portfolio website\*\* for a photographer that:
-
-
-
-\* Showcases work with maximum visual fidelity
-
-\* Feels premium, cinematic, and fast
-
-\* Converts visitors into inquiries (clients)
-
-\* Works flawlessly on mobile, tablet, and desktop
-
-
-
-This is \*\*not a blog-heavy CMS\*\*. This is a \*\*visual experience with intent\*\*.
-
-
+Same intent. Same agency-grade thinking.
+Just **closer to the metal**.
 
 ---
 
+# 📸 PRODUCT REQUIREMENTS DOCUMENT (PRD)
 
+## Project: Photographer Portfolio Website
 
-\## 2. Target Users
-
-
-
-\* \*\*Primary\*\*: Potential clients (brands, couples, agencies, individuals)
-
-\* \*\*Secondary\*\*: Other photographers, collaborators, recruiters
-
-
-
-User behavior is simple but brutal:
-
-They scroll fast, judge faster, and leave instantly if it feels slow or generic.
-
-
+**Scope: Frontend Only (HTML, CSS, JavaScript)**
 
 ---
 
+## 1. Product Overview
 
+The goal is to build a **high-impact, visually immersive photographer portfolio** that:
 
-\## 3. Tech Stack (Frontend Only)
+* Showcases photography with maximum visual fidelity
+* Feels premium, editorial, and cinematic
+* Loads fast and scrolls smoothly
+* Converts visitors into real inquiries
+* Works flawlessly across mobile, tablet, and desktop
 
+This is **not** a CMS-heavy content site.
+This is a **curated visual experience with intent**.
 
+The site should feel closer to a fashion magazine than a tech product.
 
-\### Core Stack (Recommended)
+---
 
+## 2. Target Users
 
+### Primary Users
 
-\* \*\*Framework\*\*: \*\*Next.js (App Router)\*\*
+* Potential clients: brands, couples, agencies, individuals
 
-\* \*\*Language\*\*: TypeScript
+### Secondary Users
 
-\* \*\*Styling\*\*: Tailwind CSS
+* Other photographers
+* Creative collaborators
+* Recruiters
 
-\* \*\*Animation\*\*: Framer Motion
+User behavior is ruthless:
+They scroll fast, judge instantly, and leave the moment the site feels slow, generic, or cluttered.
 
-\* \*\*Image Handling\*\*: Next.js Image + modern formats (WebP / AVIF)
+The design must earn attention immediately.
 
+---
 
+## 3. Tech Stack (Frontend Only)
+
+### Core Stack (Final)
+
+* **Markup**: HTML5 (semantic, accessible)
+* **Styling**: CSS3 (modern layout: Flexbox + Grid)
+* **Animation**: GSAP (ScrollTrigger where needed)
+* **JavaScript**: Vanilla ES6+
+* **Assets**: Optimized images (WebP / AVIF preferred)
+
+No frameworks.
+No build tools.
+No runtime dependencies.
 
 Why this stack works:
 
-
-
-\* Next.js gives SEO + performance out of the box
-
-\* Tailwind keeps UI consistent and fast to iterate
-
-\* Framer Motion is perfect for subtle, premium animations
-
-\* TypeScript avoids silent UI bugs later
-
-
+* Zero abstraction overhead
+* Full control over layout and motion
+* Excellent performance when done correctly
+* Easy to host anywhere (Netlify, GitHub Pages, static hosting)
+* Long-term maintainability
 
 ---
 
+## 4. Data Flow (Frontend Perspective)
 
+This is a **read-only, static site**.
 
-\## 4. Data Flow (Frontend Perspective)
+### Data Sources
 
+* Static JSON files for:
 
+  * Gallery images
+  * Categories
+  * Testimonials
+* Optional: inline HTML for critical content
 
-Since this is frontend-only, data flow is \*\*read-only and predictable\*\*.
+### Data Flow
 
+1. Static content loads with the page
+2. Images are lazy-loaded using native browser features
+3. JavaScript enhances interactions (not required for core content)
+4. Contact form submits to:
 
+   * Email service, or
+   * External form handler (no backend in scope)
 
-\### Data Sources
+Benefits:
 
-
-
-\* Static JSON files (gallery data, categories, testimonials)
-
-\* Optional: Headless CMS later (plug-and-play)
-
-
-
-\### Flow Explanation
-
-
-
-1\. Static data is loaded at build time (SSG)
-
-2\. Gallery images are optimized and lazy-loaded
-
-3\. UI components consume data via props
-
-4\. Contact form sends data to:
-
-
-
-&nbsp;  \* Email service or
-
-&nbsp;  \* External form handler (no backend here)
-
-
-
-This approach ensures:
-
-
-
-\* Zero runtime DB dependency
-
-\* Lightning-fast load times
-
-\* Excellent SEO
-
-
+* No database dependency
+* Predictable performance
+* Excellent SEO
+* Simple deployment
 
 ---
 
+## 5. Interface & UX Direction
 
+### Design Language
 
-\## 5. Interface Ideas (UX + UI Direction)
+* Minimal
+* Editorial
+* Image-first, text-second
+* High contrast
+* Purposeful whitespace
 
-
-
-\### Overall Design Language
-
-
-
-\* Minimal
-
-\* Editorial
-
-\* High contrast
-
-\* Image-first, text-second
-
-
-
-\### Key Screens \& Concepts
-
-
-
-\*\*Home Page\*\*
-
-
-
-\* Full-screen hero image or slideshow
-
-\* Photographer name + short tagline
-
-\* Smooth scroll cue
-
-\* No clutter
-
-
-
-\*\*Portfolio / Gallery\*\*
-
-
-
-\* Category-based (Weddings, Portraits, Street, Commercial, etc.)
-
-\* Masonry or grid layout
-
-\* Hover reveals minimal info
-
-\* Click opens immersive lightbox view
-
-
-
-\*\*Project View\*\*
-
-
-
-\* Full-width images
-
-\* Natural vertical storytelling
-
-\* No sidebars, no distractions
-
-
-
-\*\*About Page\*\*
-
-
-
-\* Photographer portrait
-
-\* Short, human story (not resume)
-
-\* Social proof (logos / testimonials)
-
-
-
-\*\*Contact Page\*\*
-
-
-
-\* Simple form (Name, Email, Message)
-
-\* Clear CTA
-
-\* Optional WhatsApp / Instagram link
-
-
-
-\*\*Micro-interactions\*\*
-
-
-
-\* Image hover effects
-
-\* Page transition fades
-
-\* Scroll-triggered reveals (used sparingly)
-
-
+Nothing decorative without function.
 
 ---
 
+### Key Pages & Sections
 
+#### Home Page
 
-\## 6. Which Tech Stack Is Best \*For You\*
+* Full-screen hero image or controlled slideshow
+* Photographer name + short tagline
+* Scroll cue (subtle)
+* No clutter, no competing CTAs
 
-
-
-Given your background:
-
-
-
-\* Full-stack dev
-
-\* Strong in JS ecosystem
-
-\* Agency mindset
-
-\* Performance-aware
-
-
-
-\*\*Best choice for you\*\*:
-
-
-
-\* \*\*Next.js + Tailwind + Framer Motion\*\*
-
-
-
-Why:
-
-
-
-\* You can scale this into a reusable agency template
-
-\* Easy to convert into a CMS-driven version later
-
-\* Industry-standard stack clients trust
-
-\* Perfect balance of speed and control
-
-
-
-Avoid:
-
-
-
-\* WordPress (overkill, slow, client bloat)
-
-\* Pure React SPA (SEO suffers)
-
-\* Heavy UI libraries (kills uniqueness)
-
-
+The first screen decides everything.
 
 ---
 
+#### Portfolio / Gallery
 
+* Category-based navigation (Weddings, Portraits, Commercial, etc.)
+* Grid or masonry-style layout
+* Hover reveals minimal metadata
+* Click opens immersive lightbox or project view
 
-\## 7. Development Tools
-
-
-
-\### Core Dev Tools
-
-
-
-\* VS Code
-
-\* ESLint + Prettier
-
-\* Git + GitHub
-
-
-
-\### UI \& Design
-
-
-
-\* Figma (layout + spacing planning)
-
-\* Coolors / Adobe Color (palette)
-
-\* Unsplash / Local assets (for testing only)
-
-
-
-\### Performance \& Quality
-
-
-
-\* Lighthouse (performance audits)
-
-\* Chrome DevTools (network + images)
-
-\* Responsive testing (mobile-first)
-
-
-
-\### Animation Testing
-
-
-
-\* Framer Motion DevTools mindset: subtle > flashy
-
-
+Images are the product. Everything else is supporting cast.
 
 ---
 
+#### Project View
 
+* Full-width imagery
+* Vertical storytelling flow
+* Natural scroll rhythm
+* No sidebars
+* No distractions
 
+Feels like turning pages in a printed portfolio.
+
+---
+
+#### About Section
+
+* Photographer portrait
+* Short, human story (not a resume)
+* Social proof (logos, testimonials, publications)
+
+Trust is built here, quietly.
+
+---
+
+#### Contact Section
+
+* Simple form: Name, Email, Message
+* Clear primary CTA
+* Optional external links (Instagram / WhatsApp)
+
+No friction. No gimmicks.
+
+---
+
+### Micro-Interactions
+
+* Image hover transitions
+* Subtle scroll-triggered reveals
+* Minimal page transitions (fade / translate)
+
+Used sparingly.
+Never flashy.
+Never distracting.
+
+---
+
+## 6. Performance & Quality Requirements
+
+### Performance Targets
+
+* Fast first paint
+* Smooth scroll (no jank)
+* Lazy-loaded images
+* Minimal JavaScript execution
+
+### Quality Rules
+
+* Layout must not shift during load
+* Animations must not block interaction
+* Mobile-first behavior is mandatory
+* Works without JavaScript (content still visible)
+
+This site must feel **effortless**, not clever.
+
+---
+
+## 7. Development & Tooling
+
+### Development Tools
+
+* VS Code
+* Git + GitHub
+* Browser DevTools
+
+### Design & Planning
+
+* Figma (layout, spacing, hierarchy)
+* Color palette tools (Coolors / Adobe Color)
+
+### Performance & Testing
+
+* Lighthouse audits
+* Network throttling tests
+* Real-device testing (especially mobile)
+
+### Animation Discipline
+
+* GSAP used only where motion adds meaning
+* Scroll-triggered animations must feel weighted
+* Subtle > noticeable
+
+---
+
+## 8. Out of Scope (Explicitly)
+
+* CMS integration (future optional)
+* Backend development
+* User accounts
+* Blog system
+* Heavy UI libraries
+* Over-animated interactions
+
+This keeps the project focused and sharp.
+
+---
+
+## Final Note
+
+This project is not about “features.”
+It’s about **taste, restraint, and execution**.
+
+HTML provides structure.
+CSS provides authority.
+JavaScript provides intention.
+
+Everything else is noise.
+
+The next natural documents after this PRD are:
 
 
