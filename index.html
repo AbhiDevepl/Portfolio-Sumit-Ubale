@@ -37,6 +37,7 @@
   <link rel="stylesheet" href="/styles/base.css">
   <link rel="stylesheet" href="/styles/layout.css">
   <link rel="stylesheet" href="/styles/components.css">
+  <link rel="stylesheet" href="/styles/testimonials.css">
   <link rel="stylesheet" href="/styles/animations.css">
 </head>
 <body>
@@ -107,6 +108,9 @@
           <div class="about-social-proof">
             <p class="caption">Featured In</p>
             <!-- Add publication logos here -->
+            <div id="publications"></div>
+            <div id="clients"></div>
+            <ul id="awards"></ul>
           </div>
         </div>
       </div>
@@ -173,6 +177,17 @@
           >
         </div>
         -->
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="testimonials section" id="testimonials">
+    <div class="container">
+      <h2 class="heading-lg" style="text-align: center; margin-bottom: 2rem;">Kind Words</h2>
+      <div class="testimonials-container" id="testimonials-container">
+        <!-- Testimonials will be loaded dynamically -->
       </div>
     </div>
   </section>
@@ -258,6 +273,7 @@
   <script src="/scripts/sections.js"></script>
   <script src="/scripts/gallery.js"></script>
   <script src="/scripts/contact.js"></script>
+  <script src="/scripts/content-loader.js"></script>
   
   <!-- Set current year in footer -->
   <script>

@@ -178,49 +178,49 @@
 
 ### Main HTML (`index.html`)
 
-- [ ] Semantic HTML5 structure
-- [ ] `<head>` setup
-  - [ ] Meta tags (charset, viewport)
-  - [ ] SEO meta tags (title, description)
-  - [ ] Open Graph tags (og:title, og:description, og:image)
-  - [ ] Favicon link
-  - [ ] CSS file links (in order: theme → base → layout → components → animations)
-- [ ] Navigation section
-  - [ ] Logo/brand name
-  - [ ] Menu links (Home, Portfolio, About, Contact)
-  - [ ] CTA button
-- [ ] Hero section
-  - [ ] Background image container
-  - [ ] Hero title (photographer name)
-  - [ ] Optional tagline
-  - [ ] Scroll cue indicator
-- [ ] About section
-  - [ ] Photographer portrait image
-  - [ ] Bio text (short, human story)
-  - [ ] Social proof (logos, testimonials, publications)
-- [ ] Portfolio/Gallery section
-  - [ ] Category navigation
-  - [ ] Image grid container
-  - [ ] Individual image cards with metadata
-- [ ] Project view template (if separate page)
-  - [ ] Full-width image containers
-  - [ ] Vertical scroll layout
-- [ ] Events section
-  - [ ] Event image containers
-  - [ ] Varied aspect ratios
-  - [ ] Minimal text overlays
-- [ ] Contact section
-  - [ ] Contact form (Name, Email, Message fields)
-  - [ ] Submit button
-  - [ ] Social links (Instagram, WhatsApp, etc.)
-- [ ] Footer
-  - [ ] Copyright notice
-  - [ ] Additional links
-- [ ] Script includes (at end of `<body>`)
-  - [ ] GSAP CDN
-  - [ ] ScrollTrigger CDN
-  - [ ] Lenis CDN
-  - [ ] Custom scripts (in order: gsap-init → smooth-scroll → hero → sections → gallery → contact)
+- [x] Semantic HTML5 structure
+- [x] `<head>` setup
+  - [x] Meta tags (charset, viewport)
+  - [x] SEO meta tags (title, description)
+  - [x] Open Graph tags (og:title, og:description, og:image)
+  - [x] Favicon link
+  - [x] CSS file links (in order: theme → base → layout → components → animations)
+- [x] Navigation section
+  - [x] Logo/brand name
+  - [x] Menu links (Home, Portfolio, About, Contact)
+  - [x] CTA button
+- [x] Hero section
+  - [x] Background image container
+  - [x] Hero title (photographer name)
+  - [x] Optional tagline
+  - [x] Scroll cue indicator
+- [x] About section
+  - [x] Photographer portrait image
+  - [x] Bio text (short, human story)
+  - [x] Social proof (logos, testimonials, publications)
+- [x] Portfolio/Gallery section
+  - [x] Category navigation
+  - [x] Image grid container
+  - [x] Individual image cards with metadata
+- [x] Project view template (if separate page)
+  - [x] Full-width image containers
+  - [x] Vertical scroll layout
+- [x] Events section
+  - [x] Event image containers
+  - [x] Varied aspect ratios
+  - [x] Minimal text overlays
+- [x] Contact section
+  - [x] Contact form (Name, Email, Message fields)
+  - [x] Submit button
+  - [x] Social links (Instagram, WhatsApp, etc.)
+- [x] Footer
+  - [x] Copyright notice
+  - [x] Additional links
+- [x] Script includes (at end of `<body>`)
+  - [x] GSAP CDN
+  - [x] ScrollTrigger CDN
+  - [x] Lenis CDN
+  - [x] Custom scripts (in order: gsap-init → smooth-scroll → hero → sections → gallery → contact)
 
 ---
 
@@ -244,10 +244,10 @@
 
 ### Content Loading
 
-- [ ] Fetch and parse JSON data
-- [ ] Dynamically populate gallery grid
-- [ ] Dynamically populate testimonials
-- [ ] Error handling for failed data loads
+- [x] Fetch and parse JSON data
+- [x] Dynamically populate gallery grid
+- [x] Dynamically populate testimonials
+- [x] Error handling for failed data loads
 
 ---
 
