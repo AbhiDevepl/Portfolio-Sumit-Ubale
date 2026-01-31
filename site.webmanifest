@@ -1,0 +1,22 @@
+{
+  "name": "Photographer Portfolio",
+  "short_name": "Portfolio",
+  "description": "Editorial photographer portfolio showcasing weddings, portraits, and commercial work",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "theme_color": "#4A483F",
+  "background_color": "#E8E4E1",
+  "display": "standalone",
+  "start_url": "/"
+}

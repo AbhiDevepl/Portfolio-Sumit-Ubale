@@ -1,0 +1,143 @@
+{
+  "portfolio": {
+    "categories": [
+      {
+        "id": "all",
+        "name": "All Work",
+        "slug": "all"
+      },
+      {
+        "id": "weddings",
+        "name": "Weddings",
+        "slug": "weddings"
+      },
+      {
+        "id": "portraits",
+        "name": "Portraits",
+        "slug": "portraits"
+      },
+      {
+        "id": "commercial",
+        "name": "Commercial",
+        "slug": "commercial"
+      },
+      {
+        "id": "events",
+        "name": "Events",
+        "slug": "events"
+      }
+    ],
+    "images": [
+      {
+        "id": 1,
+        "title": "Sunset Ceremony",
+        "category": "weddings",
+        "src": "/assets/images/portraits/wedding-1.webp",
+        "alt": "Beautiful sunset wedding ceremony",
+        "aspectRatio": "3/4",
+        "description": "Intimate outdoor wedding ceremony at golden hour"
+      },
+      {
+        "id": 2,
+        "title": "Editorial Portrait",
+        "category": "portraits",
+        "src": "/assets/images/portraits/portrait-1.webp",
+        "alt": "Professional editorial portrait",
+        "aspectRatio": "4/5",
+        "description": "High-fashion editorial portrait session"
+      },
+      {
+        "id": 3,
+        "title": "Brand Campaign",
+        "category": "commercial",
+        "src": "/assets/images/portraits/commercial-1.webp",
+        "alt": "Commercial brand photography",
+        "aspectRatio": "3/4",
+        "description": "Lifestyle brand campaign photography"
+      },
+      {
+        "id": 4,
+        "title": "Corporate Event",
+        "category": "events",
+        "src": "/assets/images/events/event-1.webp",
+        "alt": "Corporate event photography",
+        "aspectRatio": "4/3",
+        "description": "Annual corporate gala event coverage"
+      },
+      {
+        "id": 5,
+        "title": "Bridal Portrait",
+        "category": "weddings",
+        "src": "/assets/images/portraits/wedding-2.webp",
+        "alt": "Elegant bridal portrait",
+        "aspectRatio": "3/4",
+        "description": "Classic bridal portrait in natural light"
+      },
+      {
+        "id": 6,
+        "title": "Fashion Editorial",
+        "category": "portraits",
+        "src": "/assets/images/portraits/portrait-2.webp",
+        "alt": "Fashion editorial photography",
+        "aspectRatio": "4/5",
+        "description": "Contemporary fashion editorial shoot"
+      }
+    ]
+  },
+  "testimonials": [
+    {
+      "id": 1,
+      "name": "Sarah Johnson",
+      "role": "Bride",
+      "quote": "The photos exceeded all our expectations. Every moment was captured with such artistry and emotion.",
+      "image": null
+    },
+    {
+      "id": 2,
+      "name": "Michael Chen",
+      "role": "Creative Director, Brand Co.",
+      "quote": "Professional, creative, and incredibly talented. Our campaign images were absolutely stunning.",
+      "image": null
+    },
+    {
+      "id": 3,
+      "name": "Emma Williams",
+      "role": "Model",
+      "quote": "Working with this photographer is always a pleasure. They have an incredible eye for composition and light.",
+      "image": null
+    }
+  ],
+  "socialProof": {
+    "publications": [
+      {
+        "name": "Vogue",
+        "logo": "/assets/images/logos/vogue.svg"
+      },
+      {
+        "name": "Harper's Bazaar",
+        "logo": "/assets/images/logos/harpers.svg"
+      },
+      {
+        "name": "Elle",
+        "logo": "/assets/images/logos/elle.svg"
+      }
+    ],
+    "awards": [
+      "Best Wedding Photographer 2024",
+      "Editorial Photography Award",
+      "Portrait Excellence Award"
+    ],
+    "clients": ["Nike", "Adidas", "Gucci", "Prada", "Louis Vuitton"]
+  },
+  "about": {
+    "name": "Sumit Ubale",
+    "tagline": "Editorial & Portrait Photographer",
+    "bio": "With over a decade of experience in editorial and portrait photography, I specialize in creating timeless, emotive images that tell compelling stories. My work has been featured in leading publications and I've had the privilege of working with incredible clients around the world.",
+    "image": "/assets/images/about/photographer.webp",
+    "social": {
+      "instagram": "https://instagram.com/photographer",
+      "email": "hello@photographer.com",
+      "phone": "+1 (555) 123-4567"
+    }
+  }
+}

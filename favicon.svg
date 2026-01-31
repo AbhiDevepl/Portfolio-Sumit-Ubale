@@ -1,0 +1,28 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#E8E4E1"/>
+  
+  <!-- Camera Icon -->
+  <g transform="translate(136, 186)">
+    <!-- Camera Body -->
+    <rect x="0" y="32" width="240" height="160" fill="#4A483F"/>
+    
+    <!-- Camera Top -->
+    <rect x="40" y="0" width="80" height="32" fill="#4A483F"/>
+    
+    <!-- Lens Outer Circle -->
+    <circle cx="100" cy="112" r="64" fill="#E8E4E1"/>
+    
+    <!-- Lens Middle Circle -->
+    <circle cx="100" cy="112" r="48" fill="#4A483F"/>
+    
+    <!-- Lens Inner Circle -->
+    <circle cx="100" cy="112" r="32" fill="#E8E4E1"/>
+    
+    <!-- Viewfinder -->
+    <rect x="160" y="64" width="48" height="32" fill="#E8E4E1"/>
+    
+    <!-- Flash -->
+    <rect x="32" y="48" width="24" height="16" fill="#E8E4E1"/>
+  </g>
+</svg>

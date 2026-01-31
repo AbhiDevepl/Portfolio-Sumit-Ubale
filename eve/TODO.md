@@ -10,21 +10,21 @@
 
 ### Directory Structure
 
-- [ ] Create root project directory structure
-- [ ] Set up `/styles` directory with all CSS files
-- [ ] Set up `/scripts` directory with all JS modules
-- [ ] Set up `/data` directory for JSON content
-- [ ] Set up `/assets/images` directory with subdirectories
-  - [ ] `/assets/images/hero`
-  - [ ] `/assets/images/portraits`
-  - [ ] `/assets/images/events`
-- [ ] Add `favicon.ico` to root
+- [x] Create root project directory structure
+- [x] Set up `/styles` directory with all CSS files
+- [x] Set up `/scripts` directory with all JS modules
+- [x] Set up `/data` directory for JSON content
+- [x] Set up `/assets/images` directory with subdirectories
+  - [x] `/assets/images/hero`
+  - [x] `/assets/images/portraits`
+  - [x] `/assets/images/events`
+- [x] Add `favicon.ico` to root
 
 ### Core Files
 
-- [ ] Create `index.html` (main entry point)
-- [ ] Set up Git repository and `.gitignore`
-- [ ] Create `README.md` with project documentation
+- [x] Create `index.html` (main entry point)
+- [x] Set up Git repository and `.gitignore`
+- [x] Create `README.md` with project documentation
 
 ---
 
@@ -32,73 +32,73 @@
 
 ### Theme & Variables (`styles/theme.css`)
 
-- [ ] Define CSS custom properties (`:root`)
-  - [ ] `--editorial-bg: #E8E4E1`
-  - [ ] `--editorial-rose: #C68B7A`
-  - [ ] `--editorial-olive: #4A483F`
-  - [ ] `--font-serif: "Cormorant Garamond", serif`
-  - [ ] `--font-sans: "Inter", sans-serif`
-  - [ ] `--tracking-tight: -0.05em`
-- [ ] Import Google Fonts (Cormorant Garamond, Inter)
+- [x] Define CSS custom properties (`:root`)
+  - [x] `--editorial-bg: #E8E4E1`
+  - [x] `--editorial-rose: #C68B7A`
+  - [x] `--editorial-olive: #4A483F`
+  - [x] `--font-serif: "Cormorant Garamond", serif`
+  - [x] `--font-sans: "Inter", sans-serif`
+  - [x] `--tracking-tight: -0.05em`
+- [x] Import Google Fonts (Cormorant Garamond, Inter)
 
 ### Base Styles (`styles/base.css`)
 
-- [ ] CSS reset / normalize
-- [ ] Base typography rules
-  - [ ] Serif for headings (uppercase, tight tracking)
-  - [ ] Sans-serif for body text
-- [ ] Global box-sizing and margin/padding reset
-- [ ] Accessibility foundations (focus states, skip links)
+- [x] CSS reset / normalize
+- [x] Base typography rules
+  - [x] Serif for headings (uppercase, tight tracking)
+  - [x] Sans-serif for body text
+- [x] Global box-sizing and margin/padding reset
+- [x] Accessibility foundations (focus states, skip links)
 
 ### Layout System (`styles/layout.css`)
 
-- [ ] Global layout containers
-- [ ] Flexbox and Grid utilities
-- [ ] Responsive breakpoints
-- [ ] Section spacing rhythm
-- [ ] Asymmetric whitespace patterns
+- [x] Global layout containers
+- [x] Flexbox and Grid utilities
+- [x] Responsive breakpoints
+- [x] Section spacing rhythm
+- [x] Asymmetric whitespace patterns
 
 ### Component Styles (`styles/components.css`)
 
-- [ ] Navigation styling
-  - [ ] Fixed positioning
-  - [ ] `mix-blend-mode: difference` over hero
-  - [ ] Minimal height, understated logo
-  - [ ] Outlined pill CTA (no fill)
-- [ ] Hero section styling
-  - [ ] Full viewport height
-  - [ ] Background image positioning
-  - [ ] Text anchoring (bottom-left/center-left)
-  - [ ] Typography: uppercase serif, tight leading
-- [ ] About section styling
-  - [ ] Asymmetric grid layout
-  - [ ] Image positioning (never centered)
-  - [ ] Text blocks (never full-width)
-- [ ] Portfolio/Gallery grid
-  - [ ] Masonry or grid layout
-  - [ ] Hover state transitions
-  - [ ] Portrait aspect ratios (3:4 or 4:5)
-- [ ] Project view styling
-  - [ ] Full-width imagery
-  - [ ] Vertical storytelling flow
-  - [ ] No sidebars or distractions
-- [ ] Events section styling
-  - [ ] Flexbox with bottom alignment
-  - [ ] Varied aspect ratios
-  - [ ] Intentional imbalance
-- [ ] Contact footer styling
-  - [ ] Soft background
-  - [ ] Optional backdrop blur
-  - [ ] Simple form layout
-  - [ ] Button hover states
+- [x] Navigation styling
+  - [x] Fixed positioning
+  - [x] `mix-blend-mode: difference` over hero
+  - [x] Minimal height, understated logo
+  - [x] Outlined pill CTA (no fill)
+- [x] Hero section styling
+  - [x] Full viewport height
+  - [x] Background image positioning
+  - [x] Text anchoring (bottom-left/center-left)
+  - [x] Typography: uppercase serif, tight leading
+- [x] About section styling
+  - [x] Asymmetric grid layout
+  - [x] Image positioning (never centered)
+  - [x] Text blocks (never full-width)
+- [x] Portfolio/Gallery grid
+  - [x] Masonry or grid layout
+  - [x] Hover state transitions
+  - [x] Portrait aspect ratios (3:4 or 4:5)
+- [x] Project view styling
+  - [x] Full-width imagery
+  - [x] Vertical storytelling flow
+  - [x] No sidebars or distractions
+- [x] Events section styling
+  - [x] Flexbox with bottom alignment
+  - [x] Varied aspect ratios
+  - [x] Intentional imbalance
+- [x] Contact footer styling
+  - [x] Soft background
+  - [x] Optional backdrop blur
+  - [x] Simple form layout
+  - [x] Button hover states
 
 ### Animation Styles (`styles/animations.css`)
 
-- [ ] Motion-related CSS classes
-- [ ] Transition definitions
-- [ ] Transform utilities
-- [ ] `will-change` optimizations
-- [ ] Clip-path utilities for reveals
+- [x] Motion-related CSS classes
+- [x] Transition definitions
+- [x] Transform utilities
+- [x] `will-change` optimizations
+- [x] Clip-path utilities for reveals
 
 ---
 
@@ -106,71 +106,71 @@
 
 ### GSAP Setup (`scripts/gsap-init.js`)
 
-- [ ] Include GSAP CDN in HTML
-  - [ ] `gsap.min.js`
-  - [ ] `ScrollTrigger.min.js`
-- [ ] Register ScrollTrigger plugin
-- [ ] Configure global GSAP settings
+- [x] Include GSAP CDN in HTML
+  - [x] `gsap.min.js`
+  - [x] `ScrollTrigger.min.js`
+- [x] Register ScrollTrigger plugin
+- [x] Configure global GSAP settings
 
 ### Smooth Scroll (`scripts/smooth-scroll.js`)
 
-- [ ] Include Lenis CDN in HTML
-- [ ] Initialize Lenis with settings
-  - [ ] `smooth: true`
-  - [ ] `lerp: 0.08`
-- [ ] Set up `requestAnimationFrame` loop
-- [ ] Integrate with GSAP ScrollTrigger
+- [x] Include Lenis CDN in HTML
+- [x] Initialize Lenis with settings
+  - [x] `smooth: true`
+  - [x] `lerp: 0.08`
+- [x] Set up `requestAnimationFrame` loop
+- [x] Integrate with GSAP ScrollTrigger
 
 ### Hero Animations (`scripts/hero.js`)
 
-- [ ] Hero title reveal animation
-  - [ ] Fade in from bottom (`y: 80, opacity: 0`)
-  - [ ] Duration: 1.2s
-  - [ ] Easing: `power4.out`
-  - [ ] Delay: 0.2s
-- [ ] Hero image parallax on scroll
-  - [ ] `yPercent: 10`
-  - [ ] ScrollTrigger with scrub
-- [ ] Optional: Clip-path reveal animation
-  - [ ] `clip-path: inset(100% 0 0 0)` → `inset(0% 0 0 0)`
-  - [ ] Duration: 1.4s
-  - [ ] Easing: `power4.out`
+- [x] Hero title reveal animation
+  - [x] Fade in from bottom (`y: 80, opacity: 0`)
+  - [x] Duration: 1.2s
+  - [x] Easing: `power4.out`
+  - [x] Delay: 0.2s
+- [x] Hero image parallax on scroll
+  - [x] `yPercent: 10`
+  - [x] ScrollTrigger with scrub
+- [x] Optional: Clip-path reveal animation
+  - [x] `clip-path: inset(100% 0 0 0)` → `inset(0% 0 0 0)`
+  - [x] Duration: 1.4s
+  - [x] Easing: `power4.out`
 
 ### Section Animations (`scripts/sections.js`)
 
-- [ ] About section scroll reveal
-  - [ ] Fade + rise on scroll (`y: 40, opacity: 0`)
-  - [ ] Duration: 0.8s
-  - [ ] Easing: `power3.out`
-  - [ ] Trigger: `start: "top 75%"`
-- [ ] Events section parallax
-  - [ ] Different speeds for different images
-  - [ ] `.event-image.slow` moves up (`y: -50`)
-  - [ ] `.event-image.fast` moves down (`y: 50`)
-  - [ ] ScrollTrigger with scrub
-- [ ] General scroll-triggered reveals for other sections
+- [x] About section scroll reveal
+  - [x] Fade + rise on scroll (`y: 40, opacity: 0`)
+  - [x] Duration: 0.8s
+  - [x] Easing: `power3.out`
+  - [x] Trigger: `start: "top 75%"`
+- [x] Events section parallax
+  - [x] Different speeds for different images
+  - [x] `.event-image.slow` moves up (`y: -50`)
+  - [x] `.event-image.fast` moves down (`y: 50`)
+  - [x] ScrollTrigger with scrub
+- [x] General scroll-triggered reveals for other sections
 
 ### Gallery Interactions (`scripts/gallery.js`)
 
-- [ ] Category-based filtering logic
-- [ ] Image hover interactions
-  - [ ] Grayscale to color transition
-  - [ ] Arrow icon fade-in
-  - [ ] 200-300ms duration
-- [ ] Lightbox or project view modal
-  - [ ] Open/close functionality
-  - [ ] Keyboard navigation (ESC, arrows)
-  - [ ] Accessibility (focus trap, ARIA)
-- [ ] Lazy loading implementation (native or custom)
+- [x] Category-based filtering logic
+- [x] Image hover interactions
+  - [x] Grayscale to color transition
+  - [x] Arrow icon fade-in
+  - [x] 200-300ms duration
+- [x] Lightbox or project view modal
+  - [x] Open/close functionality
+  - [x] Keyboard navigation (ESC, arrows)
+  - [x] Accessibility (focus trap, ARIA)
+- [x] Lazy loading implementation (native or custom)
 
 ### Contact Form (`scripts/contact.js`)
 
-- [ ] Form validation (Name, Email, Message)
-- [ ] Submit handler
-  - [ ] Integration with email service or form handler
-  - [ ] Success/error feedback
-- [ ] Input focus states and animations
-- [ ] Prevent default form submission
+- [x] Form validation (Name, Email, Message)
+- [x] Submit handler
+  - [x] Integration with email service or form handler
+  - [x] Success/error feedback
+- [x] Input focus states and animations
+- [x] Prevent default form submission
 
 ---
 
@@ -228,19 +228,19 @@
 
 ### Portfolio Data (`data/portfolio.json`)
 
-- [ ] Create JSON structure for gallery images
-  - [ ] Image paths
-  - [ ] Categories (Weddings, Portraits, Commercial, Events)
-  - [ ] Metadata (title, description, date)
-  - [ ] Alt text for accessibility
-- [ ] Create JSON structure for testimonials
-  - [ ] Client name
-  - [ ] Quote
-  - [ ] Optional photo/logo
-- [ ] Create JSON structure for social proof
-  - [ ] Publication logos
-  - [ ] Awards
-  - [ ] Client logos
+- [x] Create JSON structure for gallery images
+  - [x] Image paths
+  - [x] Categories (Weddings, Portraits, Commercial, Events)
+  - [x] Metadata (title, description, date)
+  - [x] Alt text for accessibility
+- [x] Create JSON structure for testimonials
+  - [x] Client name
+  - [x] Quote
+  - [x] Optional photo/logo
+- [x] Create JSON structure for social proof
+  - [x] Publication logos
+  - [x] Awards
+  - [x] Client logos
 
 ### Content Loading
 
