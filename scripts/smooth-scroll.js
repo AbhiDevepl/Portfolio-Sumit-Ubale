@@ -15,17 +15,12 @@ const lenis = new Lenis({
   infinite: false,
 });
 
-// Request animation frame loop
-function raf(time) {
-  lenis.raf(time);
-  requestAnimationFrame(raf);
-}
-
-requestAnimationFrame(raf);
-
 // Integrate Lenis with GSAP ScrollTrigger
 lenis.on('scroll', ScrollTrigger.update);
 
+// Use GSAP ticker to drive Lenis's RAF loop
+// This is more efficient than a separate requestAnimationFrame loop
+// and prevents redundant processing by ensuring all updates are synced with GSAP.
 gsap.ticker.add((time) => {
   lenis.raf(time * 1000);
 });
@@ -37,7 +32,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
     e.preventDefault();
     const target = document.querySelector(this.getAttribute('href'));
-    
+
     if (target) {
       lenis.scrollTo(target, {
         offset: -100,
