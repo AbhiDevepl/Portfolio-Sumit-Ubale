@@ -92,6 +92,126 @@
 }
 
 /* ========================================
+   Mobile Navigation
+   ======================================== */
+
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: var(--z-fixed);
+  padding: var(--space-2);
+}
+
+.nav-toggle-line {
+  width: 32px;
+  height: 2px;
+  background-color: var(--editorial-olive);
+  transition: all var(--transition-base);
+}
+
+.nav-blend .nav-toggle-line {
+  background-color: var(--editorial-white);
+}
+
+/* Toggle Active State */
+.nav-toggle.active .nav-toggle-line:nth-child(1) {
+  transform: translateY(4px) rotate(45deg);
+  background-color: var(--editorial-olive); /* Always olive when open (on white bg) */
+}
+
+.nav-toggle.active .nav-toggle-line:nth-child(2) {
+  transform: translateY(-4px) rotate(-45deg);
+  background-color: var(--editorial-olive);
+}
+
+/* Mobile Menu Overlay */
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  background-color: var(--editorial-white);
+  z-index: calc(var(--z-fixed) - 1); /* Behind toggle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  clip-path: polygon(0 0, 100% 0, 100% 0, 0 0); /* Closed state */
+  pointer-events: none;
+}
+
+.mobile-menu.active {
+  pointer-events: auto;
+}
+
+.mobile-menu-container {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.mobile-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.mobile-nav-link {
+  font-family: var(--font-serif);
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--editorial-olive);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  opacity: 0; /* Animated in */
+  transform: translateY(20px);
+}
+
+.mobile-nav-num {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-wide);
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+.mobile-menu-footer {
+  border-top: 1px solid rgba(0,0,0,0.1);
+  padding-top: var(--space-8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.mobile-menu-text {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--editorial-gray);
+}
+
+.mobile-social {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.mobile-social-link {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--editorial-olive);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* ========================================
    Hero Section
    ======================================== */
 
@@ -400,6 +520,14 @@
   transform: scale(1.02);
 }
 
+.event-item:hover .gallery-overlay {
+  opacity: 1;
+}
+
+.event-item {
+  cursor: pointer;
+}
+
 /* Varied aspect ratios for visual interest */
 .event-item:nth-child(1) .event-image { aspect-ratio: 4 / 5; }
 .event-item:nth-child(2) .event-image { aspect-ratio: 3 / 4; }
@@ -583,7 +711,11 @@
 
 @media (max-width: 767px) {
   .nav-menu {
-    gap: var(--space-4);
+    display: none; /* Hide standard menu on mobile */
+  }
+
+  .nav-toggle {
+    display: flex; /* Show toggle */
   }
   
   .nav-link {

@@ -32,34 +32,34 @@
         "id": 1,
         "title": "Sunset Ceremony",
         "category": "weddings",
-        "src": "/assets/images/portraits/wedding-1.webp",
+        "src": "/assets/images/weddings/wedding-1.png",
         "alt": "Beautiful sunset wedding ceremony",
-        "aspectRatio": "3/4",
+        "aspectRatio": "4/3",
         "description": "Intimate outdoor wedding ceremony at golden hour"
       },
       {
         "id": 2,
         "title": "Editorial Portrait",
         "category": "portraits",
-        "src": "/assets/images/portraits/portrait-1.webp",
+        "src": "/assets/images/portraits/portrait-1.png",
         "alt": "Professional editorial portrait",
-        "aspectRatio": "4/5",
+        "aspectRatio": "4/3",
         "description": "High-fashion editorial portrait session"
       },
       {
         "id": 3,
         "title": "Brand Campaign",
         "category": "commercial",
-        "src": "/assets/images/portraits/commercial-1.webp",
+        "src": "/assets/images/commercial/commercial-1.png",
         "alt": "Commercial brand photography",
-        "aspectRatio": "3/4",
+        "aspectRatio": "4/3",
         "description": "Lifestyle brand campaign photography"
       },
       {
         "id": 4,
         "title": "Corporate Event",
         "category": "events",
-        "src": "/assets/images/events/event-1.webp",
+        "src": "/assets/images/events/event-1.png",
         "alt": "Corporate event photography",
         "aspectRatio": "4/3",
         "description": "Annual corporate gala event coverage"
@@ -68,22 +68,60 @@
         "id": 5,
         "title": "Bridal Portrait",
         "category": "weddings",
-        "src": "/assets/images/portraits/wedding-2.webp",
+        "src": "/assets/images/weddings/wedding-2.png",
         "alt": "Elegant bridal portrait",
-        "aspectRatio": "3/4",
+        "aspectRatio": "4/3",
         "description": "Classic bridal portrait in natural light"
       },
       {
         "id": 6,
         "title": "Fashion Editorial",
         "category": "portraits",
-        "src": "/assets/images/portraits/portrait-2.webp",
+        "src": "/assets/images/portraits/portrait-2.png",
         "alt": "Fashion editorial photography",
-        "aspectRatio": "4/5",
+        "aspectRatio": "4/3",
         "description": "Contemporary fashion editorial shoot"
       }
     ]
   },
+  "recentEvents": [
+    {
+      "id": 101,
+      "title": "Fashion Week Paris",
+      "category": "Event",
+      "src": "/assets/images/events/event-1.png",
+      "alt": "Paris Fashion Week coverage",
+      "aspectRatio": "4/3",
+      "description": "Backstage and runway coverage for Spring/Summer collection."
+    },
+    {
+      "id": 102,
+      "title": "Tech Summit 2024",
+      "category": "Conference",
+      "src": "/assets/images/events/event-2.png",
+      "alt": "Global Tech Summit keynotes",
+      "aspectRatio": "4/3",
+      "description": "Keynote photography for main stage speakers."
+    },
+    {
+      "id": 103,
+      "title": "Art Gallery Opening",
+      "category": "Gala",
+      "src": "/assets/images/events/event-3.png",
+      "alt": "Modern Art Gallery Opening Gala",
+      "aspectRatio": "4/3",
+      "description": "VIP opening night reception photography."
+    },
+    {
+      "id": 104,
+      "title": "Charity Fundraiser",
+      "category": "Gala",
+      "src": "/assets/images/events/event-4.png",
+      "alt": "Annual Charity Fundraiser",
+      "aspectRatio": "4/3",
+      "description": "Evening gala event for non-profit organization."
+    }
+  ],
   "testimonials": [
     {
       "id": 1,
@@ -127,17 +165,17 @@
       "Editorial Photography Award",
       "Portrait Excellence Award"
     ],
-    "clients": ["Nike", "Adidas", "Gucci", "Prada", "Louis Vuitton"]
+    "clients": ["","",""]
   },
   "about": {
     "name": "Sumit Ubale",
-    "tagline": "Editorial & Portrait Photographer",
+    "tagline": "Photographer & films",
     "bio": "With over a decade of experience in editorial and portrait photography, I specialize in creating timeless, emotive images that tell compelling stories. My work has been featured in leading publications and I've had the privilege of working with incredible clients around the world.",
-    "image": "/assets/images/about/photographer.webp",
+    "image": "/assets/images/about/photographer.png",
     "social": {
-      "instagram": "https://instagram.com/photographer",
-      "email": "hello@photographer.com",
-      "phone": "+1 (555) 123-4567"
+      "instagram": "https://www.instagram.com/sumit_ubale_photography/",
+      "email": "sumitubale5050@gmail.com",
+      "phone": ""
     }
   }
 }
