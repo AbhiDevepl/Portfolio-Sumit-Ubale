@@ -688,11 +688,11 @@
     grid-template-columns: 1fr 1fr;
     gap: var(--space-16);
   }
-  
+
   .hero-content {
     left: var(--space-24);
   }
-  
+
   .gallery-grid {
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   }
@@ -703,7 +703,7 @@
     grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
     gap: var(--space-8);
   }
-  
+
   .events-grid {
     gap: var(--space-12);
   }
@@ -717,20 +717,20 @@
   .nav-toggle {
     display: flex; /* Show toggle */
   }
-  
+
   .nav-link {
     font-size: var(--text-xs);
   }
-  
+
   .hero-content {
     left: var(--space-6);
     bottom: var(--space-12);
   }
-  
+
   .about-content {
     padding: 0 var(--space-4);
   }
-  
+
   .portfolio-categories {
     gap: var(--space-2);
   }
