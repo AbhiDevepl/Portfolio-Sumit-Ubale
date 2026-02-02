@@ -1,3 +1,3 @@
-## 2025-02-01 - Redundant Animation Loops (Lenis + GSAP)
-**Learning:** When using Lenis alongside GSAP, it is common to accidentally create redundant update loops. Both libraries often compete to drive the `requestAnimationFrame` (RAF). In this codebase, Lenis was being updated by both a native RAF loop and a GSAP ticker listener, leading to double-execution of scroll calculations every frame.
-**Action:** Always consolidate animation/scroll updates into a single loop (preferably `gsap.ticker` if GSAP is present) to ensure synchronization and reduce CPU overhead. Use `gsap.ticker.add((time) => lenis.raf(time * 1000))` for optimal results.
+## 2025-05-24 - [Smooth Scroll Conflict & Redundant Listeners]
+**Learning:** Found that global `scroll-behavior: smooth` in CSS conflicts with Lenis smooth-scroll library, causing jittery scroll behavior. Also, GSAP hover listeners were redundant as CSS transitions were already defined for the same elements.
+**Action:** Always check for existing smooth-scroll libraries before setting global CSS scroll behavior. Prefer CSS transitions over GSAP for simple interaction states (hover/active) to reduce JS execution.

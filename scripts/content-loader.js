@@ -16,12 +16,12 @@ class ContentLoader {
     try {
       await this.loadData();
       this.populateGallery();
-      
+
       // Initialize Gallery Interactions (after content is loaded)
       if (window.GalleryManager) {
         window.GalleryManager.init();
       }
-      
+
       this.populateTestimonials();
       this.populateEvents();
       this.populateAbout();
@@ -37,11 +37,11 @@ class ContentLoader {
   async loadData() {
     try {
       const response = await fetch(this.dataUrl);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       this.data = await response.json();
       return this.data;
     } catch (error) {
@@ -54,7 +54,7 @@ class ContentLoader {
    */
   populateGallery() {
     const galleryGrid = document.getElementById('gallery-grid');
-    
+
     if (!galleryGrid || !this.data?.portfolio?.images) {
       console.warn('Gallery grid or images data not found');
       return;
@@ -63,11 +63,14 @@ class ContentLoader {
     // Clear existing content
     galleryGrid.innerHTML = '';
 
-    // Create gallery items
+    // Batch DOM updates using DocumentFragment for better performance
+    const fragment = document.createDocumentFragment();
     this.data.portfolio.images.forEach((image, index) => {
       const galleryItem = this.createGalleryItem(image, index);
-      galleryGrid.appendChild(galleryItem);
+      fragment.appendChild(galleryItem);
     });
+
+    galleryGrid.appendChild(fragment);
 
     console.log(`✅ Loaded ${this.data.portfolio.images.length} gallery images`);
   }
@@ -130,7 +133,7 @@ class ContentLoader {
    */
   populateTestimonials() {
     const testimonialsContainer = document.getElementById('testimonials-container');
-    
+
     if (!testimonialsContainer || !this.data?.testimonials) {
       console.warn('Testimonials container or data not found');
       return;
@@ -139,11 +142,14 @@ class ContentLoader {
     // Clear existing content
     testimonialsContainer.innerHTML = '';
 
-    // Create testimonial items
+    // Batch DOM updates using DocumentFragment for better performance
+    const fragment = document.createDocumentFragment();
     this.data.testimonials.forEach(testimonial => {
       const testimonialItem = this.createTestimonialItem(testimonial);
-      testimonialsContainer.appendChild(testimonialItem);
+      fragment.appendChild(testimonialItem);
     });
+
+    testimonialsContainer.appendChild(fragment);
 
     console.log(`✅ Loaded ${this.data.testimonials.length} testimonials`);
   }
@@ -153,7 +159,7 @@ class ContentLoader {
    */
   populateEvents() {
     const eventsGrid = document.querySelector('.events-grid');
-    
+
     if (!eventsGrid || !this.data?.recentEvents) {
       console.warn('Events grid or data not found');
       return;
@@ -162,24 +168,21 @@ class ContentLoader {
     // Clear existing content
     eventsGrid.innerHTML = '';
 
+    // Batch DOM updates using DocumentFragment for better performance
+    const fragment = document.createDocumentFragment();
+
     // Create event items (reusing gallery item structure for consistency)
     this.data.recentEvents.forEach((event, index) => {
-      // Use createGalleryItem styling/structure but appended to events grid
-      // We manually recreate it here to ensure specific event classes if needed
-      // or we can reuse createGalleryItem if we want identical behavior.
-      // User asked for "like Portfolio", so let's stick to the Project Card style 
-      // or the Gallery Item style. The HTML had .event-item structure.
-      // Let's use the .event-item structure but make it dynamic.
-      
+
       const item = document.createElement('div');
       item.className = 'event-item';
-      
+
       const img = document.createElement('img');
       img.src = event.src;
       img.alt = event.alt || event.title;
       img.className = 'event-image';
       img.loading = 'lazy';
-      
+
       // Maintain aspect ratio via CSS or style if variable
       // The CSS has :nth-child rules for aspect ratios, but data has valid aspect ratios.
       // We can override via style if needed, or let CSS handle it.
@@ -187,36 +190,38 @@ class ContentLoader {
       if (event.aspectRatio) {
         img.style.aspectRatio = event.aspectRatio;
       }
-      
+
       // Optional: Add overlay content like portfolio if desired?
       // The original HTML structure for events was just image.
       // "make same as a Recent Events like Portfolio" implies showing title/category.
       // Let's add an overlay similar to gallery items.
-      
+
       const overlay = document.createElement('div');
       overlay.className = 'gallery-overlay'; // Reuse gallery overlay class
-      
+
       const title = document.createElement('h3');
       title.className = 'gallery-title';
       title.textContent = event.title;
-      
+
       const category = document.createElement('p');
       category.className = 'gallery-category';
       category.textContent = event.category;
-      
+
       overlay.appendChild(title);
       overlay.appendChild(category);
-      
+
       item.appendChild(img);
       item.appendChild(overlay);
-      
+
       // Add click listener for lightbox if we want events to open there too
       // We need to add it to the GalleryManager access if we do that.
       // For now, let's just make it visual.
-      
-      eventsGrid.appendChild(item);
+
+      fragment.appendChild(item);
     });
-    
+
+    eventsGrid.appendChild(fragment);
+
     console.log(`✅ Loaded ${this.data.recentEvents.length} events`);
   }
 
@@ -262,35 +267,41 @@ class ContentLoader {
     const publicationsContainer = document.getElementById('publications');
     if (publicationsContainer && this.data?.socialProof?.publications) {
       publicationsContainer.innerHTML = '';
+      const fragment = document.createDocumentFragment();
       this.data.socialProof.publications.forEach(pub => {
         const pubItem = document.createElement('span');
         pubItem.className = 'publication-item';
         pubItem.textContent = pub;
-        publicationsContainer.appendChild(pubItem);
+        fragment.appendChild(pubItem);
       });
+      publicationsContainer.appendChild(fragment);
     }
 
     // Populate awards
     const awardsContainer = document.getElementById('awards');
     if (awardsContainer && this.data?.socialProof?.awards) {
       awardsContainer.innerHTML = '';
+      const fragment = document.createDocumentFragment();
       this.data.socialProof.awards.forEach(award => {
         const awardItem = document.createElement('li');
         awardItem.textContent = award;
-        awardsContainer.appendChild(awardItem);
+        fragment.appendChild(awardItem);
       });
+      awardsContainer.appendChild(fragment);
     }
 
     // Populate clients
     const clientsContainer = document.getElementById('clients');
     if (clientsContainer && this.data?.socialProof?.clients) {
       clientsContainer.innerHTML = '';
+      const fragment = document.createDocumentFragment();
       this.data.socialProof.clients.forEach(client => {
         const clientItem = document.createElement('span');
         clientItem.className = 'client-item';
         clientItem.textContent = client;
-        clientsContainer.appendChild(clientItem);
+        fragment.appendChild(clientItem);
       });
+      clientsContainer.appendChild(fragment);
     }
 
     console.log('✅ Loaded social proof data');
@@ -326,7 +337,7 @@ class ContentLoader {
    */
   showFallbackContent() {
     console.log('📦 Showing fallback content');
-    
+
     // You can add static fallback content here
     // For example, show a message or load from localStorage
   }

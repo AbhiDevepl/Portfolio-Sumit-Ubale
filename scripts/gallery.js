@@ -3,13 +3,13 @@
    ======================================== */
 
 window.GalleryManager = {
-  
+
   // State
   activeCategory: 'all',
   lightbox: null,
   currentImageIndex: 0,
   galleryItems: [],
-  
+
   /**
    * Initialize Gallery
    */
@@ -19,21 +19,21 @@ window.GalleryManager = {
     this.initHoverEffects();
     this.initLightbox();
     this.checkURLState();
-    
+
     // Lazy loading fallback
     this.initLazyLoading();
-    
+
     console.log('✅ Gallery Manager initialized');
   },
-  
+
   /**
    * Initialize Filtering Logic
    */
   initFiltering() {
     const categoryButtons = document.querySelectorAll('.category-btn');
-    
+
     if (categoryButtons.length === 0) return;
-    
+
     categoryButtons.forEach(button => {
       button.addEventListener('click', () => {
         const category = button.dataset.category;
@@ -41,21 +41,21 @@ window.GalleryManager = {
         this.updateURL(category);
       });
     });
-    
+
     // Handle browser back/forward buttons
     window.addEventListener('popstate', (e) => {
       const category = e.state?.category || 'all';
       this.filterGallery(category, false); // Don't push state again
     });
   },
-  
+
   /**
    * Filter Gallery Items
    * @param {string} category - Category slug to filter by
    */
   filterGallery(category) {
     this.activeCategory = category;
-    
+
     // Update active button state
     document.querySelectorAll('.category-btn').forEach(btn => {
       if (btn.dataset.category === category) {
@@ -66,14 +66,16 @@ window.GalleryManager = {
         btn.setAttribute('aria-selected', 'false');
       }
     });
-    
-    // Filter items using GSAP
-    this.galleryItems = document.querySelectorAll('.gallery-item');
-    
+
+    // Filter items using GSAP - use cached galleryItems for better performance
+    if (!this.galleryItems || this.galleryItems.length === 0) {
+      this.galleryItems = document.querySelectorAll('.gallery-item');
+    }
+
     this.galleryItems.forEach(item => {
       const itemCategory = item.dataset.category;
       const shouldShow = category === 'all' || itemCategory === category;
-      
+
       if (shouldShow) {
         gsap.to(item, {
           opacity: 1,
@@ -96,13 +98,13 @@ window.GalleryManager = {
         });
       }
     });
-    
+
     // Refresh ScrollTrigger layout
     setTimeout(() => {
       ScrollTrigger.refresh();
     }, 450);
   },
-  
+
   /**
    * Update URL without reloading
    */
@@ -115,7 +117,7 @@ window.GalleryManager = {
     }
     window.history.pushState({ category }, '', url);
   },
-  
+
   /**
    * Check URL on load for active filter
    */
@@ -126,52 +128,33 @@ window.GalleryManager = {
       this.filterGallery(category);
     }
   },
-  
+
   /**
-   * Initialize Hover Effects
+   * Initialize Hover Effects and Clicks
    */
   initHoverEffects() {
-    // Re-select items to ensure we catch dynamic content
-    const items = document.querySelectorAll('.gallery-item');
-    
-    items.forEach(item => {
-      const image = item.querySelector('.gallery-image');
-      const overlay = item.querySelector('.gallery-overlay');
-      
-      if (!image || !overlay) return;
-      
-      // Remove old listeners to prevent duplicates if re-initialized
-      // Use cloneNode to strip listeners, then replace (careful with this approach) - 
-      // safer to just rely on unique initialization call or clean up.
-      // For now, simpler event delegation or direct attach assuming single init.
-      
-      item.addEventListener('mouseenter', () => {
-        gsap.to(image, { scale: 1.05, filter: 'grayscale(0%)', duration: 0.5 });
-        gsap.to(overlay, { opacity: 1, duration: 0.3 });
-      });
-      
-      item.addEventListener('mouseleave', () => {
-        gsap.to(image, { scale: 1, filter: 'grayscale(0%)', duration: 0.5 });
-        gsap.to(overlay, { opacity: 0, duration: 0.3 });
-      });
-      
-      // Lightbox click
-      item.addEventListener('click', () => {
-        // Find current index among ALL items (not just visible) to keep index logic simple
-        // or filter visible only. Let's use all items for index context.
+    const galleryGrid = document.getElementById('gallery-grid');
+    if (!galleryGrid) return;
+
+    // Use event delegation for gallery item clicks (Lightbox)
+    // This is more efficient than adding a listener to every item.
+    // Redundant GSAP hover animations removed as they are already handled by CSS transitions.
+    galleryGrid.addEventListener('click', (e) => {
+      const item = e.target.closest('.gallery-item');
+      if (item) {
         const index = parseInt(item.dataset.index);
         this.openLightbox(index);
-      });
+      }
     });
   },
-  
+
   /**
    * Initialize Lightbox
    */
   initLightbox() {
     // Only create if not exists
     if (document.getElementById('lightbox')) return;
-    
+
     const lightboxHTML = `
       <div class="lightbox" id="lightbox" style="display: none;">
         <div class="lightbox-overlay"></div>
@@ -199,16 +182,16 @@ window.GalleryManager = {
         body.no-scroll { overflow: hidden; }
       </style>
     `;
-    
+
     document.body.insertAdjacentHTML('beforeend', lightboxHTML);
     this.lightbox = document.getElementById('lightbox');
-    
+
     // Event Listeners
     this.lightbox.querySelector('.lightbox-close').addEventListener('click', () => this.closeLightbox());
     this.lightbox.querySelector('.lightbox-overlay').addEventListener('click', () => this.closeLightbox());
     this.lightbox.querySelector('.lightbox-prev').addEventListener('click', () => this.navigateLightbox(-1));
     this.lightbox.querySelector('.lightbox-next').addEventListener('click', () => this.navigateLightbox(1));
-    
+
     document.addEventListener('keydown', (e) => {
       if (!this.lightbox.classList.contains('active')) return;
       if (e.key === 'Escape') this.closeLightbox();
@@ -216,21 +199,21 @@ window.GalleryManager = {
       if (e.key === 'ArrowRight') this.navigateLightbox(1);
     });
   },
-  
+
   openLightbox(index) {
     this.currentImageIndex = index;
     this.updateLightboxContent();
-    
+
     this.lightbox.style.display = 'flex';
     // Small delay to allow display:flex to apply before opacity transition
     requestAnimationFrame(() => {
       this.lightbox.classList.add('active');
     });
-    
+
     document.body.classList.add('no-scroll');
     if (window.lenis) window.lenis.stop();
   },
-  
+
   closeLightbox() {
     this.lightbox.classList.remove('active');
     setTimeout(() => {
@@ -239,18 +222,18 @@ window.GalleryManager = {
       if (window.lenis) window.lenis.start();
     }, 300);
   },
-  
+
   navigateLightbox(direction) {
     // Navigate only through VISIBLE items if filter is active?
     // For simplicity, let's navigate all items but skip hidden ones
     // Or just simple index navigation:
-    
+
     const totalItems = this.galleryItems.length;
     let newIndex = this.currentImageIndex + direction;
-    
+
     if (newIndex < 0) newIndex = totalItems - 1;
     if (newIndex >= totalItems) newIndex = 0;
-    
+
     // Check if hidden (due to filter)
     // If hidden, keep moving in same direction until visible found
     /*
@@ -261,14 +244,14 @@ window.GalleryManager = {
         if (newIndex >= totalItems) newIndex = 0;
         item = this.galleryItems[newIndex];
         // Break infinite loop if all hidden (shouldn't happen)
-        if (newIndex === this.currentImageIndex) break; 
+        if (newIndex === this.currentImageIndex) break;
     }
     */
-   
+
     this.currentImageIndex = newIndex;
     this.updateLightboxContent();
   },
-  
+
   updateLightboxContent() {
     const item = this.galleryItems[this.currentImageIndex];
     const imgInfo = {
@@ -276,10 +259,10 @@ window.GalleryManager = {
       title: item.querySelector('.gallery-title')?.innerText || '',
       category: item.getAttribute('data-category')
     };
-    
+
     const imgEl = this.lightbox.querySelector('.lightbox-image');
     const capEl = this.lightbox.querySelector('.lightbox-caption');
-    
+
     // Quick fade out/in effect for image
     gsap.to(imgEl, { opacity: 0, duration: 0.15, onComplete: () => {
       imgEl.src = imgInfo.src;
@@ -287,7 +270,7 @@ window.GalleryManager = {
       gsap.to(imgEl, { opacity: 1, duration: 0.15 });
     }});
   },
-  
+
   initLazyLoading() {
      // Native lazy loading is used on createGalleryItem in content-loader
      // This is just a backup or for other images
