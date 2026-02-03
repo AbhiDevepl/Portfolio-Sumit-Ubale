@@ -35,7 +35,7 @@
   <link rel="manifest" href="/site.webmanifest">
 
   <!-- Theme Color -->
-  <meta name="theme-color" content="#4A483F">
+  <meta name="theme-color" content="#F5F5F2">
 
   <!-- CSS Files (in order) -->
   <link rel="stylesheet" href="/styles/theme.css">
@@ -44,9 +44,22 @@
   <link rel="stylesheet" href="/styles/components.css">
   <link rel="stylesheet" href="/styles/testimonials.css">
   <link rel="stylesheet" href="/styles/animations.css">
+  <link rel="stylesheet" href="/styles/loader.css">
+
+  <!-- Global Color System (Must load before body render) -->
+  <script src="/scripts/colors.js"></script>
 </head>
 
-<body>
+<body id="home">
+  <!-- Page Loader -->
+  <div id="page-loader">
+    <div class="loader-content">
+      <div class="loader-logo">Sumit Ubale</div>
+      <div class="loader-progress-bar">
+        <div class="loader-progress-fill"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Skip to Main Content (Accessibility) -->
   <a href="#main" class="skip-to-main">Skip to main content</a>
@@ -57,10 +70,11 @@
       <a href="/" class="nav-logo" aria-label="Home">SUMIT UBALE</a>
 
       <div class="nav-menu">
-        <a href="#portfolio" class="nav-link">Portfolio</a>
+        <a href="#portfolio" class="nav-link">Everything</a>
+        <a href="/service.html?s=weddings" class="nav-link">Weddings</a>
+        <a href="/service.html?s=cinematics" class="nav-link">Films</a>
         <a href="#about" class="nav-link">About</a>
-        <a href="#contact" class="nav-link">Contact</a>
-        <a href="#contact" class="nav-cta">Get in Touch</a>
+        <a href="#contact" class="nav-cta">Enquire</a>
       </div>
 
       <!-- Mobile Menu Toggle -->
@@ -76,13 +90,15 @@
     <div class="mobile-menu-container">
       <nav class="mobile-nav">
         <a href="#home" class="mobile-nav-link">Home <span class="mobile-nav-num">01</span></a>
-        <a href="#portfolio" class="mobile-nav-link">Portfolio <span class="mobile-nav-num">02</span></a>
-        <a href="#about" class="mobile-nav-link">About <span class="mobile-nav-num">03</span></a>
-        <a href="#contact" class="mobile-nav-link">Contact <span class="mobile-nav-num">04</span></a>
+        <a href="/service.html?s=weddings" class="mobile-nav-link">Weddings <span class="mobile-nav-num">02</span></a>
+        <a href="/service.html?s=cinematics" class="mobile-nav-link">Films <span class="mobile-nav-num">03</span></a>
+        <a href="#portfolio" class="mobile-nav-link">Portfolio <span class="mobile-nav-num">04</span></a>
+        <a href="#about" class="mobile-nav-link">About <span class="mobile-nav-num">05</span></a>
+        <a href="#contact" class="mobile-nav-link">Enquire <span class="mobile-nav-num">06</span></a>
       </nav>
 
       <div class="mobile-menu-footer">
-        <p class="mobile-menu-text">Based in Mumbai, India</p>
+        <p class="mobile-menu-text">Based in Shrigonda Maharashtra India</p>
         <div class="mobile-social">
           <a href="#" class="mobile-social-link">IG</a>
           <a href="#" class="mobile-social-link">FB</a>
@@ -94,7 +110,7 @@
 
   <!-- Hero Section -->
   <section class="hero" id="home">
-    <div class="hero-image" style="background-image: url('/assets/images/hero/hero-main.png');" role="img"
+    <div class="hero-image" style="background-image: url('/assets/images/hero/IMG_Hero.webp');" role="img"
       aria-label="Editorial photography hero image"></div>
 
     <div class="hero-content">
@@ -156,6 +172,12 @@
         <div class="portfolio-categories" role="tablist" aria-label="Portfolio categories">
           <button class="category-btn active" data-category="all" role="tab" aria-selected="true">All</button>
           <button class="category-btn" data-category="weddings" role="tab" aria-selected="false">Weddings</button>
+          <button class="category-btn" data-category="engagement" role="tab" aria-selected="false">Engagement</button>
+          <button class="category-btn" data-category="haldi" role="tab" aria-selected="false">Haldi</button>
+          <button class="category-btn" data-category="baby-shower" role="tab"
+            aria-selected="false">Baby&nbsp;Shower</button>
+          <button class="category-btn" data-category="pre-wedding" role="tab" aria-selected="false">Pre-Wedding</button>
+          <button class="category-btn" data-category="cinematics" role="tab" aria-selected="false">Cinematics</button>
           <button class="category-btn" data-category="portraits" role="tab" aria-selected="false">Portraits</button>
           <button class="category-btn" data-category="commercial" role="tab" aria-selected="false">Commercial</button>
           <button class="category-btn" data-category="events" role="tab" aria-selected="false">Events</button>
@@ -165,23 +187,11 @@
       <!-- Gallery Grid -->
       <div class="gallery-grid" id="gallery-grid" role="region" aria-label="Photography gallery">
         <!-- Gallery items will be dynamically loaded from portfolio.json -->
-        <!-- Example structure: -->
-        <!--
-        <div class="gallery-item portrait" data-category="weddings">
-          <img 
-            src="/assets/images/portraits/wedding-1.webp" 
-            alt="Sunset wedding ceremony"
-            class="gallery-image"
-            loading="lazy"
-            width="800"
-            height="1000"
-          >
-          <div class="gallery-overlay">
-            <h3 class="gallery-title">Sunset Ceremony</h3>
-            <p class="gallery-category">Weddings</p>
-          </div>
-        </div>
-        -->
+      </div>
+
+      <!-- Learn More Button -->
+      <div class="portfolio-more" id="portfolio-more" style="display: none;">
+        <button class="learn-more-btn" id="load-more-btn">Learn More</button>
       </div>
     </div>
   </section>
@@ -292,6 +302,7 @@
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 
+  <script src="/scripts/loader.js"></script>
 </body>
 
 </html>

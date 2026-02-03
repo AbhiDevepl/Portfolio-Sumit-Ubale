@@ -1,8 +1,4 @@
-/* ========================================
-   SMOOTH SCROLL - Lenis Integration
-   ======================================== */
 
-// Initialize Lenis smooth scroll
 const lenis = new Lenis({
   duration: 1.2,
   easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -18,9 +14,7 @@ const lenis = new Lenis({
 // Integrate Lenis with GSAP ScrollTrigger
 lenis.on('scroll', ScrollTrigger.update);
 
-// Use GSAP ticker to drive Lenis's RAF loop
-// This is more efficient than a separate requestAnimationFrame loop
-// and prevents redundant processing by ensuring all updates are synced with GSAP.
+
 gsap.ticker.add((time) => {
   lenis.raf(time * 1000);
 });

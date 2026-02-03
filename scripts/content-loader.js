@@ -63,13 +63,50 @@ class ContentLoader {
     // Clear existing content
     galleryGrid.innerHTML = '';
 
+    // Flatten images from object structure if necessary
+    const rawImages = this.data.portfolio.images;
+    let allImages = [];
+
+    if (Array.isArray(rawImages)) {
+      // Fallback for flat array (if still used)
+      allImages = rawImages.map(img => ({ ...img, isPreview: true }));
+    } else {
+      // Grouped by category slug
+      Object.entries(rawImages).forEach(([categorySlug, images]) => {
+        // Separate videos and images for selection
+        const videos = images.filter(i => i.type === 'video');
+        const photos = images.filter(i => i.type !== 'video');
+
+        // Select 1 random video for preview
+        const randomVideoIndex = videos.length > 0 ? Math.floor(Math.random() * videos.length) : -1;
+
+        images.forEach((image) => {
+          let isPreview = false;
+          
+          if (image.type === 'video') {
+            const vidIdx = videos.indexOf(image);
+            if (vidIdx === randomVideoIndex) isPreview = true;
+          } else {
+            const photoIdx = photos.indexOf(image);
+            if (photoIdx !== -1 && photoIdx < 3) isPreview = true;
+          }
+
+          allImages.push({
+            ...image,
+            category: categorySlug, // Ensure category is assigned
+            isPreview: isPreview
+          });
+        });
+      });
+    }
+
     // Create gallery items
-    this.data.portfolio.images.forEach((image, index) => {
+    allImages.forEach((image, index) => {
       const galleryItem = this.createGalleryItem(image, index);
       galleryGrid.appendChild(galleryItem);
     });
 
-    console.log(`✅ Loaded ${this.data.portfolio.images.length} gallery images`);
+    console.log(`✅ Loaded ${allImages.length} gallery images`);
   }
 
   /**
@@ -77,32 +114,53 @@ class ContentLoader {
    */
   createGalleryItem(image, index) {
     const item = document.createElement('div');
-    item.className = `gallery-item ${image.aspectRatio || 'portrait'}`;
+    // Simplified class mapping
+    let sizeClass = image.aspectRatio === '16/9' ? 'landscape' : (image.aspectRatio || 'portrait');
+    item.className = `gallery-item ${sizeClass}`;
     item.setAttribute('data-category', image.category);
     item.setAttribute('data-index', index);
+    item.setAttribute('data-preview', image.isPreview ? 'true' : 'false');
 
-    // Create image element
-    const img = document.createElement('img');
-    img.src = image.src;
-    img.alt = image.alt || image.title;
-    img.className = 'gallery-image';
-    img.loading = 'lazy';
-    img.width = 800;
-    img.height = image.aspectRatio === 'landscape' ? 600 : 1000;
+    // Create image or video element
+    let media;
+    if (image.type === 'video') {
+      media = document.createElement('video');
+      
+      // MANDATORY: Do NOT set src attribute initially
+      media.dataset.src = image.src; 
+      
+      // Initial state properties
+      media.preload = 'none';
+      media.muted = true;
+      media.loop = true;
+      media.playsInline = true;
+      media.className = 'gallery-image video-preview';
+      
+      // Load poster image if provided
+      if (image.poster) {
+        media.poster = image.poster;
+      }
+    } else {
+      media = document.createElement('img');
+      media.src = image.src;
+      media.className = 'gallery-image';
+      media.loading = 'lazy';
+      media.width = 800;
+      media.height = image.aspectRatio === 'landscape' ? 600 : 1000;
+    }
+    media.alt = image.alt || image.title;
 
     // Create overlay
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
 
-    // Create title
+    // ... (overlay content)
     if (image.title) {
-      const title = document.createElement('h3');
+      const title = document.createElement('h2'); // Use semantic title
       title.className = 'gallery-title';
       title.textContent = image.title;
       overlay.appendChild(title);
     }
-
-    // Create category
     if (image.category) {
       const category = document.createElement('p');
       category.className = 'gallery-category';
@@ -111,8 +169,57 @@ class ContentLoader {
     }
 
     // Assemble item
-    item.appendChild(img);
+    item.appendChild(media);
     item.appendChild(overlay);
+
+    // TRUE LAZY-LOAD HOVER SYSTEM
+    if (image.type === 'video') {
+      let isSourceSet = false;
+
+      const handleHoverIn = () => {
+        if (!isSourceSet) {
+          // Attach src only on interaction
+          media.src = media.dataset.src;
+          media.load(); // Explicitly trigger hardware-accelerated loading
+          isSourceSet = true;
+        }
+        media.play().catch(e => {
+          // Fallback for browsers that block autoplay
+          console.debug("Autoplay pending interaction", e);
+        });
+      };
+
+      const handleHoverOut = () => {
+        media.pause();
+        media.currentTime = 0; // Reset for next watch
+        
+        // Optional: To TRULY stop network data if the user is extremely concerned:
+        // media.removeAttribute('src'); 
+        // media.load();
+        // isSourceSet = false;
+        // However, standard pause is usually sufficient for chunked streams.
+      };
+
+      // Desktop
+      item.addEventListener('mouseenter', handleHoverIn);
+      item.addEventListener('mouseleave', handleHoverOut);
+
+      // Mobile / Touch (Tap to play)
+      item.addEventListener('touchstart', (e) => {
+        if (!isSourceSet) handleHoverIn();
+      }, { passive: true });
+
+      item.addEventListener('click', (e) => {
+        // Stop bubbling on mobile to prevent Lightbox opening while just trying to play
+        if (window.matchMedia('(max-width: 768px)').matches) {
+          if (media.paused) {
+            handleHoverIn();
+            e.stopPropagation();
+            e.preventDefault();
+          }
+        }
+      });
+    }
 
     return item;
   }

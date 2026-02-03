@@ -240,7 +240,7 @@
 .overlay-fade {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: var(--bg-overlay-dark);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;

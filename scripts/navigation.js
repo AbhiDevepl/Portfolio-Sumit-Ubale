@@ -1,7 +1,4 @@
-/**
- * Navigation Logic
- * Handles mobile menu toggle and desktop interactions
- */
+
 
 class Navigation {
   constructor() {

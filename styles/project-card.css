@@ -3,11 +3,12 @@
    ======================================== */
 
 .project-card {
-  background-color: var(--editorial-white);
-  border-radius: var(--radius-lg);
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-sm); /* Minimal radius */
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: transform var(--transition-slow), box-shadow var(--transition-slow);
+  /* box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); Remove shadow */
+  border: 1px solid var(--border-color); /* Global border */
+  transition: transform var(--transition-slow), border-color var(--transition-slow);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -15,7 +16,7 @@
 
 .project-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  border-color: var(--accent);
 }
 
 /* Project Image */
@@ -24,18 +25,20 @@
   width: 100%;
   aspect-ratio: 3 / 4;
   overflow: hidden;
-  background-color: var(--editorial-light-gray);
+  background-color: var(--bg-primary);
 }
 
 .project-card-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform var(--transition-slower);
+  transition: transform var(--transition-slower), filter var(--transition-base);
+  filter: grayscale(0.2);
 }
 
 .project-card:hover .project-card-image {
   transform: scale(1.05);
+  filter: grayscale(0);
 }
 
 /* Project Content */
@@ -53,7 +56,7 @@
   font-size: var(--text-xs);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
-  color: var(--editorial-rose);
+  color: var(--accent);
   font-weight: 500;
 }
 
@@ -63,7 +66,7 @@
   font-size: var(--text-2xl);
   line-height: var(--leading-snug);
   letter-spacing: var(--tracking-tight);
-  color: var(--editorial-olive);
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -72,7 +75,7 @@
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
-  color: var(--editorial-gray);
+  color: var(--text-secondary);
   margin: 0;
   flex-grow: 1;
 }
@@ -85,7 +88,7 @@
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   letter-spacing: var(--tracking-wide);
-  color: var(--editorial-olive);
+  color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
   margin-top: var(--space-2);
@@ -93,7 +96,7 @@
 }
 
 .project-card-link:hover {
-  color: var(--editorial-rose);
+  color: var(--accent);
 }
 
 .project-card-link::after {

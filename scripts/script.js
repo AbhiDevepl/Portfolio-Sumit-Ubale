@@ -1,10 +1,16 @@
-gsap.registerPlugin(ScrollTrigger);
-
-window.addEventListener('load', () => {
+const initAll = () => {
     initHeroAnimations();
     initScrollAnimations();
     initParallax();
-});
+    console.log('🎬 Site animations synchronized with loader');
+};
+
+// Orchestrate with the page loader
+if (document.body.classList.contains('loaded')) {
+    initAll();
+} else {
+    window.addEventListener('pageLoaded', initAll, { once: true });
+}
 
 function initHeroAnimations() {
     const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
@@ -13,7 +19,7 @@ function initHeroAnimations() {
         y: 50,
         opacity: 0,
         duration: 1,
-        delay: 0.3
+        delay: 0.1 // Slight delay after loader fades
     })
     .from('.hero-title', {
         y: 80,
@@ -28,6 +34,7 @@ function initHeroAnimations() {
 }
 
 function initScrollAnimations() {
+    // Existing scroll animations logic...
     gsap.utils.toArray('.section-title, .portraits-title, .events-title, .special-title').forEach(title => {
         gsap.from(title, {
             y: 60,
@@ -181,6 +188,7 @@ function initParallax() {
     });
 }
 
+// Global smoothness & interaction
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();

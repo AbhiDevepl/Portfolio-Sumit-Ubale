@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     errorEl.textContent = message;
     errorEl.style.cssText = `
       display: block;
-      color: #C68B7A;
+      color: ${window.SiteColors.state.error};
       font-size: 0.75rem;
       margin-top: 0.25rem;
       font-family: var(--font-sans);
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
   formInputs.forEach(input => {
     input.addEventListener('focus', () => {
       gsap.to(input, {
-        borderColor: 'var(--editorial-olive)',
+        borderColor: 'var(--accent)',
         duration: 0.3,
         ease: "power2.out"
       });
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
     input.addEventListener('blur', () => {
       if (!input.value) {
         gsap.to(input, {
-          borderColor: 'var(--editorial-bg)',
+          borderColor: 'rgba(255,255,255,0.05)',
           duration: 0.3,
           ease: "power2.out"
         });
@@ -289,14 +289,15 @@ document.addEventListener('DOMContentLoaded', () => {
     messageEl.className = `form-message form-message-${type}`;
     messageEl.textContent = text;
     
-    const bgColor = type === 'success' ? '#4A483F' : '#C68B7A';
+    // const bgColor = type === 'success' ? '#4A483F' : '#C68B7A'; // Removed hardcoded colors
     
     messageEl.style.cssText = `
       padding: 1rem 1.5rem;
       margin-bottom: 1.5rem;
-      background-color: ${bgColor};
-      color: white;
-      border-radius: 0.25rem;
+      background-color: var(--bg-surface);
+      border: 1px solid ${type === 'success' ? window.SiteColors.text.primary : window.SiteColors.state.error};
+      color: ${type === 'success' ? window.SiteColors.text.primary : window.SiteColors.state.error};
+      border-radius: var(--radius-sm);
       font-family: var(--font-sans);
       font-size: 0.875rem;
       text-align: center;

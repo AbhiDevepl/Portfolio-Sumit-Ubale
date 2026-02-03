@@ -3,7 +3,7 @@
    ======================================== */
 
 .testimonials {
-  background-color: var(--editorial-light-gray);
+  background-color: var(--bg-surface);
   padding: var(--space-20) 0;
 }
 
@@ -15,23 +15,24 @@
 }
 
 .testimonial-item {
-  background-color: var(--editorial-white);
+  background-color: var(--bg-primary); /* Darker than surface for contrast, or just surface with border */
   padding: var(--space-10);
-  border-radius: var(--radius-md);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  box-shadow: none; /* Removed shadow for flat editorial feel */
 }
 
 .testimonial-quote {
   font-family: var(--font-serif);
   font-size: var(--text-xl);
   line-height: var(--leading-relaxed);
-  color: var(--editorial-olive);
+  color: var(--text-primary);
   font-style: italic;
   margin: 0 0 var(--space-6) 0;
 }
 
 .testimonial-author {
-  border-top: 1px solid var(--editorial-light-gray);
+  border-top: 1px solid var(--divider-color);
   padding-top: var(--space-4);
 }
 
@@ -39,14 +40,14 @@
   font-family: var(--font-sans);
   font-size: var(--text-base);
   font-weight: 600;
-  color: var(--editorial-olive);
+  color: var(--text-primary);
   margin: 0 0 var(--space-1) 0;
 }
 
 .testimonial-role {
   font-family: var(--font-sans);
   font-size: var(--text-sm);
-  color: var(--editorial-gray);
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -69,8 +70,8 @@
 .content-error {
   padding: var(--space-16);
   text-align: center;
-  background-color: rgba(198, 139, 122, 0.1);
-  border: 1px solid var(--editorial-rose);
+  background-color: var(--bg-dim); /* Error tint light */
+  border: 1px solid var(--error);
   border-radius: var(--radius-md);
   margin: var(--space-12) 0;
 }
@@ -78,13 +79,13 @@
 .content-error p {
   font-family: var(--font-sans);
   font-size: var(--text-base);
-  color: var(--editorial-olive);
+  color: var(--text-primary);
   margin: 0 0 var(--space-2) 0;
 }
 
 .content-error .error-details {
   font-size: var(--text-sm);
-  color: var(--editorial-gray);
+  color: var(--text-secondary);
   font-family: monospace;
 }
 
@@ -95,7 +96,7 @@
 .about-social-proof {
   margin-top: var(--space-10);
   padding-top: var(--space-8);
-  border-top: 1px solid var(--editorial-light-gray);
+  border-top: 1px solid var(--border-color);
 }
 
 #publications,
@@ -110,9 +111,10 @@
 .client-item {
   font-family: var(--font-sans);
   font-size: var(--text-sm);
-  color: var(--editorial-gray);
+  color: var(--text-secondary);
   padding: var(--space-2) var(--space-4);
-  background-color: var(--editorial-light-gray);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
 }
 
@@ -125,9 +127,9 @@
 #awards li {
   font-family: var(--font-sans);
   font-size: var(--text-sm);
-  color: var(--editorial-gray);
+  color: var(--text-secondary);
   padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--editorial-light-gray);
+  border-bottom: 1px solid var(--divider-color);
 }
 
 #awards li:last-child {

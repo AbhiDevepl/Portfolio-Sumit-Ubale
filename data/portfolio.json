@@ -1,176 +1,98 @@
 {
   "portfolio": {
     "categories": [
-      {
-        "id": "all",
-        "name": "All Work",
-        "slug": "all"
-      },
-      {
-        "id": "weddings",
-        "name": "Weddings",
-        "slug": "weddings"
-      },
-      {
-        "id": "portraits",
-        "name": "Portraits",
-        "slug": "portraits"
-      },
-      {
-        "id": "commercial",
-        "name": "Commercial",
-        "slug": "commercial"
-      },
-      {
-        "id": "events",
-        "name": "Events",
-        "slug": "events"
-      }
+      { "id": "all", "name": "All Work", "slug": "all" },
+      { "id": "weddings", "name": "Weddings", "slug": "weddings" },
+      { "id": "portraits", "name": "Portraits", "slug": "portraits" },
+      { "id": "commercial", "name": "Commercial", "slug": "commercial" },
+      { "id": "events", "name": "Events", "slug": "events" },
+      { "id": "pre-wedding", "name": "Pre-Wedding", "slug": "pre-wedding" },
+      { "id": "baby-shower", "name": "Baby Shower", "slug": "baby-shower" },
+      { "id": "engagement", "name": "Engagement", "slug": "engagement" },
+      { "id": "haldi", "name": "Haldi", "slug": "haldi" },
+      { "id": "cinematics", "name": "Cinematics", "slug": "cinematics" }
     ],
-    "images": [
-      {
-        "id": 1,
-        "title": "Sunset Ceremony",
-        "category": "weddings",
-        "src": "/assets/images/weddings/wedding-1.png",
-        "alt": "Beautiful sunset wedding ceremony",
-        "aspectRatio": "4/3",
-        "description": "Intimate outdoor wedding ceremony at golden hour"
-      },
-      {
-        "id": 2,
-        "title": "Editorial Portrait",
-        "category": "portraits",
-        "src": "/assets/images/portraits/portrait-1.png",
-        "alt": "Professional editorial portrait",
-        "aspectRatio": "4/3",
-        "description": "High-fashion editorial portrait session"
-      },
-      {
-        "id": 3,
-        "title": "Brand Campaign",
-        "category": "commercial",
-        "src": "/assets/images/commercial/commercial-1.png",
-        "alt": "Commercial brand photography",
-        "aspectRatio": "4/3",
-        "description": "Lifestyle brand campaign photography"
-      },
-      {
-        "id": 4,
-        "title": "Corporate Event",
-        "category": "events",
-        "src": "/assets/images/events/event-1.png",
-        "alt": "Corporate event photography",
-        "aspectRatio": "4/3",
-        "description": "Annual corporate gala event coverage"
-      },
-      {
-        "id": 5,
-        "title": "Bridal Portrait",
-        "category": "weddings",
-        "src": "/assets/images/weddings/wedding-2.png",
-        "alt": "Elegant bridal portrait",
-        "aspectRatio": "4/3",
-        "description": "Classic bridal portrait in natural light"
-      },
-      {
-        "id": 6,
-        "title": "Fashion Editorial",
-        "category": "portraits",
-        "src": "/assets/images/portraits/portrait-2.png",
-        "alt": "Fashion editorial photography",
-        "aspectRatio": "4/3",
-        "description": "Contemporary fashion editorial shoot"
-      }
-    ]
-  },
-  "recentEvents": [
-    {
-      "id": 101,
-      "title": "Fashion Week Paris",
-      "category": "Event",
-      "src": "/assets/images/events/event-1.png",
-      "alt": "Paris Fashion Week coverage",
-      "aspectRatio": "4/3",
-      "description": "Backstage and runway coverage for Spring/Summer collection."
-    },
-    {
-      "id": 102,
-      "title": "Tech Summit 2024",
-      "category": "Conference",
-      "src": "/assets/images/events/event-2.png",
-      "alt": "Global Tech Summit keynotes",
-      "aspectRatio": "4/3",
-      "description": "Keynote photography for main stage speakers."
-    },
-    {
-      "id": 103,
-      "title": "Art Gallery Opening",
-      "category": "Gala",
-      "src": "/assets/images/events/event-3.png",
-      "alt": "Modern Art Gallery Opening Gala",
-      "aspectRatio": "4/3",
-      "description": "VIP opening night reception photography."
-    },
-    {
-      "id": 104,
-      "title": "Charity Fundraiser",
-      "category": "Gala",
-      "src": "/assets/images/events/event-4.png",
-      "alt": "Annual Charity Fundraiser",
-      "aspectRatio": "4/3",
-      "description": "Evening gala event for non-profit organization."
+
+    "images": {
+      "pre-wedding": [
+        {
+          "id": 1,
+          "title": "Cinematic Teaser",
+          "type": "video",
+          "src": "/assets/images/PrewedVideo/01 Teaser-4K.mp4",
+          "alt": "Pre-wedding cinematic teaser",
+          "aspectRatio": "16/9",
+          "description": "A glimpse into the beautiful journey"
+        },
+        {
+          "id": 2,
+          "title": "The Love Song",
+          "type": "video",
+          "src": "/assets/images/PrewedVideo/Me tuzi rukhumai Tu maza Vithuraya Prewedding.mp4",
+          "alt": "Pre-wedding musical film",
+          "aspectRatio": "16/9",
+          "description": "Music video style pre-wedding film"
+        },
+        {
+          "id": 3,
+          "title": "Pre Wedding Session",
+          "type": "video",
+          "src": "/assets/images/PrewedVideo/01 song 4K.mp4",
+          "alt": "Pre Wedding Session film",
+          "aspectRatio": "16/9",
+          "description": "Beautiful pre wedding captured by Sumit Ubale"
+        }
+      ],
+
+      "baby-shower": [
+        { "id": 1, "title": "Baby Shower Session", "src": "/assets/images/BabyShower/1.webp", "alt": "Baby Shower photography", "aspectRatio": "3/4", "description": "Beautiful baby shower captured by Sumit Ubale" },
+        { "id": 2, "title": "Baby Shower Session", "src": "/assets/images/BabyShower/2.webp", "alt": "Baby Shower photography", "aspectRatio": "3/4", "description": "Beautiful baby shower captured by Sumit Ubale" },
+        { "id": 3, "title": "Baby Shower Session", "src": "/assets/images/BabyShower/3.webp", "alt": "Baby Shower photography", "aspectRatio": "3/4", "description": "Beautiful baby shower captured by Sumit Ubale" },
+        { "id": 4, "title": "Baby Shower Session", "src": "/assets/images/BabyShower/4.webp", "alt": "Baby Shower photography", "aspectRatio": "3/4", "description": "Beautiful baby shower captured by Sumit Ubale" },
+        { "id": 5, "title": "Baby Shower Session", "src": "/assets/images/BabyShower/5.webp", "alt": "Baby Shower photography", "aspectRatio": "3/4", "description": "Beautiful baby shower captured by Sumit Ubale" },
+        { "id": 6, "title": "Baby Shower Session", "src": "/assets/images/BabyShower/6.webp", "alt": "Baby Shower photography", "aspectRatio": "3/4", "description": "Beautiful baby shower captured by Sumit Ubale" },
+        { "id": 7, "title": "Baby Shower Session", "src": "/assets/images/BabyShower/7.webp", "alt": "Baby Shower photography", "aspectRatio": "3/4", "description": "Beautiful baby shower captured by Sumit Ubale" }
+      ],
+
+      "cinematics": [
+        { "id": 1, "title": "Cinematics Session", "type": "video", "src": "/assets/images/Cinematic/Akshay & Akshada Cine final .mp4", "alt": "Cinematics film", "aspectRatio": "16/9", "description": "Beautiful cinematics captured by Sumit Ubale" },
+        { "id": 2, "title": "Cinematics Session", "type": "video", "src": "/assets/images/Cinematic/Cine Highlight Final.mp4", "alt": "Cinematics highlight", "aspectRatio": "16/9", "description": "Beautiful cinematics captured by Sumit Ubale" },
+        { "id": 3, "title": "Cinematics Session", "type": "video", "src": "/assets/images/Cinematic/Cine Teaser Final.mp4", "alt": "Cinematics teaser", "aspectRatio": "16/9", "description": "Beautiful cinematics captured by Sumit Ubale" },
+        { "id": 4, "title": "Cinematics Session", "type": "video", "src": "/assets/images/Cinematic/IMG_6432.MP4", "alt": "Cinematics reel", "aspectRatio": "16/9", "description": "Beautiful cinematics captured by Sumit Ubale" },
+        { "id": 5, "title": "Cinematics Session", "type": "video", "src": "/assets/images/Cinematic/Same Day 24 12.mp4", "alt": "Same day edit", "aspectRatio": "16/9", "description": "Beautiful cinematics captured by Sumit Ubale" },
+        { "id": 6, "title": "Cinematics Session", "type": "video", "src": "/assets/images/Cinematic/TEASER FINAL.mp4", "alt": "Cinematics teaser", "aspectRatio": "16/9", "description": "Beautiful cinematics captured by Sumit Ubale" }
+      ],
+
+      "engagement": [
+        { "id": 1, "title": "Engagement Session", "src": "/assets/images/Engagement/1.webp", "alt": "Engagement photography", "aspectRatio": "3/4", "description": "Beautiful engagement captured by Sumit Ubale" },
+        { "id": 2, "title": "Engagement Session", "src": "/assets/images/Engagement/2.webp", "alt": "Engagement photography", "aspectRatio": "3/4", "description": "Beautiful engagement captured by Sumit Ubale" },
+        { "id": 3, "title": "Engagement Session", "src": "/assets/images/Engagement/3.webp", "alt": "Engagement photography", "aspectRatio": "3/4", "description": "Beautiful engagement captured by Sumit Ubale" }
+      ],
+
+      "haldi": [
+        { "id": 1, "title": "Haldi Session", "src": "/assets/images/Haldi/1.webp", "alt": "Haldi photography", "aspectRatio": "3/4", "description": "Beautiful haldi captured by Sumit Ubale" },
+        { "id": 2, "title": "Haldi Session", "src": "/assets/images/Haldi/2.webp", "alt": "Haldi photography", "aspectRatio": "3/4", "description": "Beautiful haldi captured by Sumit Ubale" },
+        { "id": 3, "title": "Haldi Session", "src": "/assets/images/Haldi/3.webp", "alt": "Haldi photography", "aspectRatio": "3/4", "description": "Beautiful haldi captured by Sumit Ubale" }
+      ],
+
+      "weddings": [
+        { "id": 1, "title": "Weddings Session", "src": "/assets/images/Wedding/1.webp", "alt": "Wedding photography", "aspectRatio": "3/4", "description": "Beautiful weddings captured by Sumit Ubale" },
+        { "id": 2, "title": "Weddings Session", "src": "/assets/images/Wedding/2.webp", "alt": "Wedding photography", "aspectRatio": "3/4", "description": "Beautiful weddings captured by Sumit Ubale" },
+        { "id": 3, "title": "Weddings Session", "src": "/assets/images/Wedding/3.webp", "alt": "Wedding photography", "aspectRatio": "3/4", "description": "Beautiful weddings captured by Sumit Ubale" }
+      ]
     }
-  ],
+  },
+
   "testimonials": [
-    {
-      "id": 1,
-      "name": "Sarah Johnson",
-      "role": "Bride",
-      "quote": "The photos exceeded all our expectations. Every moment was captured with such artistry and emotion.",
-      "image": null
-    },
-    {
-      "id": 2,
-      "name": "Michael Chen",
-      "role": "Creative Director, Brand Co.",
-      "quote": "Professional, creative, and incredibly talented. Our campaign images were absolutely stunning.",
-      "image": null
-    },
-    {
-      "id": 3,
-      "name": "Emma Williams",
-      "role": "Model",
-      "quote": "Working with this photographer is always a pleasure. They have an incredible eye for composition and light.",
-      "image": null
-    }
+    { "id": 1, "name": "Sarah Johnson", "role": "Bride", "quote": "The photos exceeded all our expectations.", "image": null },
+    { "id": 2, "name": "Michael Chen", "role": "Creative Director", "quote": "Professional, creative, and incredibly talented.", "image": null },
+    { "id": 3, "name": "Emma Williams", "role": "Model", "quote": "An incredible eye for composition and light.", "image": null }
   ],
-  "socialProof": {
-    "publications": [
-      {
-        "name": "Vogue",
-        "logo": "/assets/images/logos/vogue.svg"
-      },
-      {
-        "name": "Harper's Bazaar",
-        "logo": "/assets/images/logos/harpers.svg"
-      },
-      {
-        "name": "Elle",
-        "logo": "/assets/images/logos/elle.svg"
-      }
-    ],
-    "awards": [
-      "Best Wedding Photographer 2024",
-      "Editorial Photography Award",
-      "Portrait Excellence Award"
-    ],
-    "clients": ["","",""]
-  },
+
   "about": {
     "name": "Sumit Ubale",
-    "tagline": "Photographer & films",
-    "bio": "With over a decade of experience in editorial and portrait photography, I specialize in creating timeless, emotive images that tell compelling stories. My work has been featured in leading publications and I've had the privilege of working with incredible clients around the world.",
+    "tagline": "Photographer & Films",
+    "bio": "With over a decade of experience in editorial and portrait photography.",
     "image": "/assets/images/about/photographer.png",
     "social": {
       "instagram": "https://www.instagram.com/sumit_ubale_photography/",
