@@ -100,11 +100,13 @@ class ContentLoader {
       });
     }
 
-    // Create gallery items
+    // Create gallery items using DocumentFragment for better performance
+    const fragment = document.createDocumentFragment();
     allImages.forEach((image, index) => {
       const galleryItem = this.createGalleryItem(image, index);
-      galleryGrid.appendChild(galleryItem);
+      fragment.appendChild(galleryItem);
     });
+    galleryGrid.appendChild(fragment);
 
     console.log(`✅ Loaded ${allImages.length} gallery images`);
   }
@@ -246,11 +248,13 @@ class ContentLoader {
     // Clear existing content
     testimonialsContainer.innerHTML = '';
 
-    // Create testimonial items
+    // Create testimonial items using DocumentFragment
+    const fragment = document.createDocumentFragment();
     this.data.testimonials.forEach(testimonial => {
       const testimonialItem = this.createTestimonialItem(testimonial);
-      testimonialsContainer.appendChild(testimonialItem);
+      fragment.appendChild(testimonialItem);
     });
+    testimonialsContainer.appendChild(fragment);
 
     console.log(`✅ Loaded ${this.data.testimonials.length} testimonials`);
   }
@@ -269,7 +273,8 @@ class ContentLoader {
     // Clear existing content
     eventsGrid.innerHTML = '';
 
-    // Create event items (reusing gallery item structure for consistency)
+    // Create event items using DocumentFragment
+    const fragment = document.createDocumentFragment();
     this.data.recentEvents.forEach((event, index) => {
       // Use createGalleryItem styling/structure but appended to events grid
       // We manually recreate it here to ensure specific event classes if needed
@@ -321,8 +326,9 @@ class ContentLoader {
       // We need to add it to the GalleryManager access if we do that.
       // For now, let's just make it visual.
       
-      eventsGrid.appendChild(item);
+      fragment.appendChild(item);
     });
+    eventsGrid.appendChild(fragment);
     
     console.log(`✅ Loaded ${this.data.recentEvents.length} events`);
   }
@@ -369,12 +375,14 @@ class ContentLoader {
     const publicationsContainer = document.getElementById('publications');
     if (publicationsContainer && this.data?.socialProof?.publications) {
       publicationsContainer.innerHTML = '';
+      const fragment = document.createDocumentFragment();
       this.data.socialProof.publications.forEach(pub => {
         const pubItem = document.createElement('span');
         pubItem.className = 'publication-item';
         pubItem.textContent = pub;
-        publicationsContainer.appendChild(pubItem);
+        fragment.appendChild(pubItem);
       });
+      publicationsContainer.appendChild(fragment);
     }
 
     // Populate awards
