@@ -2,26 +2,23 @@
    THEME.CSS - Editorial Design System ("Cool Blues")
    ======================================== */
 
-/* Import Google Fonts */
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap");
-
 /* ========================================
    CSS Custom Properties (Design Tokens)
    ======================================== */
 
 :root {
-  /* 
-     COLORS ARE DEFINED IN scripts/colors.js 
+  /*
+     COLORS ARE DEFINED IN scripts/colors.js
      CSS Variables are injected dynamically.
      DO NOT ADD HARDCODED COLORS HERE.
-  */ 
+  */
 
   /* === Typography === */
   --font-serif: "Cormorant Garamond", serif;
   --font-sans: "Inter", sans-serif;
 
   /* === Letter Spacing === */
-  --tracking-tight: -0.02em; 
+  --tracking-tight: -0.02em;
   --tracking-normal: 0;
   --tracking-wide: 0.05em;
 
@@ -34,7 +31,7 @@
   /* === Font Sizes === */
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
-  --text-base: 1.05rem; 
+  --text-base: 1.05rem;
   --text-lg: 1.25rem;
   --text-xl: 1.5rem;
   --text-2xl: 1.75rem;
@@ -62,7 +59,7 @@
 
   /* === Transitions === */
   --transition-fast: 200ms ease;
-  --transition-base: 300ms ease; 
+  --transition-base: 300ms ease;
   --transition-slow: 500ms ease;
   --transition-slower: 800ms ease;
 
@@ -88,7 +85,7 @@
   --radius-lg: 4px;
   --radius-xl: 8px;
   --radius-2xl: 12px;
-  --radius-full: 9999px; 
+  --radius-full: 9999px;
 
   /* === Shadows (Subtler for dark mode) === */
   --shadow-sm: 0 1px 2px 0 var(--shadow-color);
