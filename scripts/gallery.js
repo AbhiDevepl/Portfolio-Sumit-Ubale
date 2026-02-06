@@ -3,41 +3,44 @@
    ======================================== */
 
 window.GalleryManager = {
-  
+
   // State
   activeCategory: 'all',
   expandedCategories: [], // Tracks which categories are fully shown
   lightbox: null,
   currentImageIndex: 0,
   galleryItems: [],
-  
+
   /**
    * Initialize Gallery
    */
   init() {
-    this.galleryItems = document.querySelectorAll('.gallery-item');
+    // Optimization: Cache gallery items once during initialization
+    this.galleryItems = Array.from(document.querySelectorAll('.gallery-item'));
     this.initFiltering();
     this.initHoverEffects();
     this.initLightbox();
     this.checkURLState();
-    
+
     // Lazy loading fallback
     this.initLazyLoading();
-    
+
     console.log('✅ Gallery Manager initialized');
   },
-  
+
   /**
    * Initialize Filtering Logic
    */
   initFiltering() {
     const categoryButtons = document.querySelectorAll('.category-btn');
-    
+
     if (categoryButtons.length === 0) return;
-    
+
     categoryButtons.forEach(button => {
       button.addEventListener('click', () => {
         const category = button.dataset.category;
+        // Optimization: early return if already active
+        if (this.activeCategory === category && !this.expandedCategories.includes(category)) return;
         this.filterGallery(category);
         this.updateURL(category);
       });
@@ -53,7 +56,7 @@ window.GalleryManager = {
           this.expandedCategories.splice(index, 1);
         }
         this.filterGallery(this.activeCategory);
-        
+
         // Scroll to portfolio header if closing to maintain context
         if (index !== -1) {
           const portfolioSection = document.getElementById('portfolio');
@@ -63,21 +66,23 @@ window.GalleryManager = {
         }
       });
     }
-    
+
     // Handle browser back/forward buttons
     window.addEventListener('popstate', (e) => {
       const category = e.state?.category || 'all';
-      this.filterGallery(category, false); // Don't push state again
+      if (this.activeCategory !== category) {
+        this.filterGallery(category, false); // Don't push state again
+      }
     });
   },
-  
+
   /**
    * Filter Gallery Items
    * @param {string} category - Category slug to filter by
    */
   filterGallery(category) {
     this.activeCategory = category;
-    
+
     // Update active button state
     document.querySelectorAll('.category-btn').forEach(btn => {
       if (btn.dataset.category === category) {
@@ -88,17 +93,21 @@ window.GalleryManager = {
         btn.setAttribute('aria-selected', 'false');
       }
     });
-    
+
     // Filter items using GSAP
-    this.galleryItems = document.querySelectorAll('.gallery-item');
+    // Fallback if galleryItems wasn't populated during init
+    if (!this.galleryItems || this.galleryItems.length === 0) {
+      this.galleryItems = Array.from(document.querySelectorAll('.gallery-item'));
+    }
+
     const isExpanded = this.expandedCategories.includes(category);
     let hasHiddenItems = false;
-    
+
     this.galleryItems.forEach(item => {
       const itemCategory = item.dataset.category;
       const isPreview = item.dataset.preview === 'true';
       const isTargetCategory = category === 'all' || itemCategory === category;
-      
+
       let shouldShow = false;
       if (isTargetCategory) {
         if (isExpanded || isPreview) {
@@ -107,34 +116,42 @@ window.GalleryManager = {
           hasHiddenItems = true;
         }
       }
-      
+
+      // Optimization: Avoid redundant GSAP animations by checking current state
+      const currentOpacity = gsap.getProperty(item, "opacity");
+      const isCurrentlyVisible = item.style.display !== 'none' && currentOpacity > 0;
+
       if (shouldShow) {
-        gsap.to(item, {
-          opacity: 1,
-          scale: 1,
-          duration: 0.4,
-          ease: "power2.out",
-          onStart: () => {
-            item.style.display = 'block';
-          }
-        });
+        if (!isCurrentlyVisible || currentOpacity < 1) {
+          gsap.to(item, {
+            opacity: 1,
+            scale: 1,
+            duration: 0.4,
+            ease: "power2.out",
+            onStart: () => {
+              item.style.display = 'block';
+            }
+          });
+        }
       } else {
-        gsap.to(item, {
-          opacity: 0,
-          scale: 0.9,
-          duration: 0.3,
-          ease: "power2.in",
-          onComplete: () => {
-            item.style.display = 'none';
-          }
-        });
+        if (isCurrentlyVisible) {
+          gsap.to(item, {
+            opacity: 0,
+            scale: 0.9,
+            duration: 0.3,
+            ease: "power2.in",
+            onComplete: () => {
+              item.style.display = 'none';
+            }
+          });
+        }
       }
     });
 
     // Update Learn More button visibility and text
     const moreBtn = document.getElementById('load-more-btn');
     const moreContainer = document.getElementById('portfolio-more');
-    
+
     if (moreContainer && moreBtn) {
       if (isExpanded) {
         moreContainer.style.display = 'flex';
@@ -146,13 +163,13 @@ window.GalleryManager = {
         moreContainer.style.display = 'none';
       }
     }
-    
+
     // Refresh ScrollTrigger layout
     setTimeout(() => {
-      ScrollTrigger.refresh();
+      if (window.ScrollTrigger) ScrollTrigger.refresh();
     }, 450);
   },
-  
+
   /**
    * Update URL without reloading
    */
@@ -165,7 +182,7 @@ window.GalleryManager = {
     }
     window.history.pushState({ category }, '', url);
   },
-  
+
   /**
    * Check URL on load for active filter
    */
@@ -176,52 +193,32 @@ window.GalleryManager = {
       this.filterGallery(category);
     }
   },
-  
+
   /**
    * Initialize Hover Effects
    */
   initHoverEffects() {
-    // Re-select items to ensure we catch dynamic content
-    const items = document.querySelectorAll('.gallery-item');
-    
+    // Optimization: Hover effects (scale, grayscale, overlay) are handled by CSS in styles/components.css
+    // This reduces main-thread execution and prevents GSAP/CSS conflicts
+
+    const items = this.galleryItems.length > 0 ? this.galleryItems : document.querySelectorAll('.gallery-item');
+
     items.forEach(item => {
-      const image = item.querySelector('.gallery-image');
-      const overlay = item.querySelector('.gallery-overlay');
-      
-      if (!image || !overlay) return;
-      
-      // Remove old listeners to prevent duplicates if re-initialized
-      // Use cloneNode to strip listeners, then replace (careful with this approach) - 
-      // safer to just rely on unique initialization call or clean up.
-      // For now, simpler event delegation or direct attach assuming single init.
-      
-      item.addEventListener('mouseenter', () => {
-        gsap.to(image, { scale: 1.05, filter: 'grayscale(0%)', duration: 0.5 });
-        gsap.to(overlay, { opacity: 1, duration: 0.3 });
-      });
-      
-      item.addEventListener('mouseleave', () => {
-        gsap.to(image, { scale: 1, filter: 'grayscale(0%)', duration: 0.5 });
-        gsap.to(overlay, { opacity: 0, duration: 0.3 });
-      });
-      
-      // Lightbox click
+      // Lightbox click listener remains in JS
       item.addEventListener('click', () => {
-        // Find current index among ALL items (not just visible) to keep index logic simple
-        // or filter visible only. Let's use all items for index context.
         const index = parseInt(item.dataset.index);
         this.openLightbox(index);
       });
     });
   },
-  
+
   /**
    * Initialize Lightbox
    */
   initLightbox() {
     // Only create if not exists
     if (document.getElementById('lightbox')) return;
-    
+
     const lightboxHTML = `
       <div class="lightbox" id="lightbox" style="display: none;">
         <div class="lightbox-overlay"></div>
@@ -258,16 +255,16 @@ window.GalleryManager = {
         }
       </style>
     `;
-    
+
     document.body.insertAdjacentHTML('beforeend', lightboxHTML);
     this.lightbox = document.getElementById('lightbox');
-    
+
     // Event Listeners
     this.lightbox.querySelector('.lightbox-close').addEventListener('click', () => this.closeLightbox());
     this.lightbox.querySelector('.lightbox-overlay').addEventListener('click', () => this.closeLightbox());
     this.lightbox.querySelector('.lightbox-prev').addEventListener('click', () => this.navigateLightbox(-1));
     this.lightbox.querySelector('.lightbox-next').addEventListener('click', () => this.navigateLightbox(1));
-    
+
     document.addEventListener('keydown', (e) => {
       if (!this.lightbox.classList.contains('active')) return;
       if (e.key === 'Escape') this.closeLightbox();
@@ -275,21 +272,21 @@ window.GalleryManager = {
       if (e.key === 'ArrowRight') this.navigateLightbox(1);
     });
   },
-  
+
   openLightbox(index) {
     this.currentImageIndex = index;
     this.updateLightboxContent();
-    
+
     this.lightbox.style.display = 'flex';
     // Small delay to allow display:flex to apply before opacity transition
     requestAnimationFrame(() => {
       this.lightbox.classList.add('active');
     });
-    
+
     document.body.classList.add('no-scroll');
     if (window.lenis) window.lenis.stop();
   },
-  
+
   closeLightbox() {
     this.lightbox.classList.remove('active');
     // Stop any video
@@ -298,43 +295,47 @@ window.GalleryManager = {
       video.pause();
       video.currentTime = 0;
     }
-    
+
     setTimeout(() => {
       this.lightbox.style.display = 'none';
       document.body.classList.remove('no-scroll');
       if (window.lenis) window.lenis.start();
     }, 300);
   },
-  
+
   navigateLightbox(direction) {
-    const totalItems = this.galleryItems.length;
+    const totalItems = this.galleryItems.length > 0 ? this.galleryItems.length : document.querySelectorAll('.gallery-item').length;
     let newIndex = this.currentImageIndex + direction;
-    
+
     if (newIndex < 0) newIndex = totalItems - 1;
     if (newIndex >= totalItems) newIndex = 0;
-    
+
     this.currentImageIndex = newIndex;
     this.updateLightboxContent();
   },
-  
+
   updateLightboxContent() {
-    const item = this.galleryItems[this.currentImageIndex];
+    // Fallback if not cached
+    const items = this.galleryItems.length > 0 ? this.galleryItems : document.querySelectorAll('.gallery-item');
+    const item = items[this.currentImageIndex];
+    if (!item) return;
+
     const imgEl = item.querySelector('img');
     const videoEl = item.querySelector('video');
     const isVideo = !!videoEl;
-    
+
     const imgInfo = {
       src: isVideo ? (videoEl.getAttribute('src') || videoEl.dataset.src) : imgEl.getAttribute('src'),
       title: item.querySelector('.gallery-title')?.innerText || '',
       category: item.getAttribute('data-category'),
       isVideo: isVideo
     };
-    
+
     const lightboxImg = this.lightbox.querySelector('.lightbox-image');
     const lightboxVid = this.lightbox.querySelector('.lightbox-video');
     const capEl = this.lightbox.querySelector('.lightbox-caption');
-    
-    // Quick fade out/in effect
+
+    // Quick fade out/in effect using GSAP
     gsap.to([lightboxImg, lightboxVid], { opacity: 0, duration: 0.15, onComplete: () => {
       if (imgInfo.isVideo) {
         lightboxImg.style.display = 'none';
@@ -347,15 +348,14 @@ window.GalleryManager = {
         lightboxImg.style.display = 'block';
         lightboxImg.src = imgInfo.src;
       }
-      
+
       capEl.innerHTML = `<h3>${imgInfo.title}</h3><p>${imgInfo.category}</p>`;
       gsap.to(imgInfo.isVideo ? lightboxVid : lightboxImg, { opacity: 1, duration: 0.15 });
     }});
   },
-  
+
   initLazyLoading() {
      // Native lazy loading is used on createGalleryItem in content-loader
-     // This is just a backup or for other images
      const lazyImages = document.querySelectorAll('img[loading="lazy"]:not([src])');
      if ('IntersectionObserver' in window) {
        const obs = new IntersectionObserver(entries => {
@@ -371,5 +371,3 @@ window.GalleryManager = {
      }
   }
 };
-
-// Auto-init removed. Will be called by ContentLoader.

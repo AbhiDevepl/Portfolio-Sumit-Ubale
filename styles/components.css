@@ -82,7 +82,7 @@
 }
 
 /* Mix blend mode for hero overlay - disabled for now as dark mode is consistent */
-/* 
+/*
 .nav-blend {
   mix-blend-mode: difference;
 }
@@ -241,7 +241,7 @@
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight);
   text-transform: uppercase;
-  color: #f5e1a6; 
+  color: #f5e1a6;
   font-weight: 600;
   margin-bottom: var(--space-6);
   text-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -251,7 +251,7 @@
   font-family: var(--font-sans);
   font-size: var(--text-lg);
   line-height: var(--leading-normal);
-  color: var(--accent); 
+  color: var(--accent);
   opacity: 1;
   max-width: 500px;
 }
@@ -419,7 +419,7 @@
   height: 100%;
   object-fit: cover;
   transition: transform var(--transition-slower), filter var(--transition-base);
-  filter: grayscale(0.2); 
+  filter: grayscale(0.2);
 }
 
 .gallery-item:hover .gallery-image {
@@ -624,7 +624,7 @@
   color: var(--text-primary);
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm); 
+  border-radius: var(--radius-sm);
   transition: border-color var(--transition-base);
 }
 
@@ -657,7 +657,7 @@
 
 .form-submit:hover {
   background-color: var(--accent);
-  color: var(--bg-primary); 
+  color: var(--bg-primary);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
@@ -713,11 +713,11 @@
     grid-template-columns: 1fr 1fr;
     gap: var(--space-16);
   }
-  
+
   .hero-content {
     left: var(--space-24);
   }
-  
+
   .gallery-grid {
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   }
@@ -728,7 +728,7 @@
     grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
     gap: var(--space-8);
   }
-  
+
   .events-grid {
     gap: var(--space-12);
   }
@@ -742,20 +742,20 @@
   .nav-toggle {
     display: flex;
   }
-  
+
   .nav-link {
     font-size: var(--text-xs);
   }
-  
+
   .hero-content {
     left: var(--space-6);
     bottom: var(--space-12);
   }
-  
+
   .about-content {
     padding: 0 var(--space-4);
   }
-  
+
   .portfolio-categories {
     gap: var(--space-2);
   }
