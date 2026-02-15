@@ -36,6 +36,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://res.cloudinary.com">
   <link rel="preload" as="style"
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
   <link rel="stylesheet"
@@ -49,6 +50,7 @@
   <!-- Preload Critical Assets -->
   <link rel="preload" as="image"
     href="https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771091727/IMG_Hero_peub99.webp">
+  <link rel="preload" href="/data/portfolio.json" as="fetch" type="application/json" crossorigin>
 
   <!-- CSS Files (in order) -->
   <link rel="stylesheet" href="/styles/theme.css">
@@ -132,7 +134,7 @@
       <div class="about-grid">
         <div class="about-image-wrapper">
           <img src="https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771140026/About_ckm79s.jpg"
-            alt="Sumit Ubale - Photographer portrait" class="about-image" width="600" height="800">
+            alt="Sumit Ubale - Photographer portrait" class="about-image" width="600" height="800" loading="lazy">
         </div>
 
         <div class="about-content">
