@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Albums - Sumit Ubale Photography</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+        media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
+    </noscript>
+
+    <link rel="stylesheet" href="/styles/theme.css">
+    <link rel="stylesheet" href="/styles/base.css">
+    <link rel="stylesheet" href="/styles/layout.css">
+    <link rel="stylesheet" href="/styles/components.css">
+    <link rel="stylesheet" href="/styles/animations.css">
+    <link rel="stylesheet" href="/styles/loader.css">
+
+    <style>
+        .albums-page {
+            padding-top: var(--space-32);
+            padding-bottom: var(--space-20);
+        }
+
+        .albums-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: var(--space-10);
+            margin-top: var(--space-16);
+        }
+
+        .album-card {
+            position: relative;
+            aspect-ratio: 4 / 5;
+            overflow: hidden;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            background-color: var(--bg-surface);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            transition: transform var(--transition-base);
+        }
+
+        .album-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .album-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.7);
+            transition: transform var(--transition-slower), filter var(--transition-base);
+        }
+
+        .album-card:hover .album-image {
+            transform: scale(1.05);
+            filter: brightness(0.9);
+        }
+
+        .album-content {
+            position: relative;
+            z-index: 2;
+            padding: var(--space-8);
+            text-align: center;
+        }
+
+        .album-title {
+            font-family: var(--font-serif);
+            font-size: var(--text-3xl);
+            color: var(--text-primary);
+            margin-bottom: var(--space-4);
+            text-transform: uppercase;
+            letter-spacing: var(--tracking-wide);
+        }
+
+        .album-learn-more {
+            display: inline-block;
+            padding: var(--space-2) var(--space-8);
+            border: 1px solid var(--text-primary);
+            border-radius: var(--radius-full);
+            font-family: var(--font-sans);
+            font-size: var(--text-xs);
+            text-transform: uppercase;
+            letter-spacing: var(--tracking-widest);
+            color: var(--text-primary);
+            transition: all var(--transition-base);
+        }
+
+        .album-card:hover .album-learn-more {
+            background-color: var(--text-primary);
+            color: var(--bg-primary);
+        }
+
+        @media (max-width: 768px) {
+            .albums-grid {
+                grid-template-columns: 1fr;
+                gap: var(--space-6);
+            }
+        }
+    </style>
+
+    <script src="/scripts/colors.js"></script>
+</head>
+
+<body class="loading">
+    <div id="page-loader">
+        <div class="loader-content">
+            <div class="loader-logo">Sumit Ubale</div>
+            <div class="loader-progress-bar">
+                <div class="loader-progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="nav" id="main-nav"></nav>
+
+    <main>
+        <section class="albums-page section">
+            <div class="container">
+                <div class="section-header" style="text-align: center;">
+                    <h1 class="heading-xl stagger-reveal">Our Albums</h1>
+                    <p class="body-lg stagger-reveal" style="max-width: 600px; margin: 0 auto;">
+                        Explore our categorized collections of moments captured in time.
+                    </p>
+                </div>
+
+                <div class="albums-grid" id="albums-grid">
+                    <!-- Albums will be injected here -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer" id="main-footer"></footer>
+
+    <script src="https://unpkg.com/gsap@3/dist/gsap.min.js" defer></script>
+    <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js" defer></script>
+    <script src="/scripts/album-loader.js" defer></script>
+    <script src="/scripts/navigation.js" defer></script>
+    <script src="/scripts/loader.js" defer></script>
+</body>
+
+</html>

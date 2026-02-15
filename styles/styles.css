@@ -1,0 +1,18 @@
+/* 
+   NOTE: This file is deprecated.
+   The project now uses a modular CSS architecture.
+   Please refer to:
+   - theme.css (Variables & Design System)
+   - base.css (Reset & Typography)
+   - layout.css (Grid & Structure)
+   - components.css (Component Styles)
+   - animations.css (Animations)
+   - project-card.css (Project Card Styles)
+*/
+
+@import "theme.css";
+@import "base.css";
+@import "layout.css";
+@import "components.css";
+@import "animations.css";
+/* @import "project-card.css"; */ /* Not imported by main index but available */

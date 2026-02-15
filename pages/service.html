@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service - Sumit Ubale Photography</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+        media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
+    </noscript>
+
+    <link rel="stylesheet" href="/styles/theme.css">
+    <link rel="stylesheet" href="/styles/base.css">
+    <link rel="stylesheet" href="/styles/layout.css">
+    <link rel="stylesheet" href="/styles/components.css">
+    <link rel="stylesheet" href="/styles/service.css">
+    <link rel="stylesheet" href="/styles/animations.css">
+    <link rel="stylesheet" href="/styles/loader.css">
+
+    <!-- Global Color System -->
+    <script src="/scripts/colors.js"></script>
+</head>
+
+<body class="loading">
+    <!-- Page Loader -->
+    <div id="page-loader">
+        <div class="loader-content">
+            <div class="loader-logo">Sumit Ubale</div>
+            <div class="loader-progress-bar">
+                <div class="loader-progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation (Injected via JS for consistency across pages) -->
+    <nav class="nav" id="main-nav"></nav>
+
+    <main id="service-page">
+        <!-- Hero Section -->
+        <section class="service-hero" id="hero">
+            <div class="container">
+                <h1 class="service-title stagger-reveal" id="service-title"></h1>
+                <p class="service-hero-desc stagger-reveal" id="service-hero-desc"></p>
+            </div>
+        </section>
+
+        <!-- Random Featured Image Section -->
+        <section class="section service-featured-section">
+            <div class="container">
+                <div id="random-image-container" class="featured-image-frame stagger-reveal">
+                    <!-- Random image will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Gallery Section -->
+        <section class="section">
+            <div class="container">
+                <div class="service-gallery" id="service-gallery">
+                    <!-- Dynamically loaded gallery -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Content Section -->
+        <section class="section bg-light">
+            <div class="container container-narrow">
+                <div class="service-content">
+                    <div class="service-story stagger-reveal">
+                        <h2 class="heading-md">The Story</h2>
+                        <p id="service-story-text"></p>
+                    </div>
+
+                    <div class="service-deliverables stagger-reveal">
+                        <h2 class="heading-md">What's Included</h2>
+                        <ul class="deliverables-list" id="deliverables-list"></ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="section service-cta">
+            <div class="container">
+                <div class="cta-box">
+                    <h2 class="heading-lg">Ready to capture your story?</h2>
+                    <p class="body-lg">Let's create something timeless together.</p>
+                    <a href="/#contact" class="btn-cta">Enquire Now</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer" id="main-footer"></footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/gsap@3/dist/gsap.min.js" defer></script>
+    <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js" defer></script>
+    <script src="/scripts/service-loader.js" defer></script>
+    <script src="/scripts/navigation.js" defer></script>
+
+    <script src="/scripts/loader.js" defer></script>
+
+</body>
+
+</html>

@@ -1,0 +1,86 @@
+{
+  "services": [
+    {
+      "slug": "weddings",
+      "title": "Wedding Photography",
+      "heroDescription": "Timeless visual storytelling for your most precious moments.",
+      "story": "Every wedding is a unique masterpiece. My approach to wedding photography blends editorial elegance with raw emotion, capturing the quiet glances, the grand celebrations, and everything in between. We focus on creating a visual legacy that feels as alive decades from now as it did on the day.",
+      "mediaType": "photos",
+      "deliverables": [
+        "Full day coverage by Sumit Ubale",
+        "800+ High-resolution edited images",
+        "Online private viewing gallery",
+        "Fine-art physical wedding album",
+        "Engagement session included"
+      ],
+      "gallery": [
+        { "src": "/assets/images/weddings/new/1.jpg", "alt": "Classic wedding portrait" },
+        { "src": "/assets/images/weddings/new/DSC00726.jpg", "alt": "Emotional ceremony moment" },
+        { "src": "/assets/images/weddings/new/11.jpg", "alt": "Wedding decor details" },
+        { "src": "/assets/images/weddings/new/DSC00767.jpg", "alt": "Bride preparation" },
+        { "src": "/assets/images/weddings/new/DSC00783.jpg", "alt": "Groom detail shots" },
+        { "src": "/assets/images/weddings/new/DSC00859.jpg", "alt": "Reception celebration" }
+      ]
+    },
+    {
+      "slug": "pre-wedding-photos",
+      "title": "Pre-wedding Photography",
+      "heroDescription": "Artistic portraits that celebrate your unique love story before the big day.",
+      "story": "The pre-wedding session is more than just a photoshoot; it's an opportunity to celebrate your chemistry in a relaxed, creative environment. Whether it's the golden hour in nature or an urban editorial vibe, we create images that reflect who you are as a couple.",
+      "mediaType": "photos",
+      "deliverables": [
+        "4-6 Hours session at selected locations",
+        "50+ Retouched editorial images",
+        "Styling and moodboard consultation",
+        "Social media teaser set",
+        "Large format print for reception"
+      ],
+      "gallery": [
+        { "src": "/assets/images/PrewedPhoto/1.jpg", "alt": "Sunset pre-wedding portrait" },
+        { "src": "/assets/images/PrewedPhoto/10.jpg", "alt": "Lakeside romantic shot" },
+        { "src": "/assets/images/PrewedPhoto/20.jpg", "alt": "Urban editorial style" },
+        { "src": "/assets/images/PrewedPhoto/31.jpg", "alt": "Nature's backdrop portraits" },
+        { "src": "/assets/images/PrewedPhoto/45.jpg", "alt": "Creative silhouette" }
+      ]
+    },
+    {
+      "slug": "pre-wedding-videos",
+      "title": "Pre-wedding Videos",
+      "heroDescription": "Cinematic love stories brought to life through motion.",
+      "story": "Motion adds a dimension that static images cannot reach. Our pre-wedding films are crafted like short cinematic experiences, featuring music, voiceovers, and high-end production values that tell the story of how you met and the journey ahead.",
+      "mediaType": "videos",
+      "deliverables": [
+        "3-5 Minute cinematic love story film",
+        "60-Second social media teaser",
+        "High-definition 4K delivery",
+        "Professional audio recording & sound design",
+        "Drone aerial cinematography"
+      ],
+      "gallery": [
+        { "src": "/assets/images/PrewedVideo/01 Teaser-4K.mp4", "type": "video", "alt": "Cinematic teaser" },
+        { "src": "/assets/images/PrewedVideo/Mi Tuza Sajna .mp4", "type": "video", "alt": "Musical pre-wedding film" },
+        { "src": "/assets/images/PrewedVideo/Reel 1.mp4", "type": "video", "alt": "Social media reel" }
+      ]
+    },
+    {
+      "slug": "cinematics",
+      "title": "Cinematic Films",
+      "heroDescription": "Elite wedding cinematography with a high-fashion editorial edge.",
+      "story": "Our cinematic wedding films are high-production masterpieces. We use the latest technology to capture your wedding with the same intensity and beauty as a feature film. From multi-camera setups to expert color grading, we ensure every frame is a work of art.",
+      "mediaType": "mixed",
+      "deliverables": [
+        "15-20 Minute wedding highlights film",
+        "Feature-length documentary edit",
+        "Multi-camera 4K production",
+        "Soundtrack licensing & custom sound design",
+        "Same-day edit teaser (on request)"
+      ],
+      "gallery": [
+        { "src": "/assets/images/Cinematic/Cine Teaser Final.mp4", "type": "video", "alt": "Cinematic Teaser" },
+        { "src": "/assets/images/Cinematic/Cine Highlight Final.mp4", "type": "video", "alt": "Cine Highlight" },
+        { "src": "/assets/images/Cinematic/Same Day 24 12.mp4", "type": "video", "alt": "Same day edit teaser" },
+        { "src": "/assets/images/weddings/new/DSC00894.jpg1.jpg", "type": "image", "alt": "Cinematic production still" }
+      ]
+    }
+  ]
+}

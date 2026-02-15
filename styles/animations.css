@@ -1,0 +1,440 @@
+/* ========================================
+   ANIMATIONS.CSS - Motion & Transitions
+   ======================================== */
+
+/* ========================================
+   Performance Optimizations
+   ======================================== */
+
+.will-animate {
+  will-change: transform, opacity;
+}
+
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* ========================================
+   Fade Animations
+   ======================================== */
+
+.fade-in {
+  opacity: 0;
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(40px);
+}
+
+.fade-in-down {
+  opacity: 0;
+  transform: translateY(-40px);
+}
+
+.fade-in-left {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+
+.fade-in-right {
+  opacity: 0;
+  transform: translateX(40px);
+}
+
+/* ========================================
+   Clip Path Animations (Hero)
+   ======================================== */
+
+.clip-reveal {
+  clip-path: inset(100% 0 0 0);
+}
+
+.clip-reveal-active {
+  clip-path: inset(0% 0 0 0);
+  transition: clip-path 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.clip-reveal-horizontal {
+  clip-path: inset(0 100% 0 0);
+}
+
+.clip-reveal-horizontal-active {
+  clip-path: inset(0 0% 0 0);
+  transition: clip-path 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ========================================
+   Scroll-Triggered Animation States
+   ======================================== */
+
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(60px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scroll-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scroll-reveal-fast {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scroll-reveal-fast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ========================================
+   Parallax Elements
+   ======================================== */
+
+.parallax-slow {
+  will-change: transform;
+}
+
+.parallax-fast {
+  will-change: transform;
+}
+
+/* ========================================
+   Image Hover Effects
+   ======================================== */
+
+.image-hover-scale {
+  overflow: hidden;
+}
+
+.image-hover-scale img {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.image-hover-scale:hover img {
+  transform: scale(1.05);
+}
+
+.image-hover-grayscale img {
+  filter: grayscale(20%);
+  transition: filter 0.3s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.image-hover-grayscale:hover img {
+  filter: grayscale(0%);
+  transform: scale(1.03);
+}
+
+/* ========================================
+   Button Animations
+   ======================================== */
+
+.btn-hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-hover-lift:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-hover-fill {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.btn-hover-fill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--editorial-olive);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+  z-index: -1;
+}
+
+.btn-hover-fill:hover::before {
+  transform: scaleX(1);
+}
+
+/* ========================================
+   Loading States
+   ======================================== */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--editorial-light-gray) 25%,
+    var(--editorial-bg) 50%,
+    var(--editorial-light-gray) 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s ease-in-out infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--editorial-light-gray);
+  border-top-color: var(--editorial-olive);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========================================
+   Stagger Delays (for GSAP or CSS)
+   ======================================== */
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* ========================================
+   Overlay Animations
+   ======================================== */
+
+.overlay-fade {
+  position: fixed;
+  inset: 0;
+  background-color: var(--bg-overlay-dark);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: var(--z-modal-backdrop);
+}
+
+.overlay-fade.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ========================================
+   Modal/Lightbox Animations
+   ======================================== */
+
+.modal-scale {
+  transform: scale(0.9);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.3s ease;
+}
+
+.modal-scale.active {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.modal-slide-up {
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-slide-up.active {
+  transform: translateY(0);
+}
+
+/* ========================================
+   Text Reveal Animations
+   ======================================== */
+
+.text-reveal {
+  overflow: hidden;
+  display: inline-block;
+}
+
+.text-reveal span {
+  display: inline-block;
+  transform: translateY(100%);
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.text-reveal.is-visible span {
+  transform: translateY(0);
+}
+
+/* ========================================
+   Underline Animations
+   ======================================== */
+
+.underline-hover {
+  position: relative;
+  display: inline-block;
+}
+
+.underline-hover::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+}
+
+.underline-hover:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ========================================
+   Arrow Icon Animations
+   ======================================== */
+
+.arrow-icon {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.arrow-hover:hover .arrow-icon {
+  transform: translateX(4px);
+}
+
+.arrow-icon-fade {
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.arrow-hover:hover .arrow-icon-fade {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ========================================
+   Scroll Indicator
+   ======================================== */
+
+.scroll-indicator {
+  animation: scrollBounce 2s ease-in-out infinite;
+}
+
+@keyframes scrollBounce {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-10px);
+    opacity: 1;
+  }
+}
+
+/* ========================================
+   Page Transition
+   ======================================== */
+
+.page-transition {
+  position: fixed;
+  inset: 0;
+  background-color: var(--editorial-bg);
+  z-index: var(--z-tooltip);
+  transform: translateY(-100%);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.page-transition.active {
+  transform: translateY(0);
+}
+
+/* ========================================
+   Reduced Motion Support
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .parallax-slow,
+  .parallax-fast {
+    will-change: auto;
+  }
+  
+  .scroll-reveal,
+  .scroll-reveal-fast,
+  .fade-in-up,
+  .fade-in-down,
+  .fade-in-left,
+  .fade-in-right {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ========================================
+   Utility Animation Classes
+   ======================================== */
+
+.no-transition {
+  transition: none !important;
+}
+
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+.transition-fast {
+  transition-duration: 0.15s;
+}
+
+.transition-slow {
+  transition-duration: 0.5s;
+}
+
+.delay-100 { transition-delay: 0.1s; }
+.delay-200 { transition-delay: 0.2s; }
+.delay-300 { transition-delay: 0.3s; }
+.delay-400 { transition-delay: 0.4s; }
+.delay-500 { transition-delay: 0.5s; }

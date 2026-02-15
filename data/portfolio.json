@@ -1,0 +1,1002 @@
+{
+  "portfolio": {
+    "categories": [
+      {
+        "id": "all",
+        "name": "All Work",
+        "slug": "all"
+      },
+      {
+        "id": "weddings",
+        "name": "Weddings",
+        "slug": "weddings"
+      },
+      {
+        "id": "portraits",
+        "name": "Portraits",
+        "slug": "portraits"
+      },
+      {
+        "id": "commercial",
+        "name": "Commercial",
+        "slug": "commercial"
+      },
+      {
+        "id": "events",
+        "name": "Events",
+        "slug": "events"
+      },
+      {
+        "id": "pre-wedding-photos-and-videos",
+        "name": "Pre-Wedding",
+        "slug": "pre-wedding-photos-and-videos"
+      },
+      {
+        "id": "maternity",
+        "name": "Maternity",
+        "slug": "maternity"
+      },
+      {
+        "id": "engagement",
+        "name": "Engagement",
+        "slug": "engagement"
+      },
+      {
+        "id": "haldi",
+        "name": "Haldi",
+        "slug": "haldi"
+      },
+      {
+        "id": "cinematics",
+        "name": "Cinematics",
+        "slug": "cinematics"
+      }
+    ],
+    "images": {
+      "portraits": [
+        {
+          "id": 1,
+          "title": "Portraits Session",
+          "type": "image",
+          "src": "/assets/images/portraits/commercial-1.png",
+          "alt": "portraits photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 2,
+          "title": "Portraits Session",
+          "type": "image",
+          "src": "/assets/images/portraits/portrait-1.png",
+          "alt": "portraits photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 3,
+          "title": "Portraits Session",
+          "type": "image",
+          "src": "/assets/images/portraits/portrait-2.png",
+          "alt": "portraits photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 4,
+          "title": "Portraits Session",
+          "type": "image",
+          "src": "/assets/images/portraits/wedding-1.png",
+          "alt": "portraits photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 5,
+          "title": "Portraits Session",
+          "type": "image",
+          "src": "/assets/images/portraits/wedding-2.png",
+          "alt": "portraits photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        }
+      ],
+      "engagement": [
+        {
+          "id": 1,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007930/SUP04998.jpg1_mcn7yw.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 2,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007930/SUP04934.jpg11_ccofad.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 3,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007927/SUP04852.jpg1_gptwkg.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 4,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007927/SUP04839.jpg1_zyf9pl.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 5,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007926/SUP04829.jpg1_qfw25d.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 6,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007923/DSC00105_fr9j4u.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 7,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007923/DSC00089_kakwmb.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 8,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007922/DSC00061_ciktbb.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 9,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007922/DSC00057_q4katn.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 10,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007921/DSC00028_fakdxs.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 11,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007925/DSC04805.jpg1_gen5tq.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 12,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007928/SUP04872.jpg1_oh02go.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 13,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007924/DSC00517_l663mn.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 14,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007923/DSC00101_pdj9eg.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 15,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007923/DSC00098_tb02fq.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 16,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007922/DSC00061_ciktbb.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 17,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007922/DSC00040_srfchy.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 18,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007922/DSC00034_fxhdsp.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 19,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007929/SUP04934.jpg1_ptx4av.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 20,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007923/DSC00086_b2yhcn.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 21,
+          "title": "Engagement Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771007928/SUP04872.jpg1_oh02go.jpg",
+          "alt": "Engagement photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        }
+      ],
+      "haldi": [
+        {
+          "id": 1,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771011311/DSC00684_jxwqmk.jpg",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 2,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771011310/DSC00678.jpg1_r5xozt.jpg",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 3,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771011310/DSC00667_toa5gh.jpg",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 4,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771011310/DSC00673_jrbrsz.jpg",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 5,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771011310/DSC00656_sy7bgr.jpg",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 6,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771011310/DSC00626_jt656g.jpg",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 7,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771011309/DSC00645_ibzxwy.jpg",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 8,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771011309/DSC00649_obzhzr.jpg",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 9,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771011307/DSC00593_xbh78t.jpg",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 10,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771011307/DSC00552_fdtmpo.jpg",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 11,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771011307/DSC00546_pp7u9v.jpg",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 12,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771011306/DSC00563_n0czma.jpg",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 13,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771011306/DSC00557_oae766.jpg",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 14,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771011306/DSC00559_mf94ca.jpg",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 15,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "/assets/images/Haldi/3.webp",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 16,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "/assets/images/Haldi/4.webp",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 17,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "/assets/images/Haldi/5.webp",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 18,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "/assets/images/Haldi/6.webp",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 19,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "/assets/images/Haldi/7.webp",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 20,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "/assets/images/Haldi/8.webp",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 21,
+          "title": "Haldi Session",
+          "type": "image",
+          "src": "/assets/images/Haldi/9.webp",
+          "alt": "Haldi photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        }
+      ],
+      "weddings": [
+        {
+          "id": 1,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/1.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 2,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/10.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 3,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/11.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 4,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/12.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 5,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/13.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 6,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/14.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 7,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/15.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 8,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/16.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 9,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/17.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 10,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/18.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 11,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/19.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 12,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/2.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 13,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/20.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 14,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/21.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 15,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/22.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 16,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/23.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 17,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/24.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 18,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/25.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 19,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/26.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 20,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/27.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 21,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/28.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 22,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/29.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 23,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/3.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 24,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/30.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 25,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/31.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 26,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/32.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 27,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/33.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 28,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/34.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 29,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/35.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 30,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/36.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 31,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/37.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 32,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/38.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 33,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/39.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 34,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/4.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 35,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/40.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 36,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/41.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 37,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/42.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 38,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/5.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 39,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/6.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 40,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/7.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 41,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/8.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 42,
+          "title": "Wedding Session",
+          "type": "image",
+          "src": "/assets/images/Wedding/9.webp",
+          "alt": "Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        }
+      ],
+      "maternity": [
+        {
+          "id": 1,
+          "title": "Maternity Session",
+          "type": "image",
+          "src": "/assets/images/Maternity/1.webp",
+          "alt": "Maternity photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 2,
+          "title": "Maternity Session",
+          "type": "image",
+          "src": "/assets/images/Maternity/2.webp",
+          "alt": "Maternity photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 3,
+          "title": "Maternity Session",
+          "type": "image",
+          "src": "/assets/images/Maternity/3.webp",
+          "alt": "Maternity photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 4,
+          "title": "Maternity Session",
+          "type": "image",
+          "src": "/assets/images/Maternity/4.webp",
+          "alt": "Maternity photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 5,
+          "title": "Maternity Session",
+          "type": "image",
+          "src": "/assets/images/Maternity/5.webp",
+          "alt": "Maternity photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 6,
+          "title": "Maternity Session",
+          "type": "image",
+          "src": "/assets/images/Maternity/6.webp",
+          "alt": "Maternity photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 7,
+          "title": "Maternity Session",
+          "type": "image",
+          "src": "/assets/images/Maternity/7.webp",
+          "alt": "Maternity photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        }
+      ],
+      "pre-wedding-photos-and-videos": [
+        {
+          "id": 1,
+          "title": "Pre-Wedding Session",
+          "type": "image",
+          "src": "/assets/images/PreWedding/outdoor/IMG_%20(2).webp",
+          "alt": "Pre-Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 2,
+          "title": "Pre-Wedding Session",
+          "type": "image",
+          "src": "/assets/images/PreWedding/outdoor/IMG_%20(4).webp",
+          "alt": "Pre-Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 3,
+          "title": "Pre-Wedding Session",
+          "type": "image",
+          "src": "/assets/images/PreWedding/outdoor/IMG_%20(6).webp",
+          "alt": "Pre-Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 4,
+          "title": "Pre-Wedding Session",
+          "type": "image",
+          "src": "/assets/images/PreWedding/outdoor/IMG_%20(8).webp",
+          "alt": "Pre-Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 5,
+          "title": "Pre-Wedding Session",
+          "type": "image",
+          "src": "/assets/images/PreWedding/outdoor/IMG_%20(10).webp",
+          "alt": "Pre-Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 6,
+          "title": "Pre-Wedding Session",
+          "type": "image",
+          "src": "/assets/images/PreWedding/outdoor/IMG_%20(11).webp",
+          "alt": "Pre-Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 7,
+          "title": "Pre-Wedding Session",
+          "type": "image",
+          "src": "/assets/images/PreWedding/outdoor/IMG_%20(12).webp",
+          "alt": "Pre-Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 8,
+          "title": "Pre-Wedding Session",
+          "type": "image",
+          "src": "/assets/images/PreWedding/outdoor/IMG_%20(13).webp",
+          "alt": "Pre-Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 9,
+          "title": "Pre-Wedding Session",
+          "type": "image",
+          "src": "/assets/images/PreWedding/outdoor/IMG_%20(14).webp",
+          "alt": "Pre-Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        },
+        {
+          "id": 10,
+          "title": "Pre-Wedding Session",
+          "type": "image",
+          "src": "/assets/images/PreWedding/outdoor/IMG_%20(15).webp",
+          "alt": "Pre-Wedding photography captured by Sumit Ubale",
+          "aspectRatio": "3/4"
+        }
+      ],
+      "cinematics": [
+        {
+          "id": 1,
+          "title": "Cinematic Session",
+          "type": "video",
+          "src": "/assets/images/Cinematic/1.mp4",
+          "alt": "Cinematic photography captured by Sumit Ubale",
+          "aspectRatio": "16/9"
+        },
+        {
+          "id": 2,
+          "title": "Cinematic Session",
+          "type": "video",
+          "src": "/assets/images/Cinematic/2.mp4",
+          "alt": "Cinematic photography captured by Sumit Ubale",
+          "aspectRatio": "16/9"
+        },
+        {
+          "id": 3,
+          "title": "Cinematic Session",
+          "type": "video",
+          "src": "/assets/images/Cinematic/3.mp4",
+          "alt": "Cinematic photography captured by Sumit Ubale",
+          "aspectRatio": "16/9"
+        },
+        {
+          "id": 4,
+          "title": "Cinematic Session",
+          "type": "video",
+          "src": "/assets/images/Cinematic/4.MP4",
+          "alt": "Cinematic photography captured by Sumit Ubale",
+          "aspectRatio": "16/9"
+        },
+        {
+          "id": 5,
+          "title": "Cinematic Session",
+          "type": "video",
+          "src": "/assets/images/Cinematic/5.mp4",
+          "alt": "Cinematic photography captured by Sumit Ubale",
+          "aspectRatio": "16/9"
+        },
+        {
+          "id": 6,
+          "title": "Cinematic Session",
+          "type": "video",
+          "src": "/assets/images/Cinematic/6.mp4",
+          "alt": "Cinematic photography captured by Sumit Ubale",
+          "aspectRatio": "16/9"
+        }
+      ]
+    }
+  },
+  "testimonials": [
+    {
+      "id": 1,
+      "name": "Sarah Johnson",
+      "role": "Bride",
+      "quote": "The photos exceeded all our expectations.",
+      "image": null
+    },
+    {
+      "id": 2,
+      "name": "Michael Chen",
+      "role": "Creative Director",
+      "quote": "Professional, creative, and incredibly talented.",
+      "image": null
+    },
+    {
+      "id": 3,
+      "name": "Emma Williams",
+      "role": "Model",
+      "quote": "An incredible eye for composition and light.",
+      "image": null
+    }
+  ],
+  "about": {
+    "name": "Sumit Ubale",
+    "tagline": "Photographer & Films",
+    "bio": "With over a decade of experience in editorial and portrait photography.",
+    "image": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771140026/About_ckm79s.jpg",
+    "social": {
+      "instagram": "https://www.instagram.com/sumit_ubale_photography/",
+      "email": "sumitubale5050@gmail.com",
+      "phone": ""
+    }
+  }
+}

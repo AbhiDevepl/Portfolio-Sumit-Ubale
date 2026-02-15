@@ -1,0 +1,186 @@
+/* ========================================
+   THEME.CSS - Editorial Design System ("Cool Blues")
+   ======================================== */
+
+/* Import Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap");
+
+/* ========================================
+   CSS Custom Properties (Design Tokens)
+   ======================================== */
+
+:root {
+  /* 
+     COLORS ARE DEFINED IN scripts/colors.js 
+     CSS Variables are injected dynamically.
+     DO NOT ADD HARDCODED COLORS HERE.
+  */ 
+
+  /* === Typography === */
+  --font-serif: "Cormorant Garamond", serif;
+  --font-sans: "Inter", sans-serif;
+
+  /* === Letter Spacing === */
+  --tracking-tight: -0.02em; 
+  --tracking-normal: 0;
+  --tracking-wide: 0.05em;
+
+  /* === Line Heights === */
+  --leading-tight: 1.1;
+  --leading-snug: 1.3;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.8;
+
+  /* === Font Sizes === */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1.05rem; 
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --text-4xl: 3rem;
+  --text-5xl: 3.75rem;
+  --text-6xl: 4.5rem;
+  --text-7xl: 5.5rem;
+  --text-8xl: 7.5rem;
+
+  /* === Spacing Scale === */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+
+  /* === Transitions === */
+  --transition-fast: 200ms ease;
+  --transition-base: 300ms ease; 
+  --transition-slow: 500ms ease;
+  --transition-slower: 800ms ease;
+
+  /* === Easing Functions === */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* === Z-Index Scale === */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+
+  /* === Border Radius === */
+  --radius-sm: 2px; /* Slight softening for "calm" feel, but mostly sharp */
+  --radius-base: 2px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 8px;
+  --radius-2xl: 12px;
+  --radius-full: 9999px; 
+
+  /* === Shadows (Subtler for dark mode) === */
+  --shadow-sm: 0 1px 2px 0 var(--shadow-color);
+  --shadow-base: 0 1px 3px 0 var(--shadow-color);
+  --shadow-md: 0 4px 6px -1px var(--shadow-color);
+  --shadow-lg: 0 10px 15px -3px var(--shadow-color);
+  --shadow-xl: 0 20px 25px -5px var(--shadow-dark);
+}
+
+/* ========================================
+   Typography Utility Classes
+   ======================================== */
+
+.heading-xl {
+  font-family: var(--font-serif);
+  font-size: clamp(3rem, 8vw, 7rem);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.heading-lg {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.heading-md {
+  font-family: var(--font-serif);
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 500;
+}
+
+.heading-sm {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-normal);
+  font-weight: 500;
+}
+
+.body-lg {
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  letter-spacing: var(--tracking-normal);
+  font-weight: 400;
+}
+
+.body-base {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-normal);
+  font-weight: 400;
+}
+
+.body-sm {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-normal);
+  font-weight: 400;
+}
+
+.caption {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* ========================================
+   Color Utility Classes
+   ======================================== */
+
+.text-olive { color: var(--editorial-olive); }
+.text-rose { color: var(--editorial-rose); }
+.text-gray { color: var(--editorial-gray); }
+.text-white { color: var(--editorial-white); }
+.text-black { color: var(--editorial-black); }
+
+.bg-editorial { background-color: var(--editorial-bg); }
+.bg-rose { background-color: var(--editorial-rose); }
+.bg-olive { background-color: var(--editorial-olive); }
+.bg-white { background-color: var(--editorial-white); }
+.bg-light { background-color: var(--editorial-light-gray); }

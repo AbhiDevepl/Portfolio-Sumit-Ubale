@@ -1,0 +1,378 @@
+/* ========================================
+   LAYOUT.CSS - Global Layout & Grid System
+   ======================================== */
+
+/* ========================================
+   Container System
+   ======================================== */
+
+.container {
+  width: 100%;
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-6);
+  padding-right: var(--space-6);
+}
+
+.container-wide {
+  width: 100%;
+  max-width: 1920px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-8);
+  padding-right: var(--space-8);
+}
+
+.container-narrow {
+  width: 100%;
+  max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-6);
+  padding-right: var(--space-6);
+}
+
+.container-full {
+  width: 100%;
+  padding-left: var(--space-6);
+  padding-right: var(--space-6);
+}
+
+/* ========================================
+   Section Spacing
+   ======================================== */
+
+.section {
+  padding-top: var(--space-24);
+  padding-bottom: var(--space-24);
+}
+
+.section-lg {
+  padding-top: var(--space-32);
+  padding-bottom: var(--space-32);
+}
+
+.section-sm {
+  padding-top: var(--space-16);
+  padding-bottom: var(--space-16);
+}
+
+/* ========================================
+   Grid System (Editorial Asymmetry)
+   ======================================== */
+
+.grid {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Asymmetric Grid Patterns */
+.grid-asymmetric-1 {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: var(--space-12);
+}
+
+.grid-asymmetric-2 {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: var(--space-12);
+}
+
+.grid-asymmetric-3 {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-10);
+}
+
+/* Gallery Grid (Masonry-style) */
+.grid-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-6);
+  align-items: start;
+}
+
+/* Portrait Grid (3:4 aspect ratio) */
+.grid-portraits {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-8);
+}
+
+/* Events Grid (Varied heights) */
+.grid-events {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-10);
+  align-items: end;
+}
+
+/* ========================================
+   Flexbox Utilities
+   ======================================== */
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-start {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.flex-end {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.flex-nowrap {
+  flex-wrap: nowrap;
+}
+
+/* Flex Gap Utilities */
+.gap-2 { gap: var(--space-2); }
+.gap-4 { gap: var(--space-4); }
+.gap-6 { gap: var(--space-6); }
+.gap-8 { gap: var(--space-8); }
+.gap-10 { gap: var(--space-10); }
+.gap-12 { gap: var(--space-12); }
+
+/* ========================================
+   Spacing Utilities
+   ======================================== */
+
+/* Margin */
+.m-0 { margin: 0; }
+.mt-4 { margin-top: var(--space-4); }
+.mt-6 { margin-top: var(--space-6); }
+.mt-8 { margin-top: var(--space-8); }
+.mt-12 { margin-top: var(--space-12); }
+.mt-16 { margin-top: var(--space-16); }
+.mt-24 { margin-top: var(--space-24); }
+
+.mb-4 { margin-bottom: var(--space-4); }
+.mb-6 { margin-bottom: var(--space-6); }
+.mb-8 { margin-bottom: var(--space-8); }
+.mb-12 { margin-bottom: var(--space-12); }
+.mb-16 { margin-bottom: var(--space-16); }
+.mb-24 { margin-bottom: var(--space-24); }
+
+.ml-auto { margin-left: auto; }
+.mr-auto { margin-right: auto; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+
+/* Padding */
+.p-0 { padding: 0; }
+.pt-4 { padding-top: var(--space-4); }
+.pt-6 { padding-top: var(--space-6); }
+.pt-8 { padding-top: var(--space-8); }
+.pt-12 { padding-top: var(--space-12); }
+.pt-16 { padding-top: var(--space-16); }
+.pt-24 { padding-top: var(--space-24); }
+
+.pb-4 { padding-bottom: var(--space-4); }
+.pb-6 { padding-bottom: var(--space-6); }
+.pb-8 { padding-bottom: var(--space-8); }
+.pb-12 { padding-bottom: var(--space-12); }
+.pb-16 { padding-bottom: var(--space-16); }
+.pb-24 { padding-bottom: var(--space-24); }
+
+/* ========================================
+   Aspect Ratio Utilities
+   ======================================== */
+
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+.aspect-portrait {
+  aspect-ratio: 3 / 4;
+}
+
+.aspect-portrait-tall {
+  aspect-ratio: 4 / 5;
+}
+
+.aspect-landscape {
+  aspect-ratio: 4 / 3;
+}
+
+.aspect-wide {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-ultra-wide {
+  aspect-ratio: 21 / 9;
+}
+
+/* ========================================
+   Positioning Utilities
+   ======================================== */
+
+.relative { position: relative; }
+.absolute { position: absolute; }
+.fixed { position: fixed; }
+.sticky { position: sticky; }
+
+.inset-0 {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+/* ========================================
+   Overflow Utilities
+   ======================================== */
+
+.overflow-hidden { overflow: hidden; }
+.overflow-auto { overflow: auto; }
+.overflow-x-hidden { overflow-x: hidden; }
+.overflow-y-auto { overflow-y: auto; }
+
+/* ========================================
+   Responsive Breakpoints
+   ======================================== */
+
+/* Mobile First Approach */
+
+/* Small devices (landscape phones, 640px and up) */
+@media (min-width: 640px) {
+  .container {
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+  
+  .grid-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+  .section {
+    padding-top: var(--space-32);
+    padding-bottom: var(--space-32);
+  }
+  
+  .grid-md-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .grid-md-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Large devices (desktops, 1024px and up) */
+@media (min-width: 1024px) {
+  .container {
+    padding-left: var(--space-12);
+    padding-right: var(--space-12);
+  }
+  
+  .grid-lg-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .grid-lg-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .grid-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+  }
+}
+
+/* Extra large devices (large desktops, 1280px and up) */
+@media (min-width: 1280px) {
+  .grid-xl-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ========================================
+   Asymmetric Whitespace Patterns
+   ======================================== */
+
+.offset-left {
+  margin-left: 10%;
+}
+
+.offset-right {
+  margin-right: 10%;
+}
+
+.offset-top {
+  margin-top: var(--space-20);
+}
+
+.offset-bottom {
+  margin-bottom: var(--space-20);
+}
+
+/* Editorial spacing - intentional imbalance */
+.editorial-spacing-1 {
+  padding-left: 8%;
+  padding-right: 15%;
+}
+
+.editorial-spacing-2 {
+  padding-left: 15%;
+  padding-right: 8%;
+}
+
+/* ========================================
+   Display Utilities
+   ======================================== */
+
+.block { display: block; }
+.inline-block { display: inline-block; }
+.inline { display: inline; }
+.hidden { display: none; }
+
+/* Responsive Display */
+@media (max-width: 767px) {
+  .hide-mobile { display: none; }
+}
+
+@media (min-width: 768px) {
+  .show-mobile { display: none; }
+}
