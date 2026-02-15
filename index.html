@@ -1,271 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- SEO Meta Tags -->
-  <title>Sumit Ubale - Photography and Films</title>
-  <meta name="description"
-    content="Award-winning editorial and portrait photographer specializing in weddings, commercial work, and curated visual storytelling.">
-  <meta name="keywords"
-    content="photographer, editorial photography, portrait photography, wedding photography, commercial photography">
-  <meta name="author" content="Sumit Ubale">
-  <!-- Open Graph Meta Tags -->
-  <meta property="og:title" content="Sumit Ubale Photography">
-  <meta property="og:description"
-    content="Editorial and portrait photographer specializing in curated visual storytelling.">
-  <meta property="og:image" content="/assets/images/og-image.jpg">
-  <meta property="og:url" content="https://supf.in">
-  <meta property="og:type" content="website">
-  <!-- Twitter Card Meta Tags -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Sumit Ubale Photography">
-  <meta name="twitter:description"
-    content="Editorial and portrait photographer specializing in curated visual storytelling.">
-  <meta name="twitter:image" content="/assets/images/og-image.jpg">
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="icon" type="image/png" href="/favicon.png">
-  <link rel="apple-touch-icon" href="/favicon.png">
-  <link rel="manifest" href="/site.webmanifest">
-  <!-- Theme Color -->
-  <meta name="theme-color" content="#F5F5F2">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sumit Ubale — Photographer & Filmmaker</title>
 
-  <!-- Preconnect and Font Loading Optimization -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://unpkg.com">
-  <link rel="preload" as="style"
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
-  <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
-    media="print" onload="this.media='all'">
-  <noscript>
-    <link rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
-  </noscript>
+    <!-- Bolt ⚡ Performance Optimization: Preconnect to external asset origins to reduce handshake latency -->
+    <link rel="preconnect" href="https://res.cloudinary.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  <!-- Preload Critical Assets -->
-  <link rel="preload" as="image"
-    href="https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771091727/IMG_Hero_peub99.webp">
+    <!-- Bolt ⚡ Performance Optimization: Preload critical data to initiate fetch before JS execution -->
+    <link rel="preload" href="/data/portfolio.json" as="fetch" crossorigin>
 
-  <!-- CSS Files (in order) -->
-  <link rel="stylesheet" href="/styles/theme.css">
-  <link rel="stylesheet" href="/styles/base.css">
-  <link rel="stylesheet" href="/styles/layout.css">
-  <link rel="stylesheet" href="/styles/components.css">
-  <link rel="stylesheet" href="/styles/animations.css">
-  <link rel="stylesheet" href="/styles/loader.css">
-  <link rel="stylesheet" href="/styles/lightbox-video.css">
-  <!-- Global Color System (Must load before body render) -->
-  <script src="/scripts/colors.js"></script>
+    <!-- Preload Critical Fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" as="style">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles/theme.css">
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/layout.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/loader.css">
 </head>
-
-<body id="home">
-  <!-- Page Loader -->
-  <div id="page-loader">
-    <div class="loader-content">
-      <div class="loader-logo">Sumit Ubale</div>
-      <div class="loader-progress-bar">
-        <div class="loader-progress-fill"></div>
-      </div>
-    </div>
-  </div>
-  <!-- Skip to Main Content (Accessibility) -->
-  <a href="#main" class="skip-to-main">Skip to main content</a>
-  <!-- Navigation -->
-  <nav class="nav" role="navigation" aria-label="Main navigation">
-    <div class="nav-container">
-      <a href="/" class="nav-logo" aria-label="Home">SUMIT UBALE</a>
-      <div class="nav-menu">
-        <a href="#portfolio" class="nav-link">Everything</a>
-        <a href="pages/albums.html?s=all" class="nav-link">Albums</a>
-        <a href="#about" class="nav-link">About</a>
-        <a href="#contact" class="nav-cta">Enquire</a>
-      </div>
-      <!-- Mobile Menu Toggle -->
-      <button class="nav-toggle" aria-label="Toggle navigation">
-        <span class="nav-toggle-line"></span>
-        <span class="nav-toggle-line"></span>
-      </button>
-    </div>
-  </nav>
-  <!-- Mobile Menu Overlay -->
-  <div class="mobile-menu">
-    <div class="mobile-menu-container">
-      <nav class="mobile-nav">
-        <a href="#home" class="mobile-nav-link">Home <span class="mobile-nav-num">01</span></a>
-        <a href="#portfolio" class="mobile-nav-link">Portfolio <span class="mobile-nav-num">04</span></a>
-        <a href="pages/albums.html" class="mobile-nav-link">Albums <span class="mobile-nav-num">05</span></a>
-        <a href="#about" class="mobile-nav-link">About <span class="mobile-nav-num">06</span></a>
-        <a href="#contact" class="mobile-nav-link">Enquire <span class="mobile-nav-num">07</span></a>
-      </nav>
-      <div class="mobile-menu-footer">
-        <p class="mobile-menu-text">Based in Shrigonda Maharashtra India</p>
-        <div class="mobile-social">
-          <a href="#" class="mobile-social-link">IG</a>
-          <a href="#" class="mobile-social-link">FB</a>
-          <a href="#" class="mobile-social-link">TW</a>
+<body class="loading">
+    <!-- Preloader -->
+    <div id="page-loader" class="loader-wrapper">
+        <div class="loader-content">
+            <span class="loader-text">Sumit Ubale</span>
+            <div class="loader-bar"></div>
         </div>
-      </div>
     </div>
-  </div>
-  <!-- Hero Section -->
-  <section class="hero" id="home">
-    <div class="hero-media-wrapper">
-      <video class="hero-video" autoplay muted loop playsinline preload="none"
-        poster="https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771091727/IMG_Hero_peub99.webp"
-        data-src="https://res.cloudinary.com/portfolio-sumit-ubale/video/upload/v1/hero-video.mp4">
-      </video>
-      <div class="hero-overlay"></div>
-    </div>
-    <div class="hero-content">
-      <h1 class="hero-title">SUMIT<br>UBALE</h1>
-      <p class="hero-subtitle">Photographer & Filmmaker</p>
-    </div>
-    <div class="hero-scroll-cue scroll-indicator" aria-hidden="true">Scroll</div>
-  </section>
-  <!-- About Section -->
-  <section class="about section" id="about">
-    <div class="container">
-      <div class="about-grid">
-        <div class="about-image-wrapper">
-          <img src="https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771140026/About_ckm79s.jpg"
-            alt="Sumit Ubale - Photographer portrait" class="about-image" width="600" height="800">
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">SUMIT UBALE</a>
+            <div class="nav-links">
+                <a href="/#work" class="nav-link">EVERYTHING</a>
+                <a href="/pages/albums.html" class="nav-link">ALBUMS</a>
+                <a href="/#about" class="nav-link">ABOUT</a>
+                <a href="/#contact" class="btn btn-outline">ENQUIRE</a>
+            </div>
+            <button class="nav-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+            </button>
         </div>
+    </nav>
 
-        <div class="about-content">
-          <h2 class="about-heading">Crafting Timeless Visual Narratives</h2>
+    <main data-scroll-container>
+        <!-- Hero Section -->
+        <section class="hero" id="home">
+            <div class="hero-bg">
+                <img src="https://res.cloudinary.com/dfm8v997j/image/upload/v1740294157/SumitUbale/Hero/IMG_Hero_mxyvlp.webp" alt="" class="hero-img">
+                <div class="hero-overlay"></div>
+            </div>
+            <div class="hero-content container">
+                <h1 class="hero-title">
+                    <span class="line-1">SUMIT</span>
+                    <span class="line-2">UBALE</span>
+                </h1>
+                <p class="hero-subtitle stagger-reveal">Photographer & Filmmaker</p>
+                <div class="hero-scroll">
+                    <span class="scroll-text">SCROLL</span>
+                    <div class="scroll-line"></div>
+                </div>
+            </div>
+        </section>
 
-          <p class="about-text">
-            With over a decade of experience in editorial and portrait photography,
-            I bring a refined artistic vision and technical expertise to every project,
-            creating timeless and evocative imagery that tells meaningful stories.
-          </p>
+        <!-- Featured Work / Categories -->
+        <section class="work-categories container section-padding" id="work">
+            <div class="section-header">
+                <span class="section-tag">PORTFOLIO</span>
+                <h2 class="section-title">Selected Stories</h2>
+            </div>
 
-          <p class="about-text">
-            My work has been featured in prominent publications, and I have had the
-            privilege of collaborating with distinguished clients worldwide — from
-            intimate weddings to high-fashion editorial campaigns.
-          </p>
+            <div class="categories-grid">
+                <a href="/pages/gallery.html?category=weddings" class="category-card" data-category="weddings">
+                    <div class="card-image">
+                        <img src="https://res.cloudinary.com/dfm8v997j/image/upload/v1740294165/SumitUbale/Categories/Wedding_fujmre.webp" alt="Weddings">
+                    </div>
+                    <div class="card-content">
+                        <h3>WEDDINGS</h3>
+                        <span class="view-all">View Gallery</span>
+                    </div>
+                </a>
 
-          <p class="about-text">
-            Each assignment is approached with precision, creativity, and a commitment
-            to authenticity, ensuring that every captured moment leaves a lasting impression.
-          </p>
-        </div>
-      </div>
-    </div>
-    </div>
-    </div>
-  </section>
+                <a href="/pages/gallery.html?category=cinematics" class="category-card" data-category="cinematics">
+                    <div class="card-image">
+                        <img src="https://res.cloudinary.com/dfm8v997j/image/upload/v1740294162/SumitUbale/Categories/Cinematic_zrq3k0.webp" alt="Cinematics">
+                    </div>
+                    <div class="card-content">
+                        <h3>CINEMATICS</h3>
+                        <span class="view-all">View Gallery</span>
+                    </div>
+                </a>
 
-  <!-- Portfolio Section -->
-  <section class="portfolio section" id="portfolio">
-    <div class="container">
-      <div class="portfolio-header">
-        <h2 class="portfolio-title">Portfolio</h2>
+                <a href="/pages/gallery.html?category=events" class="category-card" data-category="events">
+                    <div class="card-image">
+                        <img src="https://res.cloudinary.com/dfm8v997j/image/upload/v1740294163/SumitUbale/Categories/Events_u0yevn.webp" alt="Events">
+                    </div>
+                    <div class="card-content">
+                        <h3>EVENTS</h3>
+                        <span class="view-all">View Gallery</span>
+                    </div>
+                </a>
 
-        <!-- Category Filter -->
-        <div class="portfolio-categories" role="tablist" aria-label="Portfolio categories">
-          <button class="category-btn active" data-category="all" role="tab" aria-selected="true">All</button>
-          <button class="category-btn" data-category="weddings" role="tab" aria-selected="false">Weddings</button>
-          <button class="category-btn" data-category="engagement" role="tab" aria-selected="false">Engagement</button>
-          <button class="category-btn" data-category="haldi" role="tab" aria-selected="false">Haldi</button>
-          <button class="category-btn" data-category="maternity" role="tab" aria-selected="false">Maternity</button>
-          <button class="category-btn" data-category="cinematics" role="tab" aria-selected="false">Cinematics</button>
-          <button class="category-btn" data-category="pre-wedding-photos-and-videos" role="tab"
-            aria-selected="false">Pre-Wedding</button>
-          <button class="category-btn" data-category="portraits" role="tab" aria-selected="false">Portraits</button>
-          <!-- <button class="category-btn" data-category="commercial" role="tab" aria-selected="false">Commercial</button>
-          <button class="category-btn" data-category="events" role="tab" aria-selected="false">Events</button> -->
-        </div>
-      </div>
+                <a href="/pages/gallery.html?category=portraits" class="category-card" data-category="portraits">
+                    <div class="card-image">
+                        <img src="https://res.cloudinary.com/dfm8v997j/image/upload/v1740294164/SumitUbale/Categories/Portrait_tuzjty.webp" alt="Portraits">
+                    </div>
+                    <div class="card-content">
+                        <h3>PORTRAITS</h3>
+                        <span class="view-all">View Gallery</span>
+                    </div>
+                </a>
+            </div>
+        </section>
 
-      <!-- Gallery Grid -->
-      <div class="gallery-grid" id="gallery-grid" role="region" aria-label="Photography gallery">
-        <!-- Gallery items will be dynamically loaded from portfolio.json -->
-      </div>
+        <!-- About Section -->
+        <section class="about section-padding" id="about">
+            <div class="container">
+                <div class="about-grid">
+                    <div class="about-image">
+                        <img src="https://res.cloudinary.com/dfm8v997j/image/upload/v1740294161/SumitUbale/About/IMG_About_q45n94.webp" alt="Sumit Ubale">
+                    </div>
+                    <div class="about-content">
+                        <span class="section-tag">THE ARTIST</span>
+                        <h2 class="section-title">Capturing moments that last forever.</h2>
+                        <div class="about-text">
+                            <p>I believe every person and every event has a unique story to tell. My goal is to capture that story through my lens, preserving the emotions, the details, and the magic of the moment.</p>
+                            <p>Based in Mumbai, working worldwide. Specializing in lifestyle, wedding, and cinematic storytelling.</p>
+                        </div>
+                        <div class="about-stats">
+                            <div class="stat-item">
+                                <span class="stat-number">500+</span>
+                                <span class="stat-label">Events Covered</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">50+</span>
+                                <span class="stat-label">Awards Won</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-      <!-- Learn More Button -->
-      <div class="portfolio-more" id="portfolio-more" style="display: none;">
-        <button class="learn-more-btn" id="load-more-btn">Learn More</button>
-      </div>
-    </div>
-  </section>
-  <!-- Contact Section -->
-  <section class="contact section" id="contact">
-    <div class="container">
-      <div class="contact-container">
-        <h2 class="contact-title">Let's Work Together</h2>
-        <p class="contact-subtitle">
-          Have a project in mind? I'd love to hear about it.
-          Fill out the form below and I'll get back to you within 24 hours.
-        </p>
+        <!-- Contact Section -->
+        <section class="contact section-padding" id="contact">
+            <div class="container">
+                <div class="contact-header text-center">
+                    <h2 class="section-title">Let's Create Together</h2>
+                    <p class="contact-subtitle">Now booking for 2024 & 2025</p>
+                </div>
 
-        <!-- Contact Form -->
-        <form method="post" action="https://formsubmit.co/sumitubale5050@gmail.com" class="contact-form"
-          id="contact-form" novalidate>
-          <div class="form-group">
-            <label for="name" class="form-label">Name</label>
-            <input type="text" id="name" name="name" class="form-input" required autocomplete="name">
-          </div>
+                <div class="contact-grid">
+                    <div class="contact-info">
+                        <div class="info-item">
+                            <h4>EMAIL</h4>
+                            <p><a href="mailto:sumit@example.com">sumit@example.com</a></p>
+                        </div>
+                        <div class="info-item">
+                            <h4>PHONE</h4>
+                            <p><a href="tel:+919876543210">+91 98765 43210</a></p>
+                        </div>
+                        <div class="info-item">
+                            <h4>SOCIAL</h4>
+                            <div class="social-links">
+                                <a href="#" target="_blank">Instagram</a>
+                                <a href="#" target="_blank">YouTube</a>
+                            </div>
+                        </div>
+                    </div>
 
-          <div class="form-group">
-            <label for="email" class="form-label">Email</label>
-            <input type="email" id="email" name="email" class="form-input" required autocomplete="email">
-          </div>
+                    <form id="contact-form" class="contact-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <input type="text" id="name" name="name" placeholder="Your Name" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="email" id="email" name="email" placeholder="Your Email" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <select id="interest" name="interest">
+                                <option value="" disabled selected>Interested In</option>
+                                <option value="wedding">Wedding Photography</option>
+                                <option value="cinematic">Cinematic Video</option>
+                                <option value="portrait">Portraits</option>
+                                <option value="event">Corporate/Events</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="message" name="message" placeholder="Tell me about your project" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">SEND MESSAGE</button>
+                    </form>
+                </div>
+            </div>
+        </section>
 
-          <div class="form-group">
-            <label for="message" class="form-label">Message</label>
-            <textarea id="message" name="message" class="form-textarea" required rows="6"></textarea>
-          </div>
+        <footer class="footer">
+            <div class="container">
+                <div class="footer-top">
+                    <a href="/" class="footer-logo">SUMIT UBALE</a>
+                    <div class="footer-nav">
+                        <a href="#home">HOME</a>
+                        <a href="#work">WORK</a>
+                        <a href="#about">ABOUT</a>
+                        <a href="/pages/albums.html">ALBUMS</a>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p class="copyright">&copy; 2024 Sumit Ubale. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+    </main>
 
-          <button type="submit" class="form-submit">Send Message</button>
-        </form>
+    <!-- Scripts -->
+    <script src="https://unpkg.com/gsap@3.12.2/dist/gsap.min.js"></script>
+    <script src="https://unpkg.com/gsap@3.12.2/dist/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/lenis@1.0.45/dist/lenis.min.js"></script>
 
-        <!-- Social Links -->
-        <div class="contact-social">
-          <a href="https://www.instagram.com/sumit_ubale_photography/" class="social-link" target="_blank"
-            rel="noopener noreferrer">Instagram</a>
-          <a href="mailto:sumitubale5050@gmail.com" class="social-link">Email</a>
-          <a href="tel:+919552265951" class="social-link">Phone</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer class="footer" role="contentinfo">
-    <div class="container">
-      <p class="footer-text">
-        &copy; <span id="year"></span> Sumit Ubale Photography. All rights reserved.
-      </p>
-    </div>
-  </footer>
-
-  <!-- External Libraries (CDN) -->
-  <script src="https://unpkg.com/gsap@3/dist/gsap.min.js" defer></script>
-  <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js" defer></script>
-  <script src="https://unpkg.com/@studio-freight/lenis@1.0.29/dist/lenis.min.js" defer></script>
-
-  <!-- Optimization: Unified Script Bundle -->
-  <script src="/scripts/core.js" defer></script>
-  <script src="/scripts/gsap-init.js" defer></script>
-  <script src="/scripts/smooth-scroll.js" defer></script>
-  <script src="/scripts/hero.js" defer></script>
-  <script src="/scripts/sections.js" defer></script>
-  <script src="/scripts/gallery.js" defer></script>
-  <script src="/scripts/navigation.js" defer></script>
-  <script src="/scripts/contact.js" defer></script>
-  <script src="/scripts/content-loader.js" defer></script>
-  <script src="/scripts/loader.js" defer></script>
-
-  <!-- Set current year in footer -->
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-  </script>
+    <script src="scripts/core.js"></script>
+    <script src="scripts/smooth-scroll.js"></script>
+    <script src="scripts/loader.js"></script>
+    <script src="scripts/content-loader.js"></script>
 </body>
-
 </html>
