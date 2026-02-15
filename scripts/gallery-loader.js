@@ -107,6 +107,16 @@ class GalleryLoader {
       media.className = 'gallery-image';
       if (image.poster) media.poster = image.poster;
       
+      // Add play icon overlay
+      const playOverlay = document.createElement('div');
+      playOverlay.className = 'gallery-video-play-icon';
+      playOverlay.innerHTML = `
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="white">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      `;
+      item.appendChild(playOverlay);
+      
       // Add loaded class for videos immediately
       requestAnimationFrame(() => {
         media.classList.add('loaded');
@@ -166,33 +176,57 @@ class GalleryLoader {
     // If GSAP is not loaded (e.g., CDN blocked), skip animations instead of throwing.
     if (!hasGsap) {
       console.warn('GalleryLoader: GSAP not available, skipping animations.');
+      document.querySelectorAll('.reveal-item').forEach(el => el.style.opacity = 1);
       return;
     }
 
-    window.gsap.from('.stagger-reveal', {
-      opacity: 0,
-      y: 20,
-      duration: 0.8,
-      stagger: 0.1,
-      ease: 'power2.out'
-    });
+    // Brief delay to ensure DOM layout is settled before initializing ScrollTrigger
+    setTimeout(() => {
+      window.gsap.from('.stagger-reveal', {
+        opacity: 0,
+        y: 20,
+        duration: 0.8,
+        stagger: 0.1,
+        ease: 'power2.out',
+        clearProps: 'all' // Ensure clean state after animation
+      });
 
-    window.gsap.from('.gallery-item', {
-      opacity: 0,
-      scale: 0.9,
-      duration: 0.6,
-      stagger: 0.05,
-      ease: 'power2.out',
-      scrollTrigger: hasScrollTrigger ? {
-        trigger: '#gallery-grid',
-        start: 'top 85%'
-      } : undefined
-    });
+      if (hasScrollTrigger) {
+        // Use batch() for better performance with many items and reliable triggering
+        ScrollTrigger.batch('.gallery-item', {
+          start: 'top 95%', // Trigger slightly earlier
+          onEnter: batch => gsap.to(batch, {
+            opacity: 1,
+            scale: 1,
+            duration: 0.6,
+            stagger: 0.05,
+            ease: 'power2.out',
+            overwrite: true
+          }),
+          onEnterBack: batch => gsap.to(batch, { opacity: 1, scale: 1, overwrite: true }) // Keep visible when scrolling back
+        });
+        
+        ScrollTrigger.refresh();
+      } else {
+        // Fallback if ScrollTrigger is missing
+        window.gsap.to('.gallery-item', {
+          opacity: 1,
+          scale: 1,
+          duration: 0.6,
+          stagger: 0.05,
+          ease: 'power2.out'
+        });
+      }
+      
+      // Force loader removal just in case
+      document.body.classList.remove('loading');
+    }, 100);
   }
 
   handleError(error) {
     const grid = document.getElementById('gallery-grid');
     if (grid) grid.innerHTML = `<div class="error-msg">Failed to load gallery: ${error.message}</div>`;
+    document.body.classList.remove('loading');
   }
 }
 
