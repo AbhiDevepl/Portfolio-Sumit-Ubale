@@ -1,131 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gallery - Sumit Ubale Photography</title>
+    <title>Gallery — Sumit Ubale Photography</title>
 
-    <link rel="stylesheet" href="/styles/theme.css">
-    <link rel="stylesheet" href="/styles/base.css">
-    <link rel="stylesheet" href="/styles/layout.css">
-    <link rel="stylesheet" href="/styles/components.css">
-    <link rel="stylesheet" href="/styles/animations.css">
-    <link rel="stylesheet" href="/styles/loader.css">
-    <link rel="stylesheet" href="/styles/lightbox-video.css">
+    <!-- Bolt ⚡ Performance Optimization: Preconnect to external asset origins to reduce handshake latency -->
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://res.cloudinary.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <style>
-        .gallery-page {
-            padding-top: var(--space-32);
-            padding-bottom: var(--space-20);
-        }
+    <!-- Bolt ⚡ Performance Optimization: Preload critical data to initiate fetch before JS execution -->
+    <link rel="preload" href="/data/portfolio.json" as="fetch" crossorigin>
 
-        .gallery-header {
-            text-align: center;
-            margin-bottom: var(--space-16);
-        }
+    <!-- Bolt ⚡ Performance Optimization: Non-blocking CSS loading for fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" as="style">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" media="print" onload="this.media='all'">
 
-        .gallery-category-title {
-            font-size: var(--text-4xl);
-            margin-bottom: var(--space-4);
-            text-transform: uppercase;
-            letter-spacing: var(--tracking-wide);
-        }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: var(--space-8);
-            color: var(--text-secondary);
-            font-family: var(--font-sans);
-            text-transform: uppercase;
-            letter-spacing: var(--tracking-widest);
-            font-size: var(--text-xs);
-            transition: color var(--transition-base);
-        }
-
-        .back-link:hover {
-            color: var(--text-primary);
-        }
-
-        /* Reusing gallery grid styles but on a separate page */
-        .full-gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: var(--space-6);
-        }
-
-        @media (max-width: 768px) {
-            .full-gallery-grid {
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-                gap: var(--space-4);
-            }
-        }
-    </style>
-
-    <!-- Global Color System -->
-    <script src="/scripts/colors.js"></script>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/base.css">
+    <link rel="stylesheet" href="../styles/layout.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/loader.css">
+    <link rel="stylesheet" href="../styles/gallery.css">
 </head>
-
 <body class="loading">
-    <!-- Page Loader -->
-    <div id="page-loader">
+    <!-- Preloader -->
+    <div id="page-loader" class="loader-wrapper">
         <div class="loader-content">
-            <div class="loader-logo">Sumit Ubale</div>
-            <div class="loader-progress-bar">
-                <div class="loader-progress-fill"></div>
-            </div>
+            <span class="loader-text">Sumit Ubale</span>
+            <div class="loader-bar"></div>
         </div>
     </div>
 
-    <!-- Navigation -->
-    <nav class="nav" id="main-nav"></nav>
+    <nav class="nav nav-dark">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">SUMIT UBALE</a>
+            <div class="nav-links">
+                <a href="/#work" class="nav-link">EVERYTHING</a>
+                <a href="/pages/albums.html" class="nav-link">ALBUMS</a>
+                <a href="/#about" class="nav-link">ABOUT</a>
+                <a href="/#contact" class="btn btn-outline">ENQUIRE</a>
+            </div>
+            <button class="nav-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
 
-    <main id="gallery-root">
-        <section class="gallery-page section">
+    <main data-scroll-container>
+        <section class="gallery-hero section-padding">
             <div class="container">
-                <div class="gallery-header">
-                    <a href="/#portfolio" class="back-link stagger-reveal">
-                        <span>&larr;</span> Back to Portfolio
-                    </a>
-                    <h1 class="gallery-category-title stagger-reveal" id="category-title">Gallery</h1>
+                <div class="gallery-controls">
+                    <h1 id="gallery-title" class="section-title">Portfolio</h1>
 
-                    <!-- Category Filter for Gallery Page -->
-                    <div class="portfolio-categories stagger-reveal" id="gallery-categories" role="tablist"
-                        aria-label="Portfolio categories">
-                        <!-- Categories will be injected here -->
+                    <div class="filter-group">
+                        <button class="filter-btn active" data-category="all">All</button>
+                        <button class="filter-btn" data-category="weddings">Weddings</button>
+                        <button class="filter-btn" data-category="cinematics">Cinematics</button>
+                        <button class="filter-btn" data-category="portraits">Portraits</button>
+                        <button class="filter-btn" data-category="events">Events</button>
                     </div>
                 </div>
-
-                <div class="full-gallery-grid" id="gallery-grid">
-                    <!-- Media will be injected here -->
-                </div>
             </div>
         </section>
 
-        <!-- CTA Section -->
-        <section class="section service-cta">
+        <section class="gallery-grid-section container pb-100">
+            <div id="main-gallery" class="gallery-grid">
+                <!-- Dynamically populated -->
+            </div>
+        </section>
+
+        <footer class="footer">
             <div class="container">
-                <div class="cta-box">
-                    <h2 class="heading-lg">Ready to capture your story?</h2>
-                    <p class="body-lg">Let's create something timeless together.</p>
-                    <a href="/#contact" class="btn-cta">Enquire Now</a>
+                <div class="footer-top">
+                    <a href="/" class="footer-logo">SUMIT UBALE</a>
+                    <div class="footer-nav">
+                        <a href="/">HOME</a>
+                        <a href="/#work">WORK</a>
+                        <a href="/#about">ABOUT</a>
+                        <a href="/pages/albums.html">ALBUMS</a>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p class="copyright">&copy; 2024 Sumit Ubale. All rights reserved.</p>
                 </div>
             </div>
-        </section>
+        </footer>
     </main>
 
-    <footer class="footer" id="main-footer"></footer>
-
     <!-- Scripts -->
-    <script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
-    <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js"></script>
-    <script src="/scripts/core.js"></script>
-    <script src="/scripts/gallery-loader.js"></script>
-    <script src="/scripts/navigation.js"></script>
-    <script src="/scripts/loader.js"></script>
+    <script src="https://unpkg.com/gsap@3.12.2/dist/gsap.min.js"></script>
+    <script src="https://unpkg.com/gsap@3.12.2/dist/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/lenis@1.0.45/dist/lenis.min.js"></script>
 
+    <script src="../scripts/core.js"></script>
+    <script src="../scripts/smooth-scroll.js"></script>
+    <script src="../scripts/loader.js"></script>
+    <script src="../scripts/gallery-loader.js"></script>
 </body>
-
 </html>

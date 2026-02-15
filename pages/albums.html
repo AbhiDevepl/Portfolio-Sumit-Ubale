@@ -1,156 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Albums - Sumit Ubale Photography</title>
+    <title>Albums — Sumit Ubale Photography</title>
 
+    <!-- Bolt ⚡ Performance Optimization: Preconnect to external asset origins to reduce handshake latency -->
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://res.cloudinary.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style"
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
-        media="print" onload="this.media='all'">
-    <noscript>
-        <link rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
-    </noscript>
 
-    <link rel="stylesheet" href="/styles/theme.css">
-    <link rel="stylesheet" href="/styles/base.css">
-    <link rel="stylesheet" href="/styles/layout.css">
-    <link rel="stylesheet" href="/styles/components.css">
-    <link rel="stylesheet" href="/styles/animations.css">
-    <link rel="stylesheet" href="/styles/loader.css">
+    <!-- Bolt ⚡ Performance Optimization: Preload critical data to initiate fetch before JS execution -->
+    <link rel="preload" href="/data/portfolio.json" as="fetch" crossorigin>
 
-    <style>
-        .albums-page {
-            padding-top: var(--space-32);
-            padding-bottom: var(--space-20);
-        }
+    <!-- Preload Critical Fonts -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" as="style">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
 
-        .albums-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: var(--space-10);
-            margin-top: var(--space-16);
-        }
-
-        .album-card {
-            position: relative;
-            aspect-ratio: 4 / 5;
-            overflow: hidden;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            background-color: var(--bg-surface);
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            transition: transform var(--transition-base);
-        }
-
-        .album-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .album-image {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            filter: brightness(0.7);
-            transition: transform var(--transition-slower), filter var(--transition-base);
-        }
-
-        .album-card:hover .album-image {
-            transform: scale(1.05);
-            filter: brightness(0.9);
-        }
-
-        .album-content {
-            position: relative;
-            z-index: 2;
-            padding: var(--space-8);
-            text-align: center;
-        }
-
-        .album-title {
-            font-family: var(--font-serif);
-            font-size: var(--text-3xl);
-            color: var(--text-primary);
-            margin-bottom: var(--space-4);
-            text-transform: uppercase;
-            letter-spacing: var(--tracking-wide);
-        }
-
-        .album-learn-more {
-            display: inline-block;
-            padding: var(--space-2) var(--space-8);
-            border: 1px solid var(--text-primary);
-            border-radius: var(--radius-full);
-            font-family: var(--font-sans);
-            font-size: var(--text-xs);
-            text-transform: uppercase;
-            letter-spacing: var(--tracking-widest);
-            color: var(--text-primary);
-            transition: all var(--transition-base);
-        }
-
-        .album-card:hover .album-learn-more {
-            background-color: var(--text-primary);
-            color: var(--bg-primary);
-        }
-
-        @media (max-width: 768px) {
-            .albums-grid {
-                grid-template-columns: 1fr;
-                gap: var(--space-6);
-            }
-        }
-    </style>
-
-    <script src="/scripts/colors.js"></script>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/base.css">
+    <link rel="stylesheet" href="../styles/layout.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/loader.css">
+    <link rel="stylesheet" href="../styles/albums.css">
 </head>
-
 <body class="loading">
-    <div id="page-loader">
+    <!-- Preloader -->
+    <div id="page-loader" class="loader-wrapper">
         <div class="loader-content">
-            <div class="loader-logo">Sumit Ubale</div>
-            <div class="loader-progress-bar">
-                <div class="loader-progress-fill"></div>
-            </div>
+            <span class="loader-text">Sumit Ubale</span>
+            <div class="loader-bar"></div>
         </div>
     </div>
 
-    <nav class="nav" id="main-nav"></nav>
+    <nav class="nav nav-dark">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">SUMIT UBALE</a>
+            <div class="nav-links">
+                <a href="/#work" class="nav-link">EVERYTHING</a>
+                <a href="/pages/albums.html" class="nav-link active">ALBUMS</a>
+                <a href="/#about" class="nav-link">ABOUT</a>
+                <a href="/#contact" class="btn btn-outline">ENQUIRE</a>
+            </div>
+            <button class="nav-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
 
-    <main>
-        <section class="albums-page section">
+    <main data-scroll-container>
+        <section class="albums-hero section-padding">
             <div class="container">
-                <div class="section-header" style="text-align: center;">
-                    <h1 class="heading-xl stagger-reveal">Our Albums</h1>
-                    <p class="body-lg stagger-reveal" style="max-width: 600px; margin: 0 auto;">
-                        Explore our categorized collections of moments captured in time.
-                    </p>
-                </div>
-
-                <div class="albums-grid" id="albums-grid">
-                    <!-- Albums will be injected here -->
-                </div>
+                <span class="section-tag stagger-reveal">GALLERIES</span>
+                <h1 class="section-title stagger-reveal">Our Albums</h1>
+                <p class="section-subtitle stagger-reveal">A collection of stories told through the lens.</p>
             </div>
         </section>
+
+        <section class="albums-grid-section container pb-100">
+            <div id="albums-grid" class="albums-grid">
+                <!-- Dynamically populated -->
+                <div class="loader-placeholder">Loading albums...</div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="container">
+                <div class="footer-top">
+                    <a href="/" class="footer-logo">SUMIT UBALE</a>
+                    <div class="footer-nav">
+                        <a href="/">HOME</a>
+                        <a href="/#work">WORK</a>
+                        <a href="/#about">ABOUT</a>
+                        <a href="/pages/albums.html">ALBUMS</a>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p class="copyright">&copy; 2024 Sumit Ubale. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
     </main>
 
-    <footer class="footer" id="main-footer"></footer>
+    <!-- Scripts -->
+    <script src="https://unpkg.com/gsap@3.12.2/dist/gsap.min.js"></script>
+    <script src="https://unpkg.com/gsap@3.12.2/dist/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/lenis@1.0.45/dist/lenis.min.js"></script>
 
-    <script src="https://unpkg.com/gsap@3/dist/gsap.min.js" defer></script>
-    <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js" defer></script>
-    <script src="/scripts/album-loader.js" defer></script>
-    <script src="/scripts/navigation.js" defer></script>
-    <script src="/scripts/loader.js" defer></script>
+    <script src="../scripts/core.js"></script>
+    <script src="../scripts/smooth-scroll.js"></script>
+    <script src="../scripts/loader.js"></script>
+    <script src="../scripts/album-loader.js"></script>
 </body>
-
 </html>
