@@ -4,6 +4,12 @@
 
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
+  const heroVideo = document.querySelector('.hero-video');
+  if (heroVideo && window.Core && window.Core.VideoObserver) {
+    window.Core.VideoObserver.observe(heroVideo);
+  }
+  
+  // Animate hero content
   const hero = document.querySelector('.hero');
   if (!hero) return;
 

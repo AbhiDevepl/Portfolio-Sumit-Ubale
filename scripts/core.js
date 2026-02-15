@@ -279,58 +279,88 @@ window.Core = {
 
       const isVid = item.type === 'video';
       
-      // Show loading state
-      if (isVid) {
-        loadingEl.style.display = 'flex';
-      }
-      
-      // Gracefully skip animation if GSAP isn't available
-      const hasGsap = typeof window !== 'undefined' && window.gsap;
-      const fadeOut = (targets, onComplete) => {
-        if (!hasGsap) {
-          if (typeof onComplete === 'function') onComplete();
-          return;
-        }
-        window.gsap.to(targets, { opacity: 0, duration: 0.15, onComplete });
-      };
+      // Reset states
+      imgEl.style.opacity = '0';
+      vidWrapper.style.opacity = '0';
+      loadingEl.style.display = 'none';
 
-      const fadeIn = (target) => {
-        if (!hasGsap) return;
-        window.gsap.to(target, { opacity: 1, duration: 0.15 });
-      };
-
-      fadeOut([imgEl, vidWrapper], () => {
+      // Slight delay to allow transition visibility
+      requestAnimationFrame(() => {
         if (isVid) {
+          loadingEl.style.display = 'flex';
           imgEl.style.display = 'none';
           vidWrapper.style.display = 'block';
+          
           vidEl.src = item.src;
           vidEl.muted = false;
           vidEl.volume = 1;
+
+          // Event listeners with cleanup would be ideal, but for simplicity:
+          const onCanPlay = () => {
+             loadingEl.style.display = 'none';
+             vidWrapper.style.opacity = '1';
+             vidEl.play().catch(e => console.warn('Autoplay prevented:', e));
+          };
           
-          // When video can play, hide loading and play
-          vidEl.addEventListener('canplay', () => {
-            loadingEl.style.display = 'none';
-            vidEl.play();
-            fadeIn(vidWrapper);
-          }, { once: true });
-          
-          // Handle loading errors
-          vidEl.addEventListener('error', () => {
-            loadingEl.style.display = 'none';
-            console.error('Error loading video:', item.src);
-          }, { once: true });
-          
+          vidEl.oncanplay = onCanPlay;
+          // If already ready (cached)
+          if (vidEl.readyState >= 3) onCanPlay();
+
+          vidEl.onerror = () => {
+             loadingEl.style.display = 'none';
+             console.error('Error loading video');
+          };
+
         } else {
           vidWrapper.style.display = 'none';
           vidEl.pause();
-          vidEl.src = '';
+          vidEl.src = ''; // Unload video
+          
           imgEl.style.display = 'block';
           imgEl.src = item.src;
-          loadingEl.style.display = 'none';
-          fadeIn(imgEl);
+          
+          imgEl.onload = () => { imgEl.style.opacity = '1'; };
+          if (imgEl.complete) imgEl.style.opacity = '1';
         }
+        
         capEl.innerHTML = `<h3>${item.title || ''}</h3><p>${item.category || ''}</p>`;
       });
+    }
+  },
+
+  /**
+   * INTERSECTION OBSERVER ENGINE
+   * Handles scroll-based pausing and lazy loading
+   */
+  VideoObserver: {
+    observer: null,
+    
+    init() {
+      if (this.observer) return;
+      
+      this.observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          const video = entry.target;
+          
+          // Lazy Load
+          if (entry.isIntersecting) {
+            if (video.dataset.src && !video.src) {
+              video.src = video.dataset.src;
+              video.load();
+            }
+          }
+          
+          // Auto Pause when out of view
+          if (!entry.isIntersecting && !video.paused) {
+            video.pause();
+          }
+        });
+      }, { rootMargin: '50px 0px', threshold: 0.1 });
+    },
+    
+    observe(video) {
+      if (!this.observer) this.init();
+      this.observer.observe(video);
     }
   },
 
@@ -343,12 +373,15 @@ window.Core = {
 
       const parent = videoElement.closest('.gallery-item');
       if (!parent) return;
+      
+      // Register with Observer for lazy loading/auto-pause
+      if (window.Core.VideoObserver) {
+         window.Core.VideoObserver.observe(videoElement);
+      }
 
       const play = () => {
-        // Stop all other videos first
         this.stopAllVideos(videoElement);
         
-        // Only load src from data-src if not already loaded
         if (videoElement.dataset.src && !videoElement.src) {
           videoElement.src = videoElement.dataset.src;
         }
@@ -359,31 +392,25 @@ window.Core = {
         videoElement.pause();
         videoElement.currentTime = 0;
       };
-
-      parent.addEventListener('mouseenter', play);
-      parent.addEventListener('mouseleave', stop);
-      parent.addEventListener('touchstart', play, { passive: true });
       
-      // Click/touch to play/pause (toggle)
+      // Touch/Click interaction
       parent.addEventListener('click', (e) => {
-        // Don't toggle if clicking overlay to open lightbox
         if (e.target.closest('.gallery-overlay')) return;
-        
-        if (videoElement.paused) {
-          play();
-        } else {
-          stop();
-        }
+        videoElement.paused ? play() : stop();
       });
+      
+      // Desktop Hover
+      const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      if (!isTouch) {
+          parent.addEventListener('mouseenter', play);
+          parent.addEventListener('mouseleave', stop);
+      }
     },
     
-    // Stop all videos except the current one
     stopAllVideos(currentVideo) {
-      const allVideos = document.querySelectorAll('.gallery-item video');
-      allVideos.forEach(video => {
-        if (video !== currentVideo && !video.paused) {
+      document.querySelectorAll('video').forEach(video => {
+        if (video !== currentVideo && !video.paused && !video.closest('#lightbox')) {
           video.pause();
-          video.currentTime = 0;
         }
       });
     }
@@ -396,47 +423,49 @@ window.Core = {
     createItem(image, index, allItems, categoryFormatter = null) {
       const item = document.createElement('div');
       const sizeClass = image.aspectRatio === '16/9' ? 'landscape' : (image.aspectRatio || 'portrait');
-      item.className = `gallery-item ${sizeClass} reveal-item loading`; // Start with loading class
+      item.className = `gallery-item ${sizeClass} reveal-item loading`;
       item.dataset.index = index;
       if (image.category) item.dataset.category = image.category;
-      if (image.isPreview) item.dataset.preview = 'true';
 
       const isVideo = image.type === 'video';
       const media = document.createElement(isVideo ? 'video' : 'img');
-
-      media.className = 'gallery-image'; // Default class (opacity: 0)
+      media.className = 'gallery-image';
+      
+      // Add explicit opacity transition support
+      media.style.opacity = '0';
+      media.style.transition = 'opacity 0.6s ease-out';
 
       if (isVideo) {
         media.dataset.src = image.src;
-        media.preload = 'metadata'; // Ensure first frame loads
+        media.removeAttribute('src'); // Ensure lazy load
+        media.preload = 'none'; // Requirement
         media.muted = true;
         media.loop = true;
         media.playsInline = true;
         
         if (image.poster) media.poster = image.poster;
         
-        // For videos, we can consider them "loaded" enough to show the poster immediately
-        // or wait for canplay. Let's show immediately to avoid blank spaces if poster exists.
+        // Show poster immediately as "loaded" state
         requestAnimationFrame(() => {
-            media.classList.add('loaded');
-            item.classList.remove('loading');
+          media.style.opacity = '1';
+          item.classList.remove('loading');
         });
 
       } else {
         media.src = image.src;
         media.loading = 'lazy';
-        media.alt = image.alt || image.title || '';
+        media.alt = image.title || '';
         
-        // Add loaded class when image loads
         media.onload = () => {
-            media.classList.add('loaded');
-            item.classList.remove('loading');
+           media.style.opacity = '1';
+           item.classList.remove('loading');
+           media.classList.add('loaded'); // Keep class for CSS hooks
         };
         
-        // Handle cached images immediately
         if (media.complete) {
-             media.classList.add('loaded');
+             media.style.opacity = '1';
              item.classList.remove('loading');
+             media.classList.add('loaded');
         }
       }
 
@@ -448,21 +477,27 @@ window.Core = {
 
       const overlay = document.createElement('div');
       overlay.className = 'gallery-overlay';
-      
       const displayCategory = categoryFormatter ? categoryFormatter(image.category) : (image.category || '');
-      
-      overlay.innerHTML = `
-        <h3 class="gallery-title">${image.title || ''}</h3>
-        <p class="gallery-category">${displayCategory}</p>
-      `;
-
+      overlay.innerHTML = `<h3 class="gallery-title">${image.title || ''}</h3><p class="gallery-category">${displayCategory}</p>`;
       item.appendChild(overlay);
 
-      item.addEventListener('click', (e) => {
-        if (window.Core && window.Core.Lightbox) {
-          window.Core.Lightbox.open(index, allItems);
+      item.onclick = (e) => {
+        if (!e.target.closest('video')) { // If not clicking video directly (which toggles play)
+             if (window.Core && window.Core.Lightbox) window.Core.Lightbox.open(index, allItems);
         }
-      });
+      };
+      
+      // For video items, we want custom behavior: 
+      // Clicking the video toggles play (handled in VideoHover).
+      // Clicking the OVERLAY opens lightbox.
+      if (isVideo) {
+          overlay.onclick = (e) => {
+              e.stopPropagation(); // Stop video toggle
+              if (window.Core && window.Core.Lightbox) window.Core.Lightbox.open(index, allItems);
+          };
+      } else {
+           item.onclick = () => { if (window.Core.Lightbox) window.Core.Lightbox.open(index, allItems); };
+      }
 
       return item;
     }

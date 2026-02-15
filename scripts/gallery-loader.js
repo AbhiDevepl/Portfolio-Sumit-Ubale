@@ -91,68 +91,8 @@ class GalleryLoader {
   }
 
   createGalleryItem(image, index) {
-    const item = document.createElement('div');
-    const sizeClass = image.aspectRatio === '16/9' ? 'landscape' : (image.aspectRatio || 'portrait');
-    item.className = `gallery-item ${sizeClass} reveal-item`;
-    item.dataset.index = index;
-
-    const isVideo = image.type === 'video';
-    const media = document.createElement(isVideo ? 'video' : 'img');
-    
-    if (isVideo) {
-      media.src = image.src; // ✓ Set src directly for preload to work
-      media.dataset.src = image.src; // Keep for VideoHover compatibility
-      media.preload = 'metadata'; // Changed from 'none' to show first frame
-      media.muted = media.loop = media.playsInline = true;
-      media.className = 'gallery-image';
-      if (image.poster) media.poster = image.poster;
-      
-      // Add play icon overlay
-      const playOverlay = document.createElement('div');
-      playOverlay.className = 'gallery-video-play-icon';
-      playOverlay.innerHTML = `
-        <svg width="60" height="60" viewBox="0 0 24 24" fill="white">
-          <path d="M8 5v14l11-7z"/>
-        </svg>
-      `;
-      item.appendChild(playOverlay);
-      
-      // Add loaded class for videos immediately
-      requestAnimationFrame(() => {
-        media.classList.add('loaded');
-      });
-      
-      Core.VideoHover.init(media);
-    } else {
-      media.src = image.src;
-      media.className = 'gallery-image';
-      media.loading = 'lazy';
-      
-      // Add loaded class when image loads
-      media.onload = () => {
-        media.classList.add('loaded');
-      };
-      
-      // Handle already cached images
-      if (media.complete) {
-        media.classList.add('loaded');
-      }
-    }
-
-    const overlay = document.createElement('div');
-    overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h2 class="gallery-title">${image.title || ''}</h2>
-      <p class="gallery-category">${this.category}</p>
-    `;
-
-    item.append(media, overlay);
-    item.onclick = () => {
-      const allItems = this.getGalleryData();
-      Core.Lightbox.open(index, allItems);
-    };
-
-    return item;
+    // Delegate to Core.Media to ensure consistent behavior across app
+    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
   }
 
   getGalleryData() {
