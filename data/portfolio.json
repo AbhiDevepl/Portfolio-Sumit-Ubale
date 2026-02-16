@@ -56,42 +56,42 @@
       "portraits": [
         {
           "id": 1,
-          "title": "Portraits Session",
+          "title": "Portrait 1",
           "type": "image",
-          "src": "/assets/images/portraits/commercial-1.png",
-          "alt": "portraits photography captured by Sumit Ubale",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771008111/DSC03413_y0nkjk.jpg",
+          "alt": "Portrait photography captured by Sumit Ubale",
           "aspectRatio": "3/4"
         },
         {
           "id": 2,
-          "title": "Portraits Session",
+          "title": "Portrait 2",
           "type": "image",
-          "src": "/assets/images/portraits/portrait-1.png",
-          "alt": "portraits photography captured by Sumit Ubale",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771008111/DSC03096_mumlea.jpg",
+          "alt": "Portrait photography captured by Sumit Ubale",
           "aspectRatio": "3/4"
         },
         {
           "id": 3,
-          "title": "Portraits Session",
+          "title": "Portrait 3",
           "type": "image",
-          "src": "/assets/images/portraits/portrait-2.png",
-          "alt": "portraits photography captured by Sumit Ubale",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771008107/DSC02962_obcd7r.jpg",
+          "alt": "Portrait photography captured by Sumit Ubale",
           "aspectRatio": "3/4"
         },
         {
           "id": 4,
-          "title": "Portraits Session",
+          "title": "Portrait 4",
           "type": "image",
-          "src": "/assets/images/portraits/wedding-1.png",
-          "alt": "portraits photography captured by Sumit Ubale",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771008106/DSC02933_xnf2jz.jpg",
+          "alt": "Portrait photography captured by Sumit Ubale",
           "aspectRatio": "3/4"
         },
         {
           "id": 5,
-          "title": "Portraits Session",
+          "title": "Portrait 5",
           "type": "image",
-          "src": "/assets/images/portraits/wedding-2.png",
-          "alt": "portraits photography captured by Sumit Ubale",
+          "src": "https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771008105/DSC02914.jpg1_w5xncw.jpg",
+          "alt": "Portrait photography captured by Sumit Ubale",
           "aspectRatio": "3/4"
         }
       ],
