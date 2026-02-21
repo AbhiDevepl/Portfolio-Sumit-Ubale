@@ -1,0 +1,3 @@
+## 2026-02-21 - [Critical Path & Runtime Optimization]
+**Learning:** Removing CSS `@import` for fonts and replacing them with HTML `<link>` tags significantly flattens the resource loading waterfall, reducing First Contentful Paint. Additionally, caching DOM elements and checking current state before triggering GSAP animations avoids redundant calculations and layout thrashing.
+**Action:** Always prefer HTML `<link>` for fonts over CSS `@import`. When using GSAP for interactive elements (like galleries), cache the elements during initialization and check `item.style` (with fallback to `getComputedStyle`) before animating.

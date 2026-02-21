@@ -426,6 +426,7 @@ window.Core = {
       item.className = `gallery-item ${sizeClass} reveal-item loading`;
       item.dataset.index = index;
       if (image.category) item.dataset.category = image.category;
+      if (image.isPreview) item.dataset.preview = 'true';
 
       const isVideo = image.type === 'video';
       const media = document.createElement(isVideo ? 'video' : 'img');
