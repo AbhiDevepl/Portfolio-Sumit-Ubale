@@ -147,11 +147,7 @@
   // Export Palette globally for potential Javascript logic
   window.SiteColors = Palette;
 
-  // Initialize
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', injectStyles);
-  } else {
-    injectStyles();
-  }
+  // Initialize immediately to prevent FOUC (Must be in <head>)
+  injectStyles();
 
 })();
