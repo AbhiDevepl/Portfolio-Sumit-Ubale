@@ -92,8 +92,8 @@ class ServiceLoader {
     }
 
     s.gallery.forEach((item, index) => {
-      image.category = s.slug; // Inject slug as category for display
-      const mediaItem = Core.Media.createItem(image, index, s.gallery);
+      item.category = s.slug; // Inject slug as category for display
+      const mediaItem = Core.Media.createItem(item, index, s.gallery);
       gallery.appendChild(mediaItem);
     });
 
