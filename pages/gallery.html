@@ -4,7 +4,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gallery - Sumit Ubale Photography</title>
+    <title>Gallery — Sumit Ubale Photography</title>
+
+    <!-- Preconnect and Font Loading Optimization -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://res.cloudinary.com">
+    <link rel="preconnect" href="https://unpkg.com">
+
+    <!-- Critical Resource Preloads -->
+    <link rel="preload" as="fetch" href="/data/portfolio.json" crossorigin>
+    <link rel="preload" as="style"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
+
+    <!-- Optimized Font Delivery -->
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+        media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
+    </noscript>
 
     <link rel="stylesheet" href="/styles/theme.css">
     <link rel="stylesheet" href="/styles/base.css">
@@ -64,7 +84,7 @@
         }
     </style>
 
-    <!-- Global Color System -->
+    <!-- Global Color System (Must load before body render) -->
     <script src="/scripts/colors.js"></script>
 </head>
 
@@ -119,12 +139,12 @@
     <footer class="footer" id="main-footer"></footer>
 
     <!-- Scripts -->
-    <script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
-    <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js"></script>
-    <script src="/scripts/core.js"></script>
-    <script src="/scripts/gallery-loader.js"></script>
-    <script src="/scripts/navigation.js"></script>
-    <script src="/scripts/loader.js"></script>
+    <script src="https://unpkg.com/gsap@3/dist/gsap.min.js" defer></script>
+    <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js" defer></script>
+    <script src="/scripts/core.js" defer></script>
+    <script src="/scripts/gallery-loader.js" defer></script>
+    <script src="/scripts/navigation.js" defer></script>
+    <script src="/scripts/loader.js" defer></script>
 
 </body>
 
