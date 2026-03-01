@@ -1,12 +1,23 @@
 window.GalleryManager = {
   activeCategory: 'all',
+  items: [],
+  categoryBtns: [],
   
   init() {
+    this.cacheElements();
     this.initFiltering();
     this.initGalleryInteractions();
     Core.Lightbox.init();
     this.checkURLState();
-    console.log('✅ Gallery Manager optimized');
+    console.log('⚡ Gallery Manager: Elements cached & performance optimized');
+  },
+
+  /**
+   * PERF: Cache DOM elements to avoid repeated queries
+   */
+  cacheElements() {
+    this.items = Array.from(document.querySelectorAll('.gallery-item'));
+    this.categoryBtns = Array.from(document.querySelectorAll('.category-btn'));
   },
   
   initFiltering() {
@@ -52,6 +63,10 @@ window.GalleryManager = {
     grid.addEventListener('mouseover', (e) => {
       const item = e.target.closest('.gallery-item');
       if (item) {
+        // PERF: Only animate if we're entering a new item
+        if (item === this._lastHovered) return;
+        this._lastHovered = item;
+
         const img = item.querySelector('.gallery-image');
         const overlay = item.querySelector('.gallery-overlay');
         gsap.to(img, { scale: 1.05, duration: 0.4, ease: "power2.out", overwrite: true });
@@ -62,6 +77,7 @@ window.GalleryManager = {
     grid.addEventListener('mouseout', (e) => {
       const item = e.target.closest('.gallery-item');
       if (item) {
+        this._lastHovered = null;
         const img = item.querySelector('.gallery-image');
         const overlay = item.querySelector('.gallery-overlay');
         gsap.to(img, { scale: 1, duration: 0.4, ease: "power2.out", overwrite: true });
@@ -70,35 +86,43 @@ window.GalleryManager = {
     });
   },
 
+  /**
+   * PERF: Uses cached items and avoids getComputedStyle to eliminate layout thrashing
+   */
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
+    return this.items
       .filter(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
+        // Check inline style first (set by GSAP) then fallback to offsetHeight
+        return item.style.display !== 'none' && item.offsetHeight > 0;
       })
-      .map(item => ({
-        src: item.querySelector('img, video').src || item.querySelector('img, video').dataset.src,
-        title: item.querySelector('.gallery-title')?.innerText,
-        category: item.dataset.category,
-        type: item.querySelector('video') ? 'video' : 'image',
-        originalIndex: parseInt(item.dataset.index)
-      }));
+      .map(item => {
+        const media = item.querySelector('img, video');
+        return {
+          src: media.src || media.dataset.src,
+          title: item.querySelector('.gallery-title')?.innerText,
+          category: item.dataset.category,
+          type: media.tagName.toLowerCase() === 'video' ? 'video' : 'image',
+          originalIndex: parseInt(item.dataset.index)
+        };
+      });
   },
   
+  /**
+   * PERF: Uses cached elements and batch animation updates
+   */
   filterGallery(category) {
     this.activeCategory = category;
     
-    document.querySelectorAll('.category-btn').forEach(btn => {
+    this.categoryBtns.forEach(btn => {
       const isActive = btn.dataset.category === category;
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-selected', isActive);
     });
     
-    const items = document.querySelectorAll('.gallery-item');
     let shownCount = 0;
     let hasHidden = false;
 
-    items.forEach(item => {
+    this.items.forEach(item => {
       const itemCategory = item.dataset.category;
       const isPreview = item.dataset.preview === 'true';
       const isMatch = category === 'all' || itemCategory === category;
@@ -123,6 +147,7 @@ window.GalleryManager = {
         }
       }
 
+      // PERF: Only trigger animation if state is changing (optional, GSAP's overwrite:true handles this well)
       gsap.to(item, {
         opacity: shouldShow ? 1 : 0,
         scale: shouldShow ? 1 : 0.95,
@@ -152,7 +177,11 @@ window.GalleryManager = {
       });
     }
     
-    setTimeout(() => ScrollTrigger.refresh(), 500);
+    // PERF: Throttled ScrollTrigger refresh
+    if (this._refreshTimeout) clearTimeout(this._refreshTimeout);
+    this._refreshTimeout = setTimeout(() => {
+        if (window.ScrollTrigger) ScrollTrigger.refresh();
+    }, 500);
   },
   
   updateURL(category) {
@@ -166,5 +195,3 @@ window.GalleryManager = {
     this.filterGallery(category);
   }
 };
-
-// Auto-init removed. Will be called by ContentLoader.

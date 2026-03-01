@@ -102,7 +102,12 @@ class ContentLoader {
     // Create gallery items using DocumentFragment for performance
     const fragment = Core.DOM.createFragment(allImages, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists
-      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
+      const item = Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
+      // Map isPreview to data attribute for GalleryManager filtering
+      if (image.isPreview) {
+        item.dataset.preview = 'true';
+      }
+      return item;
     });
     
     galleryGrid.appendChild(fragment);
