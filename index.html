@@ -35,9 +35,17 @@
   <!-- Preconnect and Font Loading Optimization -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://res.cloudinary.com">
   <link rel="preconnect" href="https://unpkg.com">
+
+  <!-- Critical Resource Preloads -->
+  <link rel="preload" as="fetch" href="/data/portfolio.json" crossorigin>
+  <link rel="preload" as="image"
+    href="https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771091727/IMG_Hero_peub99.webp">
   <link rel="preload" as="style"
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
+
+  <!-- Optimized Font Delivery -->
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
     media="print" onload="this.media='all'">
@@ -45,10 +53,6 @@
     <link rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
   </noscript>
-
-  <!-- Preload Critical Assets -->
-  <link rel="preload" as="image"
-    href="https://res.cloudinary.com/portfolio-sumit-ubale/image/upload/v1771091727/IMG_Hero_peub99.webp">
 
   <!-- CSS Files (in order) -->
   <link rel="stylesheet" href="/styles/theme.css">
@@ -58,7 +62,8 @@
   <link rel="stylesheet" href="/styles/animations.css">
   <link rel="stylesheet" href="/styles/loader.css">
   <link rel="stylesheet" href="/styles/lightbox-video.css">
-  <!-- Global Color System (Must load before body render) -->
+
+  <!-- Global Color System (Must load before body render to prevent FOUC) -->
   <script src="/scripts/colors.js"></script>
 </head>
 

@@ -4,12 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Service - Sumit Ubale Photography</title>
+    <title>Service — Sumit Ubale Photography</title>
 
+    <!-- Preconnect and Font Loading Optimization -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://res.cloudinary.com">
+    <link rel="preconnect" href="https://unpkg.com">
+
+    <!-- Critical Resource Preloads -->
+    <link rel="preload" as="fetch" href="/data/services.json" crossorigin>
     <link rel="preload" as="style"
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap">
+
+    <!-- Optimized Font Delivery -->
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
         media="print" onload="this.media='all'">
@@ -26,7 +34,7 @@
     <link rel="stylesheet" href="/styles/animations.css">
     <link rel="stylesheet" href="/styles/loader.css">
 
-    <!-- Global Color System -->
+    <!-- Global Color System (Must load before body render) -->
     <script src="/scripts/colors.js"></script>
 </head>
 
@@ -107,7 +115,6 @@
     <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js" defer></script>
     <script src="/scripts/service-loader.js" defer></script>
     <script src="/scripts/navigation.js" defer></script>
-
     <script src="/scripts/loader.js" defer></script>
 
 </body>
