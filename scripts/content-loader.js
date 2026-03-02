@@ -99,10 +99,14 @@ class ContentLoader {
       });
     }
 
+    // Optimization: Only render preview items on the homepage to reduce DOM weight
+    const isHomepage = window.location.pathname === '/' || window.location.pathname === '/index.html' || window.location.pathname.endsWith('/');
+    const displayImages = isHomepage ? allImages.filter(img => img.isPreview) : allImages;
+
     // Create gallery items using DocumentFragment for performance
-    const fragment = Core.DOM.createFragment(allImages, (image, index) => {
+    const fragment = Core.DOM.createFragment(displayImages, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists
-      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
+      return Core.Media.createItem(image, index, displayImages, (cat) => this.getCategoryName(cat));
     });
     
     galleryGrid.appendChild(fragment);
