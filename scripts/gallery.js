@@ -1,12 +1,29 @@
 window.GalleryManager = {
   activeCategory: 'all',
+  // Cache DOM elements for performance
+  elements: {
+    grid: null,
+    items: [],
+    categories: null,
+    categoryBtns: [],
+    moreContainer: null
+  },
   
   init() {
+    this.cacheElements();
     this.initFiltering();
     this.initGalleryInteractions();
     Core.Lightbox.init();
     this.checkURLState();
     console.log('✅ Gallery Manager optimized');
+  },
+
+  cacheElements() {
+    this.elements.grid = document.getElementById('gallery-grid');
+    this.elements.items = Array.from(document.querySelectorAll('.gallery-item'));
+    this.elements.categories = document.querySelector('.portfolio-categories');
+    this.elements.categoryBtns = Array.from(document.querySelectorAll('.category-btn'));
+    this.elements.moreContainer = document.getElementById('portfolio-more');
   },
   
   initFiltering() {
@@ -70,57 +87,66 @@ window.GalleryManager = {
     });
   },
 
+  // Cache of visible items' data to avoid repeated DOM lookups and layout thrashing
+  visibleData: [],
+
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
-      })
-      .map(item => ({
-        src: item.querySelector('img, video').src || item.querySelector('img, video').dataset.src,
-        title: item.querySelector('.gallery-title')?.innerText,
-        category: item.dataset.category,
-        type: item.querySelector('video') ? 'video' : 'image',
-        originalIndex: parseInt(item.dataset.index)
-      }));
+    // Optimization: Return cached visible items instead of calculating via getComputedStyle
+    return this.visibleData;
   },
   
   filterGallery(category) {
     this.activeCategory = category;
     
-    document.querySelectorAll('.category-btn').forEach(btn => {
+    // Use cached buttons
+    this.elements.categoryBtns.forEach(btn => {
       const isActive = btn.dataset.category === category;
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-selected', isActive);
     });
     
-    const items = document.querySelectorAll('.gallery-item');
     let shownCount = 0;
     let hasHidden = false;
+    const newVisibleData = [];
 
-    items.forEach(item => {
+    const isHomepage = window.location.pathname === '/' || window.location.pathname === '/index.html' || window.location.pathname.endsWith('/');
+
+    // Use cached items
+    this.elements.items.forEach(item => {
       const itemCategory = item.dataset.category;
-      const isPreview = item.dataset.preview === 'true';
       const isMatch = category === 'all' || itemCategory === category;
       
       let shouldShow = false;
       if (isMatch) {
-        if (category === 'all') {
-          // STRICT LIMIT: Exactly 3 items for 'all' on homepage
-          if (shownCount < 3) {
-            shouldShow = true;
-            shownCount++;
+        if (isHomepage) {
+          if (category === 'all') {
+            // Homepage 'all': limit to first 3 items
+            if (shownCount < 3) {
+              shouldShow = true;
+              shownCount++;
+            } else {
+              hasHidden = true;
+            }
           } else {
+            // Homepage category-specific: show all available (already limited to previews by ContentLoader)
+            shouldShow = true;
             hasHidden = true;
           }
         } else {
-          // Category-specific: Show all preview items
-          if (isPreview) {
-            shouldShow = true;
-          } else {
-            hasHidden = true;
-          }
+          // Full Gallery Page: show all matching items
+          shouldShow = true;
         }
+      }
+
+      if (shouldShow) {
+        const media = item.querySelector('img, video');
+        newVisibleData.push({
+          src: media.src || media.dataset.src,
+          title: item.querySelector('.gallery-title')?.innerText,
+          category: item.dataset.category,
+          type: item.querySelector('video') ? 'video' : 'image',
+          originalIndex: parseInt(item.dataset.index)
+        });
       }
 
       gsap.to(item, {
@@ -133,18 +159,19 @@ window.GalleryManager = {
       });
     });
 
-    const grid = document.getElementById('gallery-grid');
-    if (grid) {
+    // Update the cached visible data for Lightbox
+    this.visibleData = newVisibleData;
+
+    if (this.elements.grid) {
       if (category === 'cinematics') {
-        grid.classList.add('layout-centered');
+        this.elements.grid.classList.add('layout-centered');
       } else {
-        grid.classList.remove('layout-centered');
+        this.elements.grid.classList.remove('layout-centered');
       }
     }
 
-    const moreContainer = document.getElementById('portfolio-more');
-    if (moreContainer) {
-      gsap.to(moreContainer, { 
+    if (this.elements.moreContainer) {
+      gsap.to(this.elements.moreContainer, {
         display: hasHidden ? 'flex' : 'none', 
         opacity: hasHidden ? 1 : 0,
         duration: 0.3,
