@@ -1,0 +1,3 @@
+## 2025-03-01 - Layout Thrashing in Gallery Filtering
+**Learning:** Using `window.getComputedStyle` inside loops, especially when combined with GSAP or ScrollTrigger, causes massive layout thrashing (forced synchronous layouts). Additionally, relying on `document.querySelectorAll` during every filter operation is inefficient for high-frequency interactions.
+**Action:** Cache DOM elements during initialization. Use inline `style` checks or `offsetHeight > 0` for visibility detection instead of `getComputedStyle`. Sync application state (like `isPreview`) to DOM `data-*` attributes to allow the optimized filter logic to access state without re-querying or complex JS logic.
