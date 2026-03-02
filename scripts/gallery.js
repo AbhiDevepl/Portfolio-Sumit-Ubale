@@ -1,12 +1,16 @@
 window.GalleryManager = {
   activeCategory: 'all',
+  items: [], // Optimized: Cached DOM elements
   
   init() {
+    // Cache gallery items once after they are populated by ContentLoader
+    this.items = Array.from(document.querySelectorAll('.gallery-item'));
+
     this.initFiltering();
     this.initGalleryInteractions();
     Core.Lightbox.init();
     this.checkURLState();
-    console.log('✅ Gallery Manager optimized');
+    console.log(`✅ Gallery Manager optimized (${this.items.length} items cached)`);
   },
   
   initFiltering() {
@@ -48,33 +52,19 @@ window.GalleryManager = {
       }
     });
 
-    // Integrated Hover Effects
-    grid.addEventListener('mouseover', (e) => {
-      const item = e.target.closest('.gallery-item');
-      if (item) {
-        const img = item.querySelector('.gallery-image');
-        const overlay = item.querySelector('.gallery-overlay');
-        gsap.to(img, { scale: 1.05, duration: 0.4, ease: "power2.out", overwrite: true });
-        gsap.to(overlay, { opacity: 1, duration: 0.3, overwrite: true });
-      }
-    });
-
-    grid.addEventListener('mouseout', (e) => {
-      const item = e.target.closest('.gallery-item');
-      if (item) {
-        const img = item.querySelector('.gallery-image');
-        const overlay = item.querySelector('.gallery-overlay');
-        gsap.to(img, { scale: 1, duration: 0.4, ease: "power2.out", overwrite: true });
-        gsap.to(overlay, { opacity: 0, duration: 0.3, overwrite: true });
-      }
-    });
+    // NOTE: Redundant GSAP hover effects removed.
+    // They are handled more efficiently by CSS transitions in components.css.
   },
 
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
+    // Optimized: Use cached items instead of querying the DOM
+    return this.items
       .filter(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
+        // Reduced layout thrashing by checking inline styles (set by GSAP) first,
+        // falling back to getComputedStyle only if necessary.
+        const display = item.style.display || getComputedStyle(item).display;
+        const opacity = item.style.opacity || getComputedStyle(item).opacity;
+        return display !== 'none' && opacity !== '0';
       })
       .map(item => ({
         src: item.querySelector('img, video').src || item.querySelector('img, video').dataset.src,
@@ -94,11 +84,11 @@ window.GalleryManager = {
       btn.setAttribute('aria-selected', isActive);
     });
     
-    const items = document.querySelectorAll('.gallery-item');
+    // Optimized: Use cached items
     let shownCount = 0;
     let hasHidden = false;
 
-    items.forEach(item => {
+    this.items.forEach(item => {
       const itemCategory = item.dataset.category;
       const isPreview = item.dataset.preview === 'true';
       const isMatch = category === 'all' || itemCategory === category;
@@ -123,14 +113,20 @@ window.GalleryManager = {
         }
       }
 
-      gsap.to(item, {
-        opacity: shouldShow ? 1 : 0,
-        scale: shouldShow ? 1 : 0.95,
-        duration: 0.4,
-        display: shouldShow ? 'block' : 'none',
-        ease: "power2.out",
-        overwrite: true
-      });
+      // Check if state actually changed before triggering animation
+      const currentDisplay = item.style.display || getComputedStyle(item).display;
+      const isCurrentlyVisible = currentDisplay !== 'none';
+
+      if (shouldShow !== isCurrentlyVisible) {
+        gsap.to(item, {
+          opacity: shouldShow ? 1 : 0,
+          scale: shouldShow ? 1 : 0.95,
+          duration: 0.4,
+          display: shouldShow ? 'block' : 'none',
+          ease: "power2.out",
+          overwrite: true
+        });
+      }
     });
 
     const grid = document.getElementById('gallery-grid');
@@ -144,12 +140,16 @@ window.GalleryManager = {
 
     const moreContainer = document.getElementById('portfolio-more');
     if (moreContainer) {
-      gsap.to(moreContainer, { 
-        display: hasHidden ? 'flex' : 'none', 
-        opacity: hasHidden ? 1 : 0,
-        duration: 0.3,
-        overwrite: true
-      });
+      const currentDisplay = moreContainer.style.display || getComputedStyle(moreContainer).display;
+      const isVisible = currentDisplay !== 'none';
+      if (hasHidden !== isVisible) {
+        gsap.to(moreContainer, {
+          display: hasHidden ? 'flex' : 'none',
+          opacity: hasHidden ? 1 : 0,
+          duration: 0.3,
+          overwrite: true
+        });
+      }
     }
     
     setTimeout(() => ScrollTrigger.refresh(), 500);
