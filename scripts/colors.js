@@ -148,10 +148,8 @@
   window.SiteColors = Palette;
 
   // Initialize
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', injectStyles);
-  } else {
-    injectStyles();
-  }
+  // Optimized for performance: execute immediately without waiting for DOMContentLoaded
+  // to prevent Flash of Unstyled Content (FOUC).
+  injectStyles();
 
 })();

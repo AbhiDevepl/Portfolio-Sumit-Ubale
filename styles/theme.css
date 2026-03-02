@@ -2,8 +2,10 @@
    THEME.CSS - Editorial Design System ("Cool Blues")
    ======================================== */
 
-/* Import Google Fonts */
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap");
+/*
+   Optimization: Google Fonts @import removed to prevent render-blocking waterfall.
+   Fonts are now loaded via prioritized <link> tags in the HTML <head>.
+*/
 
 /* ========================================
    CSS Custom Properties (Design Tokens)
