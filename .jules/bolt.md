@@ -1,0 +1,3 @@
+## 2025-05-14 - Font loading waterfall in modular CSS
+**Learning:** Using `@import` in a shared `theme.css` file creates a significant performance bottleneck (font waterfall) because the browser must download and parse the CSS before it even discovers the font URLs. This is exacerbated in multi-page applications if sub-pages don't have synchronized resource hints.
+**Action:** Always prefer HTML `<link>` tags with `preconnect`, `preload` (with `as="style"`), and `display=swap` for critical typography. Ensure these hints are consistently applied across all entry points (index and sub-pages) to enable parallel asset discovery.
