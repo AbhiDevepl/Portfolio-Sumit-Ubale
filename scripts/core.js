@@ -427,6 +427,9 @@ window.Core = {
       item.dataset.index = index;
       if (image.category) item.dataset.category = image.category;
 
+      // BOLT OPTIMIZATION: Assign preview status to DOM for faster O(1) filtering
+      if (image.isPreview) item.dataset.preview = 'true';
+
       const isVideo = image.type === 'video';
       const media = document.createElement(isVideo ? 'video' : 'img');
       media.className = 'gallery-image';

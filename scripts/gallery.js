@@ -1,12 +1,25 @@
 window.GalleryManager = {
   activeCategory: 'all',
+  items: [], // Cached gallery elements
+  categoryButtons: [], // Cached filter buttons
+  visibleData: [], // Pre-calculated visible items for Lightbox
   
   init() {
+    this.cacheElements();
     this.initFiltering();
     this.initGalleryInteractions();
     Core.Lightbox.init();
+
+    // Initial population of visibleData for lightbox (handles initial load without filter interaction)
+    this.updateVisibleData();
+
     this.checkURLState();
-    console.log('✅ Gallery Manager optimized');
+    console.log('✅ Gallery Manager optimized (Cached & Zero-Thrash)');
+  },
+
+  cacheElements() {
+    this.items = Array.from(document.querySelectorAll('.gallery-item'));
+    this.categoryButtons = Array.from(document.querySelectorAll('.category-btn'));
   },
   
   initFiltering() {
@@ -42,9 +55,8 @@ window.GalleryManager = {
     grid.addEventListener('click', (e) => {
       const item = e.target.closest('.gallery-item');
       if (item && !e.target.closest('video')) {
-        const visibleItems = this.getVisibleData();
-        const index = visibleItems.findIndex(d => d.originalIndex === parseInt(item.dataset.index));
-        if (index !== -1) Core.Lightbox.open(index, visibleItems);
+        const index = this.visibleData.findIndex(d => d.originalIndex === parseInt(item.dataset.index));
+        if (index !== -1) Core.Lightbox.open(index, this.visibleData);
       }
     });
 
@@ -70,35 +82,49 @@ window.GalleryManager = {
     });
   },
 
+  /**
+   * BOLT OPTIMIZATION: Removed window.getComputedStyle call which triggers
+   * synchronous layout (thrashing). Instead, we track state in this.visibleData
+   * during the filter phase.
+   */
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
-      })
-      .map(item => ({
-        src: item.querySelector('img, video').src || item.querySelector('img, video').dataset.src,
-        title: item.querySelector('.gallery-title')?.innerText,
-        category: item.dataset.category,
-        type: item.querySelector('video') ? 'video' : 'image',
-        originalIndex: parseInt(item.dataset.index)
-      }));
+     return this.visibleData;
+  },
+
+  updateVisibleData() {
+    this.visibleData = [];
+    this.items.forEach(item => {
+        // We only check if it's currently visible based on GSAP's set display property
+        // This avoids layout thrashing if we do it once or use the cached shouldShow state.
+        if (item.style.display !== 'none') {
+            const media = item.querySelector('img, video');
+            this.visibleData.push({
+                src: media.src || media.dataset.src,
+                title: item.querySelector('.gallery-title')?.innerText,
+                category: item.dataset.category,
+                type: item.querySelector('video') ? 'video' : 'image',
+                originalIndex: parseInt(item.dataset.index)
+            });
+        }
+    });
   },
   
   filterGallery(category) {
     this.activeCategory = category;
+    const newVisibleData = [];
     
-    document.querySelectorAll('.category-btn').forEach(btn => {
+    // Use cached buttons
+    this.categoryButtons.forEach(btn => {
       const isActive = btn.dataset.category === category;
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-selected', isActive);
     });
     
-    const items = document.querySelectorAll('.gallery-item');
     let shownCount = 0;
     let hasHidden = false;
 
-    items.forEach(item => {
+    // Use cached items
+    this.items.forEach(item => {
       const itemCategory = item.dataset.category;
       const isPreview = item.dataset.preview === 'true';
       const isMatch = category === 'all' || itemCategory === category;
@@ -123,6 +149,18 @@ window.GalleryManager = {
         }
       }
 
+      // If visible, add to visibleData cache for Lightbox (Prevents getComputedStyle later)
+      if (shouldShow) {
+          const media = item.querySelector('img, video');
+          newVisibleData.push({
+            src: media.src || media.dataset.src,
+            title: item.querySelector('.gallery-title')?.innerText,
+            category: item.dataset.category,
+            type: item.querySelector('video') ? 'video' : 'image',
+            originalIndex: parseInt(item.dataset.index)
+          });
+      }
+
       gsap.to(item, {
         opacity: shouldShow ? 1 : 0,
         scale: shouldShow ? 1 : 0.95,
@@ -132,6 +170,8 @@ window.GalleryManager = {
         overwrite: true
       });
     });
+
+    this.visibleData = newVisibleData;
 
     const grid = document.getElementById('gallery-grid');
     if (grid) {
@@ -152,7 +192,11 @@ window.GalleryManager = {
       });
     }
     
-    setTimeout(() => ScrollTrigger.refresh(), 500);
+    // Debounce ScrollTrigger refresh for better performance during transitions
+    clearTimeout(this.refreshTimeout);
+    this.refreshTimeout = setTimeout(() => {
+        if (window.ScrollTrigger) ScrollTrigger.refresh();
+    }, 200);
   },
   
   updateURL(category) {

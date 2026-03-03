@@ -147,11 +147,8 @@
   // Export Palette globally for potential Javascript logic
   window.SiteColors = Palette;
 
-  // Initialize
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', injectStyles);
-  } else {
-    injectStyles();
-  }
+  // BOLT OPTIMIZATION: Execute style injection immediately upon script load.
+  // This prevents Flash of Unstyled Content (FOUC) because the script is in the <head>.
+  injectStyles();
 
 })();
