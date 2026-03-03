@@ -60,16 +60,10 @@ class GalleryLoader {
       categoriesContainer.appendChild(fragment);
     }
 
-    // Aggregate images
-    let images = [];
-    if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
-    } else {
-      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
-    }
+    // Aggregate images (Optimized: Get enriched data once)
+    const galleryData = this.getGalleryData();
     
-    if (!images.length) {
+    if (!galleryData.length) {
       grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
       return;
     }
@@ -83,16 +77,16 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+    const galleryFragment = Core.DOM.createFragment(galleryData, (img, idx) => this.createGalleryItem(img, idx, galleryData));
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
+  createGalleryItem(image, index, allItems) {
     // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+    return Core.Media.createItem(image, index, allItems, (cat) => this.category);
   }
 
   getGalleryData() {
@@ -105,7 +99,8 @@ class GalleryLoader {
       });
       return all;
     }
-    const imgs = this.data.portfolio.images[this.category] || [];
+    const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
+    const imgs = this.data.portfolio.images[key] || [];
     return imgs.map(img => ({ ...img, category: this.category }));
   }
 
