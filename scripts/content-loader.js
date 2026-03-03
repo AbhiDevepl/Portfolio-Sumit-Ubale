@@ -99,15 +99,21 @@ class ContentLoader {
       });
     }
 
+    // BOLT OPTIMIZATION: On homepage, only render preview items to reduce DOM weight.
+    // Dedicated gallery page (gallery.html) handles its own rendering of all items via gallery-loader.js.
+    // This reduces initial DOM items from ~350 to < 50.
+    const isHomepage = window.location.pathname === '/' || window.location.pathname.endsWith('index.html');
+    const displayImages = isHomepage ? allImages.filter(img => img.isPreview) : allImages;
+
     // Create gallery items using DocumentFragment for performance
-    const fragment = Core.DOM.createFragment(allImages, (image, index) => {
+    const fragment = Core.DOM.createFragment(displayImages, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists
-      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
+      return Core.Media.createItem(image, index, displayImages, (cat) => this.getCategoryName(cat));
     });
     
     galleryGrid.appendChild(fragment);
 
-    console.log(`✅ Loaded ${allImages.length} gallery images`);
+    console.log(`✅ Loaded ${displayImages.length} gallery images (Optimized for DOM weight)`);
   }
 
   /**
