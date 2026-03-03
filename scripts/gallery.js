@@ -48,34 +48,15 @@ window.GalleryManager = {
       }
     });
 
-    // Integrated Hover Effects
-    grid.addEventListener('mouseover', (e) => {
-      const item = e.target.closest('.gallery-item');
-      if (item) {
-        const img = item.querySelector('.gallery-image');
-        const overlay = item.querySelector('.gallery-overlay');
-        gsap.to(img, { scale: 1.05, duration: 0.4, ease: "power2.out", overwrite: true });
-        gsap.to(overlay, { opacity: 1, duration: 0.3, overwrite: true });
-      }
-    });
-
-    grid.addEventListener('mouseout', (e) => {
-      const item = e.target.closest('.gallery-item');
-      if (item) {
-        const img = item.querySelector('.gallery-image');
-        const overlay = item.querySelector('.gallery-overlay');
-        gsap.to(img, { scale: 1, duration: 0.4, ease: "power2.out", overwrite: true });
-        gsap.to(overlay, { opacity: 0, duration: 0.3, overwrite: true });
-      }
-    });
+    // Integrated Hover Effects:
+    // Removed GSAP hover listeners that were duplicating existing CSS transitions
+    // to reduce main-thread execution and leverage hardware acceleration.
   },
 
   getVisibleData() {
+    // Optimized: Using offsetParent check instead of getComputedStyle to avoid layout thrashing
     return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
-      })
+      .filter(item => item.offsetParent !== null)
       .map(item => ({
         src: item.querySelector('img, video').src || item.querySelector('img, video').dataset.src,
         title: item.querySelector('.gallery-title')?.innerText,

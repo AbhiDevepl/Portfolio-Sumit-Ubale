@@ -91,11 +91,17 @@ class ServiceLoader {
       gallery.classList.remove('layout-centered');
     }
 
-    s.gallery.forEach((item, index) => {
-      image.category = s.slug; // Inject slug as category for display
-      const mediaItem = Core.Media.createItem(image, index, s.gallery);
-      gallery.appendChild(mediaItem);
+    // Optimized: Pre-calculate enriched gallery array
+    const enrichedGallery = s.gallery.map(item => ({
+      ...item,
+      category: s.slug
+    }));
+
+    const fragment = Core.DOM.createFragment(enrichedGallery, (item, index) => {
+      return Core.Media.createItem(item, index, enrichedGallery);
     });
+
+    gallery.appendChild(fragment);
 
     document.body.classList.remove('loading');
   }
