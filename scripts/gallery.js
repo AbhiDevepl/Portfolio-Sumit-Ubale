@@ -73,8 +73,22 @@ window.GalleryManager = {
   getVisibleData() {
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
+        // BOLT OPTIMIZATION: Use a performant multi-stage visibility check.
+        // 1. offsetParent is null if display: none (fastest check, avoids layout thrashing).
+        if (item.offsetParent === null) return false;
+
+        // 2. Check opacity to handle items currently animating or hidden via opacity.
+        // Use inline style check first (fastest) as GSAP sets inline styles.
+        const inlineOpacity = item.style.opacity;
+        if (inlineOpacity !== '' && parseFloat(inlineOpacity) <= 0.1) return false;
+
+        // 3. Fallback to getComputedStyle ONLY if inline opacity is missing.
+        if (inlineOpacity === '') {
+          const style = window.getComputedStyle(item);
+          if (parseFloat(style.opacity) <= 0.1) return false;
+        }
+
+        return true;
       })
       .map(item => ({
         src: item.querySelector('img, video').src || item.querySelector('img, video').dataset.src,
