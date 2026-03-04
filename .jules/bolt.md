@@ -1,0 +1,3 @@
+## 2025-05-15 - [Gallery Performance & Layout Thrashing]
+**Learning:** Calling data aggregation helpers like `getGalleryData()` inside a rendering loop creates O(N²) complexity, which becomes visible on galleries with >50 items. Additionally, using `window.getComputedStyle` for visibility checks in high-frequency interaction loops (like opening a Lightbox) triggers layout thrashing (forced synchronous layouts).
+**Action:** Always cache complex data calculations before entering rendering loops. For visibility checks, prioritize `offsetParent === null` as a fast-fail for `display: none` and check inline `style.opacity` (efficient for JS-animated elements) before falling back to the expensive `getComputedStyle`.

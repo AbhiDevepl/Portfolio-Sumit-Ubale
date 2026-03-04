@@ -83,16 +83,25 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+
+    // BOLT OPTIMIZATION: Cache gallery data once to avoid O(N^2) complexity during rendering.
+    // getGalleryData iterates through the entire dataset to inject category info;
+    // calling it inside the image loop created a performance bottleneck on large galleries.
+    const allGalleryData = this.getGalleryData();
+
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => {
+      return this.createGalleryItem(img, idx, allGalleryData);
+    });
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
-    // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+  createGalleryItem(image, index, allGalleryData) {
+    // BOLT OPTIMIZATION: Pass the pre-calculated allGalleryData to the factory.
+    // Functional requirement: Use () => this.category as label formatter to match original UI.
+    return Core.Media.createItem(image, index, allGalleryData, () => this.category);
   }
 
   getGalleryData() {
@@ -113,14 +122,12 @@ class GalleryLoader {
     const hasGsap = typeof window !== 'undefined' && window.gsap;
     const hasScrollTrigger = typeof window !== 'undefined' && window.ScrollTrigger;
 
-    // If GSAP is not loaded (e.g., CDN blocked), skip animations instead of throwing.
     if (!hasGsap) {
       console.warn('GalleryLoader: GSAP not available, skipping animations.');
       document.querySelectorAll('.reveal-item').forEach(el => el.style.opacity = 1);
       return;
     }
 
-    // Brief delay to ensure DOM layout is settled before initializing ScrollTrigger
     setTimeout(() => {
       window.gsap.from('.stagger-reveal', {
         opacity: 0,
@@ -128,13 +135,12 @@ class GalleryLoader {
         duration: 0.8,
         stagger: 0.1,
         ease: 'power2.out',
-        clearProps: 'all' // Ensure clean state after animation
+        clearProps: 'all'
       });
 
       if (hasScrollTrigger) {
-        // Use batch() for better performance with many items and reliable triggering
         ScrollTrigger.batch('.gallery-item', {
-          start: 'top 95%', // Trigger slightly earlier
+          start: 'top 95%',
           onEnter: batch => gsap.to(batch, {
             opacity: 1,
             scale: 1,
@@ -143,12 +149,11 @@ class GalleryLoader {
             ease: 'power2.out',
             overwrite: true
           }),
-          onEnterBack: batch => gsap.to(batch, { opacity: 1, scale: 1, overwrite: true }) // Keep visible when scrolling back
+          onEnterBack: batch => gsap.to(batch, { opacity: 1, scale: 1, overwrite: true })
         });
         
         ScrollTrigger.refresh();
       } else {
-        // Fallback if ScrollTrigger is missing
         window.gsap.to('.gallery-item', {
           opacity: 1,
           scale: 1,
@@ -158,7 +163,6 @@ class GalleryLoader {
         });
       }
       
-      // Force loader removal just in case
       document.body.classList.remove('loading');
     }, 100);
   }
@@ -170,7 +174,7 @@ class GalleryLoader {
   }
 }
 
-// Global Nav & Footer Injection (Single source of truth)
+// Global Nav & Footer Injection
 function injectGlobalComponents() {
   const nav = document.getElementById('main-nav');
   if (nav) {
