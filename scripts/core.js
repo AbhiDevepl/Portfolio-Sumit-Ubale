@@ -230,7 +230,7 @@ window.Core = {
     },
 
     formatTime(seconds) {
-      if (isNaN(seconds)) return '0:00';
+      if (seconds === Infinity || isNaN(seconds)) return '0:00';
       const mins = Math.floor(seconds / 60);
       const secs = Math.floor(seconds % 60);
       return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -514,6 +514,37 @@ window.Core = {
         if (rendered) fragment.appendChild(rendered);
       });
       return fragment;
+    },
+
+    injectGlobalComponents() {
+      const nav = document.getElementById('main-nav');
+      if (nav) {
+        nav.innerHTML = `
+          <div class="nav-container">
+            <a href="/" class="nav-logo">SUMIT UBALE</a>
+            <div class="nav-menu">
+              <a href="/#portfolio" class="nav-link">Everything</a>
+              <a href="/pages/service.html?s=weddings" class="nav-link">Weddings</a>
+              <a href="/pages/service.html?s=cinematics" class="nav-link">Films</a>
+              <a href="/#about" class="nav-link">About</a>
+              <a href="/#contact" class="nav-cta">Enquire</a>
+            </div>
+            <button class="nav-toggle" aria-label="Toggle navigation">
+              <span class="nav-toggle-line"></span>
+              <span class="nav-toggle-line"></span>
+            </button>
+          </div>
+        `;
+      }
+
+      const footer = document.getElementById('main-footer');
+      if (footer) {
+        footer.innerHTML = `
+          <div class="container">
+            <p>&copy; ${new Date().getFullYear()} Sumit Ubale Photography. All rights reserved.</p>
+          </div>
+        `;
+      }
     }
   }
 };
