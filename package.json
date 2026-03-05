@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@imagekit/javascript": "^5.2.1"
+  }
+}
