@@ -22,14 +22,14 @@ class ServiceLoader {
       this.currentService = this.servicesData.find(s => s.slug === slug);
 
       if (!this.currentService) {
-        throw new Error('Service not found');
+        throw new Error(`Service not found: ${slug}`);
       }
 
       this.renderPage();
       this.initAnimations();
     } catch (error) {
       console.error('Error loading service:', error);
-      document.body.innerHTML = `<div class="container" style="padding: 100px; text-align: center;"><h1>Service Not Found</h1><a href="/">Back to Home</a></div>`;
+      document.body.innerHTML = `<div class="container" style="padding: 100px; text-align: center;"><h1>Service Not Found</h1><p>${error.message}</p><a href="/">Back to Home</a></div>`;
     }
   }
 
@@ -92,8 +92,8 @@ class ServiceLoader {
     }
 
     s.gallery.forEach((item, index) => {
-      image.category = s.slug; // Inject slug as category for display
-      const mediaItem = Core.Media.createItem(image, index, s.gallery);
+      item.category = s.slug; // Inject slug as category for display (Fixed: changed 'image' to 'item')
+      const mediaItem = Core.Media.createItem(item, index, s.gallery);
       gallery.appendChild(mediaItem);
     });
 
@@ -152,7 +152,9 @@ class ServiceLoader {
 }
 
 // Initialize
-Core.DOM.injectGlobalComponents();
+if (Core && Core.DOM && Core.DOM.injectGlobalComponents) {
+  Core.DOM.injectGlobalComponents();
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const loader = new ServiceLoader();

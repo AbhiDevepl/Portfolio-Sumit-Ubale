@@ -60,16 +60,20 @@ class GalleryLoader {
       categoriesContainer.appendChild(fragment);
     }
 
-    // Aggregate images
-    let images = [];
+    // Performance Optimization: Aggregate and enrich images once to avoid O(N^2) complexity
+    let enrichedImages = [];
     if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
+      Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
+        const enriched = imgs.map(img => ({ ...img, category: catSlug }));
+        enrichedImages.push(...enriched);
+      });
     } else {
       const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
+      const imgs = this.data.portfolio.images[key] || [];
+      enrichedImages = imgs.map(img => ({ ...img, category: this.category }));
     }
     
-    if (!images.length) {
+    if (!enrichedImages.length) {
       grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
       return;
     }
@@ -83,30 +87,14 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+    // Pass the pre-calculated enriched list to avoid redundant processing in the loop
+    const galleryFragment = Core.DOM.createFragment(enrichedImages, (img, idx) => {
+      return Core.Media.createItem(img, idx, enrichedImages, (cat) => this.category);
+    });
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
-  }
-
-  createGalleryItem(image, index) {
-    // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
-  }
-
-  getGalleryData() {
-    // Helper to get raw data for lightbox with injected category
-    if (this.category === 'all') {
-      let all = [];
-      Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
-        const enriched = imgs.map(img => ({ ...img, category: catSlug }));
-        all.push(...enriched);
-      });
-      return all;
-    }
-    const imgs = this.data.portfolio.images[this.category] || [];
-    return imgs.map(img => ({ ...img, category: this.category }));
   }
 
   initAnimations() {
@@ -170,39 +158,10 @@ class GalleryLoader {
   }
 }
 
-// Global Nav & Footer Injection (Single source of truth)
-function injectGlobalComponents() {
-  const nav = document.getElementById('main-nav');
-  if (nav) {
-    nav.innerHTML = `
-      <div class="nav-container">
-        <a href="/" class="nav-logo">SUMIT UBALE</a>
-        <div class="nav-menu">
-          <a href="/#portfolio" class="nav-link">Everything</a>
-          <a href="/pages/service.html?s=weddings" class="nav-link">Weddings</a>
-          <a href="/pages/service.html?s=cinematics" class="nav-link">Films</a>
-          <a href="/#about" class="nav-link">About</a>
-          <a href="/#contact" class="nav-cta">Enquire</a>
-        </div>
-        <button class="nav-toggle" aria-label="Toggle navigation">
-          <span class="nav-toggle-line"></span>
-          <span class="nav-toggle-line"></span>
-        </button>
-      </div>
-    `;
-  }
-
-  const footer = document.getElementById('main-footer');
-  if (footer) {
-    footer.innerHTML = `
-      <div class="container">
-        <p>&copy; ${new Date().getFullYear()} Sumit Ubale Photography. All rights reserved.</p>
-      </div>
-    `;
-  }
+// Global Nav & Footer Injection
+if (Core && Core.DOM && Core.DOM.injectGlobalComponents) {
+  Core.DOM.injectGlobalComponents();
 }
-
-injectGlobalComponents();
 
 document.addEventListener('DOMContentLoaded', () => {
     const loader = new GalleryLoader();
