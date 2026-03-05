@@ -83,16 +83,24 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+
+    /**
+     * OPTIMIZATION: Cache full gallery data before fragment creation.
+     * Calling getGalleryData() inside the loop creates O(N^2) complexity because
+     * getGalleryData() re-aggregates/maps the entire portfolio for every single item.
+     */
+    const cachedGalleryData = this.getGalleryData();
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, cachedGalleryData));
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
+  createGalleryItem(image, index, galleryData) {
     // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+    // Optimization: Use cached galleryData instead of recomputing getGalleryData() for every item
+    return Core.Media.createItem(image, index, galleryData, (cat) => this.category);
   }
 
   getGalleryData() {

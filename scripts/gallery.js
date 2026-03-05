@@ -73,8 +73,13 @@ window.GalleryManager = {
   getVisibleData() {
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
+        // Performance optimization: Avoid getComputedStyle for visibility check
+        // offsetParent is null if element or any ancestor has display: none
+        if (item.offsetParent === null) return false;
+
+        // Secondary check for opacity if handled by GSAP/CSS
+        const opacity = item.style.opacity || window.getComputedStyle(item).opacity;
+        return parseFloat(opacity) > 0.1;
       })
       .map(item => ({
         src: item.querySelector('img, video').src || item.querySelector('img, video').dataset.src,
