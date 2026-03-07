@@ -73,6 +73,14 @@ window.GalleryManager = {
   getVisibleData() {
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => {
+        // PERF: Multi-stage check to avoid Layout Thrashing
+        // 1. Fast fail for items explicitly hidden via display: none (offsetParent is null)
+        if (item.offsetParent === null) return false;
+
+        // 2. Check inline style for opacity (common for GSAP states)
+        if (item.style.opacity === '0') return false;
+
+        // 3. Last resort: Computed style
         const style = window.getComputedStyle(item);
         return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
       })
