@@ -1,0 +1,3 @@
+## 2026-03-07 - [Rendering Performance and Layout Thrashing]
+**Learning:** O(N^2) complexity in rendering loops (e.g., re-querying or re-calculating full gallery data for every item) causes significant main-thread blocking as the dataset grows. Additionally, `window.getComputedStyle` triggers synchronous layout recalculation; using `offsetParent` and inline style checks as a first-pass filter avoids this "layout thrashing."
+**Action:** Always cache expensive data aggregates before entering loops. Prioritize fast, non-layout-triggering checks (like `offsetParent` or inline styles) before falling back to `getComputedStyle`.
