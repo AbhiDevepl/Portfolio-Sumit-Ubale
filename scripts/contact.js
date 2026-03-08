@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     errorEl.textContent = message;
     errorEl.style.cssText = `
       display: block;
-      color: ${window.SiteColors.state.error};
+      color: ${window.SiteColors.semantic.error};
       font-size: 0.75rem;
       margin-top: 0.25rem;
       font-family: var(--font-sans);
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Example: FormSpree, Netlify Forms, or custom backend
       
       // Simulated submission (replace with actual API call)
-      await simulateFormSubmission(formData);
+      await submitToFormSubmit(formData);
       
       // Success feedback
       showSuccessMessage();
@@ -191,40 +191,33 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   /* ========================================
-     Simulated Form Submission (Replace with real API)
+     FormSubmit API
      ======================================== */
   
-  async function simulateFormSubmission(data) {
-    // Simulate network delay
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        console.log('Form data:', data);
-        resolve();
-      }, 1500);
-    });
-  }
-  
-  /* ========================================
-     Example: Real Form Submission with FormSpree
-     ======================================== */
-  
-  /*
-  async function submitToFormSpree(data) {
-    const response = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
+  async function submitToFormSubmit(data) {
+    const response = await fetch('https://formsubmit.co/ajax/sumitubale5050@gmail.com', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify({
+        name: data.name,
+        email: data.email,
+        message: data.message,
+        _subject: `New enquiry from ${data.name}`,
+        _template: 'table'
+      })
     });
-    
+
     if (!response.ok) {
       throw new Error('Form submission failed');
     }
-    
+
     return response.json();
   }
-  */
+  
+
   
   /* ========================================
      Success/Error Messages
@@ -306,5 +299,4 @@ document.addEventListener('DOMContentLoaded', () => {
     return messageEl;
   }
   
-  console.log('✅ Contact form initialized');
 });

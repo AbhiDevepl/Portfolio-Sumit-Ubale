@@ -53,5 +53,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, hero);
 
-  console.log('✅ Hero animations initialized (Context-ready)');
 });

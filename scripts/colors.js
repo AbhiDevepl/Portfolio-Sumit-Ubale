@@ -140,8 +140,6 @@
     if (metaTheme) {
       metaTheme.setAttribute('content', Palette.background.primary);
     }
-
-    console.log('🎨 Global Color Management System Initialized');
   }
 
   // Export Palette globally for potential Javascript logic

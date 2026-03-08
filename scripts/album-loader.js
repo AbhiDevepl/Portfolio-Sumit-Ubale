@@ -46,16 +46,21 @@ class AlbumLoader {
     const card = document.createElement('div');
     card.className = 'album-card stagger-reveal';
     
-    // Get first image as cover
-    const firstImage = this.data.portfolio.images[category.slug][0];
-    const coverSrc = firstImage ? firstImage.src : '/assets/images/cover/default.jpg';
-    const isVideo = firstImage?.type === 'video';
+    // Get all images (non-videos) for this category
+    const categoryImages = (this.data.portfolio.images[category.slug] || [])
+      .filter(item => item.type === 'image' || !item.type || item.src.match(/\.(jpe?g|png|webp)/i));
+    
+    // Random selection
+    let selectedImage = null;
+    if (categoryImages.length > 0) {
+      const randomIndex = Math.floor(Math.random() * categoryImages.length);
+      selectedImage = categoryImages[randomIndex];
+    }
+
+    const coverSrc = selectedImage ? selectedImage.src : '/assets/images/cover/default.jpg';
 
     card.innerHTML = `
-      ${isVideo ? 
-        `<video class="album-image" muted loop playsinline poster="${firstImage.poster || ''}"><source src="${coverSrc}" type="video/mp4"></video>` : 
-        `<img src="${coverSrc}" alt="${category.name}" class="album-image" loading="lazy">`
-      }
+      <img src="${coverSrc}" alt="${category.name}" class="album-image" loading="lazy">
       <div class="album-content">
         <h2 class="album-title">${category.name}</h2>
         <a href="/pages/gallery.html?category=${category.slug}" class="album-learn-more">Learn More</a>
@@ -68,16 +73,6 @@ class AlbumLoader {
             window.location.href = `/pages/gallery.html?category=${category.slug}`;
         }
     };
-
-    // Video hover preview
-    if (isVideo) {
-        const video = card.querySelector('video');
-        card.onmouseenter = () => video.play();
-        card.onmouseleave = () => {
-            video.pause();
-            video.currentTime = 0;
-        };
-    }
 
     return card;
   }
@@ -105,38 +100,7 @@ class AlbumLoader {
   }
 }
 
-// Global Nav Injection (Re-using or simple version)
-function injectGlobalComponents() {
-    const nav = document.getElementById('main-nav');
-    if (nav) {
-      nav.innerHTML = `
-        <div class="nav-container">
-          <a href="/" class="nav-logo">SUMIT UBALE</a>
-          <div class="nav-menu">
-            <a href="/#portfolio" class="nav-link">Everything</a>
-            <a href="/pages/albums.html" class="nav-link">Albums</a>
-            <a href="/#about" class="nav-link">About</a>
-            <a href="/#contact" class="nav-cta">Enquire</a>
-          </div>
-          <button class="nav-toggle" aria-label="Toggle navigation">
-            <span class="nav-toggle-line"></span>
-            <span class="nav-toggle-line"></span>
-          </button>
-        </div>
-      `;
-    }
-
-    const footer = document.getElementById('main-footer');
-    if (footer) {
-      footer.innerHTML = `
-        <div class="container">
-          <p>&copy; ${new Date().getFullYear()} Sumit Ubale Photography. All rights reserved.</p>
-        </div>
-      `;
-    }
-}
-
-injectGlobalComponents();
+Core.DOM.injectGlobalComponents();
 
 document.addEventListener('DOMContentLoaded', () => {
   const loader = new AlbumLoader();

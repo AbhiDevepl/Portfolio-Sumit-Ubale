@@ -3,13 +3,20 @@ import json
 import requests
 import sys
 import re
+from dotenv import load_dotenv
 from sirv_client import SirvClient, SirvError
 
+# Load environment variables from .env
+load_dotenv()
+
 # =====================================================
-# SIRV CONFIGURATION
+# SIRV CONFIGURATION (loaded from .env)
 # =====================================================
-CLIENT_ID = "LVpkr7IY3MHpq8o4txdP8yVBkZU"
-CLIENT_SECRET = "NIl69D0o7sCIhzdOcjSuvuz9u/rKK+lmROGOkrg7pz7ACAtCELfMHlzVKe/0+dn+5yB69Rg41bHjlg7oVf9qUw=="
+CLIENT_ID = os.getenv("SIRV_CLIENT_ID")
+CLIENT_SECRET = os.getenv("SIRV_CLIENT_SECRET")
+if not CLIENT_ID or not CLIENT_SECRET:
+    print("❌ Missing SIRV_CLIENT_ID or SIRV_CLIENT_SECRET in .env")
+    sys.exit(1)
 BASE_URL = "https://api.sirv.com/v2"
 SIRV_DOMAIN = "https://exdevx.sirv.com"
 
@@ -131,11 +138,14 @@ def sync():
 
         files, actual_folder = get_sirv_files(client, folders)
 
+        # Filter by extension: JPG/JPEG for most, plus video for cinematics
+        allowed_exts = (".jpg", ".jpeg")
+        if slug == "cinematics":
+            allowed_exts = (".jpg", ".jpeg", ".mp4", ".mov")
+
         valid_files = [
             f for f in files
-            if f["filename"].lower().endswith(
-                (".jpg", ".jpeg", ".png", ".webp", ".mp4", ".mov")
-            )
+            if f["filename"].lower().endswith(allowed_exts)
         ]
 
         valid_files.sort(key=lambda x: natural_sort_key(x["filename"]))

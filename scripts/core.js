@@ -426,7 +426,7 @@ window.Core = {
       item.className = `gallery-item ${sizeClass} reveal-item loading`;
       item.dataset.index = index;
       if (image.category) item.dataset.category = image.category;
-      if (image.isPreview) item.dataset.preview = image.isPreview;
+      if (image.order !== undefined) item.dataset.order = image.order;
 
       const isVideo = image.type === 'video';
       const media = document.createElement(isVideo ? 'video' : 'img');
@@ -515,6 +515,41 @@ window.Core = {
         if (rendered) fragment.appendChild(rendered);
       });
       return fragment;
+    },
+
+    /**
+     * Injects shared nav and footer into sub-pages (gallery, albums, service).
+     * Called from page-specific loaders to avoid duplicating markup.
+     */
+    injectGlobalComponents() {
+      const nav = document.getElementById('main-nav');
+      if (nav) {
+        nav.innerHTML = `
+          <div class="nav-container">
+            <a href="/" class="nav-logo">SUMIT UBALE</a>
+            <div class="nav-menu">
+              <a href="/#portfolio" class="nav-link">Everything</a>
+              <a href="/pages/service.html?s=weddings" class="nav-link">Weddings</a>
+              <a href="/pages/service.html?s=cinematics" class="nav-link">Films</a>
+              <a href="/#about" class="nav-link">About</a>
+              <a href="/#contact" class="nav-cta">Enquire</a>
+            </div>
+            <button class="nav-toggle" aria-label="Toggle navigation">
+              <span class="nav-toggle-line"></span>
+              <span class="nav-toggle-line"></span>
+            </button>
+          </div>
+        `;
+      }
+
+      const footer = document.getElementById('main-footer');
+      if (footer) {
+        footer.innerHTML = `
+          <div class="container">
+            <p>&copy; ${new Date().getFullYear()} Sumit Ubale Photography. All rights reserved.</p>
+          </div>
+        `;
+      }
     }
   }
 };

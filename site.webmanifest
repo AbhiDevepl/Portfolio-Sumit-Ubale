@@ -1,0 +1,22 @@
+{
+  "name": "Sumit Ubale Photography",
+  "short_name": "SUPF",
+  "description": "Editorial photographer portfolio showcasing weddings, portraits, and commercial work",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "theme_color": "#F5F5F2",
+  "background_color": "#F5F5F2",
+  "display": "standalone",
+  "start_url": "/"
+}

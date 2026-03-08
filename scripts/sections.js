@@ -7,16 +7,25 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sections.length === 0) return;
 
   const ctx = gsap.context(() => {
-    // 1. Generic Reveal Observer (Highly efficient)
+    // 1. Generic Reveal Observer (IntersectionObserver for performance)
     const revealElements = document.querySelectorAll('.stagger-reveal, .scroll-reveal');
-    Core.Observer.init(revealElements, (el) => {
-      gsap.to(el, {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: "power3.out"
-      });
-    });
+    if (revealElements.length > 0) {
+      const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            gsap.to(entry.target, {
+              opacity: 1,
+              y: 0,
+              duration: 0.8,
+              ease: "power3.out"
+            });
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.1 });
+
+      revealElements.forEach(el => revealObserver.observe(el));
+    }
 
     // 2. Parallax Optimized (gpu-accelerated)
     const parallaxImages = document.querySelectorAll('.hero-image, .event-image');
@@ -49,6 +58,4 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   });
-
-  console.log('✅ Section animations initialized (optimized)');
 });

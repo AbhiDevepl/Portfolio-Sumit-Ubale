@@ -1,12 +1,12 @@
 window.GalleryManager = {
   activeCategory: 'all',
+  currentLimit: 3,
   
   init() {
     this.initFiltering();
     this.initGalleryInteractions();
     Core.Lightbox.init();
     this.checkURLState();
-    console.log('✅ Gallery Manager optimized');
   },
   
   initFiltering() {
@@ -16,6 +16,7 @@ window.GalleryManager = {
         const btn = e.target.closest('.category-btn');
         if (btn) {
           const cat = btn.dataset.category;
+          this.currentLimit = 3; // Reset limit on category change
           this.filterGallery(cat);
           this.updateURL(cat);
         }
@@ -25,11 +26,14 @@ window.GalleryManager = {
     const loadMoreBtn = document.getElementById('load-more-btn');
     if (loadMoreBtn) {
       loadMoreBtn.onclick = () => {
-        window.location.href = `/pages/gallery.html?category=${this.activeCategory}`;
+        // Increase limit by 3 and re-filter
+        this.currentLimit += 3;
+        this.filterGallery(this.activeCategory);
       };
     }
     
     window.addEventListener('popstate', (e) => {
+      this.currentLimit = 3;
       this.filterGallery(e.state?.category || 'all');
     });
   },
@@ -48,26 +52,7 @@ window.GalleryManager = {
       }
     });
 
-    // Integrated Hover Effects
-    grid.addEventListener('mouseover', (e) => {
-      const item = e.target.closest('.gallery-item');
-      if (item) {
-        const img = item.querySelector('.gallery-image');
-        const overlay = item.querySelector('.gallery-overlay');
-        gsap.to(img, { scale: 1.05, duration: 0.4, ease: "power2.out", overwrite: true });
-        gsap.to(overlay, { opacity: 1, duration: 0.3, overwrite: true });
-      }
-    });
-
-    grid.addEventListener('mouseout', (e) => {
-      const item = e.target.closest('.gallery-item');
-      if (item) {
-        const img = item.querySelector('.gallery-image');
-        const overlay = item.querySelector('.gallery-overlay');
-        gsap.to(img, { scale: 1, duration: 0.4, ease: "power2.out", overwrite: true });
-        gsap.to(overlay, { opacity: 0, duration: 0.3, overwrite: true });
-      }
-    });
+    // Integrated Hover Effects removed
   },
 
   getVisibleData() {
@@ -94,31 +79,32 @@ window.GalleryManager = {
       btn.setAttribute('aria-selected', isActive);
     });
     
-    const items = document.querySelectorAll('.gallery-item');
+    // Convert to array to sort
+    const items = Array.from(document.querySelectorAll('.gallery-item'));
+    
+    let matchCount = 0;
     let shownCount = 0;
-    let hasHidden = false;
 
     items.forEach(item => {
       const itemCategory = item.dataset.category;
-      const isPreview = item.dataset.preview === 'true';
+      const order = parseInt(item.dataset.order || '0', 10);
       const isMatch = category === 'all' || itemCategory === category;
       
       let shouldShow = false;
       if (isMatch) {
+        matchCount++;
+        
         if (category === 'all') {
-          // STRICT LIMIT: Exactly 3 items for 'all' on homepage
-          if (shownCount < 3) {
+          // Use a simple global counter for 'all'
+          if (shownCount < this.currentLimit) {
             shouldShow = true;
             shownCount++;
-          } else {
-            hasHidden = true;
           }
         } else {
-          // Category-specific: Show all preview items
-          if (isPreview) {
+          // Use the per-category 'order' for specific categories
+          if (order < this.currentLimit) {
             shouldShow = true;
-          } else {
-            hasHidden = true;
+            shownCount++;
           }
         }
       }
@@ -132,6 +118,8 @@ window.GalleryManager = {
         overwrite: true
       });
     });
+
+    const hasHidden = matchCount > shownCount;
 
     const grid = document.getElementById('gallery-grid');
     if (grid) {

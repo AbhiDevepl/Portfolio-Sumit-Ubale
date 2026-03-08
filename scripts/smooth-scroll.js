@@ -1,7 +1,9 @@
 
+const SMOOTH_EASING = (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t));
+
 const lenis = new Lenis({
   duration: 1.2,
-  easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+  easing: SMOOTH_EASING,
   direction: 'vertical',
   gestureDirection: 'vertical',
   smooth: true,
@@ -31,26 +33,17 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       lenis.scrollTo(target, {
         offset: -100,
         duration: 1.5,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+        easing: SMOOTH_EASING
       });
     }
   });
 });
 
-// Stop scroll on specific events (e.g., modal open)
-function stopScroll() {
-  lenis.stop();
-}
-
-function startScroll() {
-  lenis.start();
-}
-
-// Export functions for use in other scripts
+// Export for use in other scripts
 window.lenisScroll = {
-  stop: stopScroll,
-  start: startScroll,
+  stop: () => lenis.stop(),
+  start: () => lenis.start(),
   instance: lenis
 };
 
-console.log('✅ Lenis smooth scroll initialized');
+window.lenis = lenis;

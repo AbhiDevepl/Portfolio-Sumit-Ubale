@@ -21,7 +21,6 @@ class Navigation {
       }
     });
 
-    console.log('✅ Navigation optimized');
   }
 
   toggleMenu() {

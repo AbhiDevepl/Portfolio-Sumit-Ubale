@@ -37,4 +37,4 @@ window.addEventListener("load", () => {
   ScrollTrigger.refresh();
 });
 
-console.log("✅ GSAP initialized with ScrollTrigger");
+

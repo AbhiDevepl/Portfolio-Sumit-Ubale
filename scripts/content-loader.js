@@ -24,7 +24,6 @@ class ContentLoader {
       
       this.populateEvents();
       this.populateAbout();
-      console.log('✅ Content loaded successfully');
     } catch (error) {
       this.handleError(error);
     }
@@ -72,30 +71,50 @@ class ContentLoader {
     } else {
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
-        // Separate videos and images for selection
-        const videos = images.filter(i => i.type === 'video');
-        const photos = images.filter(i => i.type !== 'video');
-
-        // Select 1 random video for preview
-        const randomVideoIndex = videos.length > 0 ? Math.floor(Math.random() * videos.length) : -1;
-
-        images.forEach((image) => {
-          let isPreview = false;
+        // 1. Filter only .jpg and .jpeg (and videos for cinematics)
+        const validImages = images.filter(img => {
+          if (!img.src) return false;
+          const lowerSrc = img.src.toLowerCase();
+          const urlWithoutParams = lowerSrc.split('?')[0];
           
-          if (image.type === 'video') {
-            const vidIdx = videos.indexOf(image);
-            if (vidIdx === randomVideoIndex) isPreview = true;
-          } else {
-            const photoIdx = photos.indexOf(image);
-            if (photoIdx !== -1 && photoIdx < 3) isPreview = true;
+          const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
+          const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
+          
+          if (categorySlug === 'cinematics') {
+            return isJpg || isVideo;
           }
+          return isJpg;
+        });
 
+        // 2. Sort numerically based on filename
+        validImages.sort((a, b) => {
+          // Extract filename from src e.g., "10.jpg" or "5.mp4"
+          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
+          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
+          return aNum - bNum;
+        });
+
+        // 3. Assign order
+        validImages.forEach((image, idx) => {
           allImages.push({
             ...image,
-            category: categorySlug, // Ensure category is assigned
-            isPreview: isPreview
+            category: categorySlug,
+            order: idx // used for pagination logic later
           });
         });
+      });
+
+      // 4. Final Global Sort by filename number (Rule 2)
+      allImages.sort((a, b) => {
+        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
+        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
+        if (aNum !== bNum) return aNum - bNum;
+        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
+        return a.src.localeCompare(b.src);
       });
     }
 
@@ -106,8 +125,6 @@ class ContentLoader {
     });
     
     galleryGrid.appendChild(fragment);
-
-    console.log(`✅ Loaded ${allImages.length} gallery images`);
   }
 
   /**
@@ -130,25 +147,6 @@ class ContentLoader {
   }
 
 
-  populateTestimonials() {
-    const testimonialsContainer = document.getElementById('testimonials-container');
-    
-    if (!testimonialsContainer || !this.data?.testimonials) {
-      console.warn('Testimonials container or data not found');
-      return;
-    }
-
-    // Clear existing content
-    testimonialsContainer.innerHTML = '';
-
-    // Create testimonial items
-    this.data.testimonials.forEach(testimonial => {
-      const testimonialItem = this.createTestimonialItem(testimonial);
-      testimonialsContainer.appendChild(testimonialItem);
-    });
-
-    console.log(`✅ Loaded ${this.data.testimonials.length} testimonials`);
-  }
 
   /**
    * Populate events section
@@ -218,8 +216,6 @@ class ContentLoader {
       
       eventsGrid.appendChild(item);
     });
-    
-    console.log(`✅ Loaded ${this.data.recentEvents.length} events`);
   }
 
   /**
@@ -261,7 +257,6 @@ class ContentLoader {
       });
     }
 
-    console.log('✅ Loaded social proof data');
   }
 
   /**
@@ -284,42 +279,16 @@ class ContentLoader {
       galleryGrid.innerHTML = '';
       galleryGrid.appendChild(errorMessage);
     }
-
-    // Optionally show fallback content
-    this.showFallbackContent();
-  }
-
-  /**
-   * Show fallback content if data fails to load
-   */
-  showFallbackContent() {
-    console.log('📦 Showing fallback content');
-    
-    // You can add static fallback content here
-    // For example, show a message or load from localStorage
-  }
-
-  /**
-   * Get data (for external use)
-   */
-  getData() {
-    return this.data;
   }
 }
 
 // Initialize content loader when DOM is ready
-let contentLoader;
-
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initContentLoader);
+  document.addEventListener('DOMContentLoaded', () => {
+    window.contentLoader = new ContentLoader();
+    window.contentLoader.init();
+  });
 } else {
-  initContentLoader();
+  window.contentLoader = new ContentLoader();
+  window.contentLoader.init();
 }
-
-function initContentLoader() {
-  contentLoader = new ContentLoader();
-  contentLoader.init();
-}
-
-// Export for use in other scripts
-window.contentLoader = contentLoader;

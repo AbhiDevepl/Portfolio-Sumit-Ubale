@@ -103,15 +103,7 @@ p {
   color: var(--text-secondary); /* Body text should be secondary/muted by default for hierarchy, or check design rules */
 }
 
-/* User said: Primary text: #F2F2F2, Secondary text: #9A9A9A. Body text usually primary for readability, but "Restraint" philosophy might imply secondary. 
-   Let's stick to Primary for readability unless specified. "Body text: neutral sans-serif with good readability" -> Primary. 
-   Actually, looking at high-end sites, body is often #9A9A9A (grey) on black. 
-   Let's keep p as text-secondary (#9A9A9A) and Headers as text-primary (#F2F2F2). 
-*/
 
-p {
-  color: var(--text-secondary);
-}
 
 
 /* ========================================
@@ -234,17 +226,7 @@ select:focus-visible {
   outline-offset: 4px;
 }
 
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
+/* Reduced motion support defined in animations.css */
 
 /* ========================================
    Selection Styles
@@ -256,8 +238,8 @@ select:focus-visible {
 }
 
 ::-moz-selection {
-  background-color: var(--editorial-rose);
-  color: var(--editorial-white);
+  background-color: var(--accent);
+  color: var(--bg-primary);
 }
 
 /* ========================================

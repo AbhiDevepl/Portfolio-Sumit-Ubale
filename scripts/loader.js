@@ -18,9 +18,7 @@
         document.body.classList.add('loaded');
         clearTimeout(safetyTimeout);
         
-        // Dispatch custom event for other scripts to know we're ready
         window.dispatchEvent(new CustomEvent('pageLoaded'));
-        console.log('✨ Page fully loaded and transition complete');
       }
     };
 
