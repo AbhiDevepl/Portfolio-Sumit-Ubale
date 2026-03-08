@@ -120,26 +120,40 @@ This portfolio embodies **restraint, editorial elegance, and cinematic motion**:
 
 ## 📝 Content Management
 
-### Adding Portfolio Images
+### 📂 Smart Media Management (Recommended)
 
-1. **Add images to appropriate folder**
+I have implemented an automated synchronization workflow using **Sirv**. This is the best way to manage hundreds of images and videos without manual JSON editing.
 
-   ```
-   /assets/images/portraits/your-image.webp
-   ```
+#### 1. Upload to Sirv
+- Upload your images and videos to [Sirv](https://sirv.com).
+- Organize them into folders named exactly like your categories:
+  - `/Weddings`
+  - `/Portraits`
+  - `/Pre-Wedding`
+  - `/Maternity`
+  - `/Engagement`
+  - `/Haldi`
+  - `/Cinematics`
 
-2. **Update `data/portfolio.json`**
+#### 2. Run the Sync Script
+Run the following command in your terminal to automatically update `portfolio.json` with your latest Sirv uploads:
 
-   ```json
-   {
-     "id": 7,
-     "title": "Your Image Title",
-     "category": "portraits",
-     "src": "/assets/images/portraits/your-image.webp",
-     "alt": "Descriptive alt text",
-     "aspectRatio": "3/4"
-   }
-   ```
+```bash
+python3 sync-sirv.py
+```
+
+This script will:
+- Authenticate with Sirv API.
+- Scan your folders.
+- Automatically detect images vs. videos.
+- Update `data/portfolio.json` with optimized CDN links.
+
+---
+
+### 📝 Manual Additions (Legacy)
+
+If you still need to add a one-off image manually:
+...
 
 3. **Optimize images**
    - Convert to WebP format

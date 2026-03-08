@@ -115,10 +115,12 @@ class ContentLoader {
    */
   getCategoryName(category) {
     const names = {
-      'wedding': 'Weddings',
+      'weddings': 'Weddings',
       'portraits': 'Portraits',
+      'commercial': 'Commercial',
       'events': 'Events',
       'maternity': 'Maternity',
+      'kids': 'Kids',
       'haldi': 'Haldi',
       'engagement': 'Engagement',
       'pre-wedding-photos-and-videos': 'Pre-Wedding',

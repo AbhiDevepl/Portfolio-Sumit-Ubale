@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "@imagekit/javascript": "^5.2.1"
+  },
+  "scripts": {
+    "dev": "vite"   
   }
 }
