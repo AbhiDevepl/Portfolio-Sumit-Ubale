@@ -92,8 +92,8 @@ class ServiceLoader {
     }
 
     s.gallery.forEach((item, index) => {
-      image.category = s.slug; // Inject slug as category for display
-      const mediaItem = Core.Media.createItem(image, index, s.gallery);
+      item.category = s.slug; // Inject slug as category for display
+      const mediaItem = Core.Media.createItem(item, index, s.gallery);
       gallery.appendChild(mediaItem);
     });
 
@@ -154,7 +154,13 @@ class ServiceLoader {
 // Initialize
 Core.DOM.injectGlobalComponents();
 
-document.addEventListener('DOMContentLoaded', () => {
+function initServiceLoader() {
   const loader = new ServiceLoader();
   loader.init();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initServiceLoader);
+} else {
+  initServiceLoader();
+}
