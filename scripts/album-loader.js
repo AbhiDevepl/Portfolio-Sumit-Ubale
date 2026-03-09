@@ -57,7 +57,12 @@ class AlbumLoader {
       selectedImage = categoryImages[randomIndex];
     }
 
-    const coverSrc = selectedImage ? selectedImage.src : '/assets/images/cover/default.jpg';
+    let coverSrc = selectedImage ? selectedImage.src : '/assets/images/cover/default.jpg';
+    
+    // Ensure Sirv profile preservation for color accuracy
+    if (coverSrc.includes('sirv.com')) {
+      coverSrc += (coverSrc.includes('?') ? '&' : '?') + 'profile=true';
+    }
 
     card.innerHTML = `
       <img src="${coverSrc}" alt="${category.name}" class="album-image" loading="lazy">

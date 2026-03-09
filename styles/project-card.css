@@ -33,12 +33,12 @@
   height: 100%;
   object-fit: cover;
   transition: transform var(--transition-slower), filter var(--transition-base);
-  filter: grayscale(0.2);
+  /* filter: grayscale(0.2); Removed for color accuracy */
 }
 
 .project-card:hover .project-card-image {
   transform: scale(1.05);
-  filter: grayscale(0);
+  /* filter: grayscale(0); Removed for color accuracy */
 }
 
 /* Project Content */

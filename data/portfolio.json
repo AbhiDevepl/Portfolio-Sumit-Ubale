@@ -63,7 +63,7 @@
           "id": 1,
           "title": "Weddings Session",
           "type": "image",
-          "src": "https://exdevx.sirv.com/Wedding/1.jpg?w=800&q=80",
+          "src": "https://exdevx.sirv.com/Wedding/1.jpg?w=800&q=80&profile=true",
           "alt": "Professional Wedding Photography by Sumit Ubale in Shrigonda Maharashtra",
           "aspectRatio": "3/4"
         },
@@ -71,7 +71,7 @@
           "id": 2,
           "title": "Weddings Session",
           "type": "image",
-          "src": "https://exdevx.sirv.com/Wedding/2.jpg?w=800&q=80",
+          "src": "https://exdevx.sirv.com/Wedding/2.jpg?w=800&q=80&profile=true",
           "alt": "Professional Wedding Photography by Sumit Ubale in Shrigonda Maharashtra",
           "aspectRatio": "3/4"
         },
@@ -79,7 +79,7 @@
           "id": 3,
           "title": "Weddings Session",
           "type": "image",
-          "src": "https://exdevx.sirv.com/Wedding/3.jpg?w=800&q=80",
+          "src": "https://exdevx.sirv.com/Wedding/3.jpg?w=800&q=80&profile=true",
           "alt": "Professional Wedding Photography by Sumit Ubale in Shrigonda Maharashtra",
           "aspectRatio": "3/4"
         },
