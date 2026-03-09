@@ -60,17 +60,11 @@ class GalleryLoader {
       categoriesContainer.appendChild(fragment);
     }
 
-    // Aggregate images
-    let images = [];
-    if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
-    } else {
-      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
-    }
+    // Aggregate and enrich images once for performance O(N) instead of O(N^2)
+    const images = this.getGalleryData();
     
     if (!images.length) {
-      grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
+      if (grid) grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
       return;
     }
 
@@ -80,24 +74,27 @@ class GalleryLoader {
       } else {
         grid.classList.remove('layout-centered');
       }
-    }
 
-    grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
-    grid.appendChild(galleryFragment);
+      grid.innerHTML = '';
+      const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, images));
+      grid.appendChild(galleryFragment);
+    }
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
+  createGalleryItem(image, index, allItems) {
     // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+    // We pass the pre-calculated allItems array to avoid O(N^2) overhead
+    return Core.Media.createItem(image, index, allItems, (cat) => this.category);
   }
 
   getGalleryData() {
     // Helper to get raw data for lightbox with injected category
-    if (this.category === 'all') {
+    const categoryLower = this.category.toLowerCase();
+
+    if (categoryLower === 'all') {
       let all = [];
       Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
         const enriched = imgs.map(img => ({ ...img, category: catSlug }));
@@ -105,8 +102,11 @@ class GalleryLoader {
       });
       return all;
     }
-    const imgs = this.data.portfolio.images[this.category] || [];
-    return imgs.map(img => ({ ...img, category: this.category }));
+
+    // Find key case-insensitively
+    const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === categoryLower);
+    const imgs = key ? this.data.portfolio.images[key] : [];
+    return imgs.map(img => ({ ...img, category: key || categoryLower }));
   }
 
   initAnimations() {
