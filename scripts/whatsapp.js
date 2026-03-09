@@ -1,40 +1,83 @@
 /**
  * WhatsApp Assistant Script
- * Handles context-aware pre-filled messages based on the current page.
+ * Smart context-aware WhatsApp messages for higher inquiry conversion
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+
     const whatsappBtn = document.querySelector('.whatsapp-float');
     if (!whatsappBtn) return;
 
     const phoneNumber = '919552265951';
-    let message = 'Hello I found your website and want to know about your photography services';
 
-    // Context-aware message generation
-    const currentPath = window.location.pathname;
-    
-    if (currentPath.includes('albums.html')) {
-        message = 'Hello I found your website and want to know about your wedding album and wedding photography collections';
-    } else if (window.location.hash === '#portfolio') {
-        message = 'Hello I found your website and want to know about your wedding photography portfolio';
-    } else if (window.location.hash === '#contact') {
-        message = 'Hello I found your website and want to book a photography session';
+    const siteName = "Sumit Ubale Photography";
+
+    let message = 
+`Hello 👋
+
+I just visited your website and I'm interested in learning more about your photography services.
+
+Could you please share more details about availability and packages?
+
+Thank you!`;
+
+    const path = window.location.pathname;
+    const hash = window.location.hash;
+
+    // Context specific messages
+    if (path.includes('albums.html')) {
+
+        message =
+`Hello 👋
+
+I saw the wedding albums on your website and they look amazing.
+
+Could you please share details about your wedding album packages and pricing?
+
+Thank you!`;
+
     }
 
-    // Encode message for URL
+    else if (hash === '#portfolio') {
+
+        message =
+`Hello 👋
+
+I was viewing your photography portfolio on the website.
+
+Your work looks beautiful. I would love to know more about booking you for a wedding or pre-wedding shoot.`;
+
+    }
+
+    else if (hash === '#contact') {
+
+        message =
+`Hello 👋
+
+I would like to enquire about booking ${siteName} for a wedding / event.
+
+Could you please share your availability and package details?`;
+
+    }
+
+    // Encode message
     const encodedMessage = encodeURIComponent(message);
+
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
 
-    // Update link
     whatsappBtn.setAttribute('href', whatsappUrl);
 
-    // Show button with a slight delay for better UX
+    // UX improvements
     setTimeout(() => {
+
         whatsappBtn.classList.add('loaded');
-        
-        // Add pulse animation after some time
+
         setTimeout(() => {
+
             whatsappBtn.classList.add('pulse');
+
         }, 3000);
-    }, 1500);
+
+    }, 1200);
+
 });
