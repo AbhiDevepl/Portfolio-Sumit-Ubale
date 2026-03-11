@@ -121,7 +121,9 @@ class ContentLoader {
     // Create gallery items using DocumentFragment for performance
     const fragment = Core.DOM.createFragment(allImages, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists
-      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
+      // Optimization: Skip individual handlers on homepage gallery items as GalleryManager
+      // already uses event delegation on #gallery-grid.
+      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat), { skipHandler: true });
     });
     
     galleryGrid.appendChild(fragment);
