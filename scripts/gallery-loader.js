@@ -83,16 +83,27 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+
+    // Performance: Pre-calculate gallery data once to avoid O(N²) complexity in loop
+    const galleryData = this.getGalleryData();
+
+    // Create a lookup map for category names to avoid redundant searching in the loop
+    const categoryNames = {};
+    if (this.data.portfolio.categories) {
+      this.data.portfolio.categories.forEach(c => categoryNames[c.slug] = c.name);
+    }
+
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => {
+        // Delegate to Core.Media to ensure consistent behavior across app
+        // Use cached galleryData to maintain O(N) complexity
+        // Use actual item category if available (aligns with ContentLoader behavior)
+        const itemCategory = img.category || (this.category !== 'all' ? this.category : '');
+        return Core.Media.createItem(img, idx, galleryData, (cat) => categoryNames[cat] || cat);
+    });
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
-  }
-
-  createGalleryItem(image, index) {
-    // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
   }
 
   getGalleryData() {
