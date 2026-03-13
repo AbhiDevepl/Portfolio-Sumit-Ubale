@@ -58,8 +58,11 @@ window.GalleryManager = {
   getVisibleData() {
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
+        // Optimization: offsetParent === null is a fast way to check for display: none
+        // We also check inline style opacity which GSAP uses, falling back to computed style only if needed.
+        if (item.offsetParent === null) return false;
+        const opacity = item.style.opacity || window.getComputedStyle(item).opacity;
+        return parseFloat(opacity) > 0.1;
       })
       .map(item => ({
         src: item.querySelector('img, video').src || item.querySelector('img, video').dataset.src,
