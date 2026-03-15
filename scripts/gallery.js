@@ -109,14 +109,20 @@ window.GalleryManager = {
         }
       }
 
-      gsap.to(item, {
-        opacity: shouldShow ? 1 : 0,
-        scale: shouldShow ? 1 : 0.95,
-        duration: 0.4,
-        display: shouldShow ? 'block' : 'none',
-        ease: "power2.out",
-        overwrite: true
-      });
+      if (window.gsap) {
+        gsap.to(item, {
+          opacity: shouldShow ? 1 : 0,
+          scale: shouldShow ? 1 : 0.95,
+          duration: 0.4,
+          display: shouldShow ? 'block' : 'none',
+          ease: "power2.out",
+          overwrite: true
+        });
+      } else {
+        // Graceful fallback without GSAP
+        item.style.display = shouldShow ? 'block' : 'none';
+        item.style.opacity = shouldShow ? '1' : '0';
+      }
     });
 
     const hasHidden = matchCount > shownCount;
@@ -132,15 +138,22 @@ window.GalleryManager = {
 
     const moreContainer = document.getElementById('portfolio-more');
     if (moreContainer) {
-      gsap.to(moreContainer, { 
-        display: hasHidden ? 'flex' : 'none', 
-        opacity: hasHidden ? 1 : 0,
-        duration: 0.3,
-        overwrite: true
-      });
+      if (window.gsap) {
+        gsap.to(moreContainer, { 
+          display: hasHidden ? 'flex' : 'none', 
+          opacity: hasHidden ? 1 : 0,
+          duration: 0.3,
+          overwrite: true
+        });
+      } else {
+        moreContainer.style.display = hasHidden ? 'flex' : 'none';
+        moreContainer.style.opacity = hasHidden ? '1' : '0';
+      }
     }
     
-    setTimeout(() => ScrollTrigger.refresh(), 500);
+    if (window.ScrollTrigger) {
+      setTimeout(() => ScrollTrigger.refresh(), 500);
+    }
   },
   
   updateURL(category) {

@@ -14,43 +14,53 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!hero) return;
 
   // Optimized GSAP Context for memory management
-  const ctx = gsap.context(() => {
-    // Hero Elements
+  if (window.gsap) {
+    const ctx = gsap.context(() => {
+      // Hero Elements
+      const title = hero.querySelector('.hero-title');
+      const subtitle = hero.querySelector('.hero-subtitle');
+      const scrollCue = hero.querySelector('.hero-scroll-cue');
+      const image = hero.querySelector('.hero-image');
+
+      // Reveal Animation
+      gsap.timeline({ delay: 0.2 })
+        .from(title, { y: 60, opacity: 0, duration: 1.2, ease: "power4.out" })
+        .from(subtitle, { y: 30, opacity: 0, duration: 1, ease: "power4.out" }, "-=0.8")
+        .from(scrollCue, { opacity: 0, duration: 0.8 }, "-=0.5");
+
+      // Parallax (Promoted to hardware)
+      if (image && window.ScrollTrigger) {
+        gsap.to(image, {
+          yPercent: 15,
+          ease: "none",
+          scrollTrigger: {
+            trigger: hero,
+            start: "top top",
+            end: "bottom top",
+            scrub: true
+          }
+        });
+      }
+
+      // Nav State
+      const nav = document.querySelector('.nav');
+      if (nav && window.ScrollTrigger) {
+        ScrollTrigger.create({
+          trigger: hero,
+          start: "bottom 10%",
+          onEnter: () => nav.classList.add('nav-scrolled'),
+          onLeaveBack: () => nav.classList.remove('nav-scrolled')
+        });
+      }
+    }, hero);
+  } else {
+    // Basic reveal for hero without GSAP
     const title = hero.querySelector('.hero-title');
     const subtitle = hero.querySelector('.hero-subtitle');
     const scrollCue = hero.querySelector('.hero-scroll-cue');
-    const image = hero.querySelector('.hero-image');
-
-    // Reveal Animation
-    gsap.timeline({ delay: 0.2 })
-      .from(title, { y: 60, opacity: 0, duration: 1.2, ease: "power4.out" })
-      .from(subtitle, { y: 30, opacity: 0, duration: 1, ease: "power4.out" }, "-=0.8")
-      .from(scrollCue, { opacity: 0, duration: 0.8 }, "-=0.5");
-
-    // Parallax (Promoted to hardware)
-    if (image) {
-      gsap.to(image, {
-        yPercent: 15,
-        ease: "none",
-        scrollTrigger: {
-          trigger: hero,
-          start: "top top",
-          end: "bottom top",
-          scrub: true
-        }
-      });
-    }
-
-    // Nav State
-    const nav = document.querySelector('.nav');
-    if (nav) {
-      ScrollTrigger.create({
-        trigger: hero,
-        start: "bottom 10%",
-        onEnter: () => nav.classList.add('nav-scrolled'),
-        onLeaveBack: () => nav.classList.remove('nav-scrolled')
-      });
-    }
-  }, hero);
+    if (title) title.style.opacity = '1';
+    if (subtitle) subtitle.style.opacity = '1';
+    if (scrollCue) scrollCue.style.opacity = '1';
+  }
 
 });
