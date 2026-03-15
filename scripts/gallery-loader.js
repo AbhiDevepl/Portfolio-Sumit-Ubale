@@ -7,14 +7,22 @@ class GalleryLoader {
   constructor() {
     this.data = null;
     this.category = this.getCategoryFromURL();
+    this.categoryNames = {}; // Cache for category names
   }
 
   async init() {
     this.category = (this.category || 'all').toLowerCase();
-    // if (!this.category) { window.location.href = '/'; return; } // Removed redirect
 
     try {
       await this.loadData();
+
+      // Build category name lookup map once to avoid repeated O(N) array searches
+      if (this.data?.portfolio?.categories) {
+        this.data.portfolio.categories.forEach(cat => {
+          this.categoryNames[cat.slug.toLowerCase()] = cat.name;
+        });
+      }
+
       Core.Lightbox.init();
       this.renderGallery();
       this.initAnimations();
@@ -39,20 +47,22 @@ class GalleryLoader {
     const titleEl = document.getElementById('category-title');
     const categoriesContainer = document.getElementById('gallery-categories');
     
-    // Update category title
-    const categoryInfo = this.data.portfolio.categories.find(c => c.slug.toLowerCase() === this.category);
-    if (titleEl) titleEl.textContent = categoryInfo ? categoryInfo.name : this.category.toUpperCase();
+    // Update category title using cached names
+    if (titleEl) {
+      titleEl.textContent = this.categoryNames[this.category] || this.category.toUpperCase();
+    }
 
     // Render category buttons (navigation)
-    if (categoriesContainer) {
+    if (categoriesContainer && this.data?.portfolio?.categories) {
       categoriesContainer.innerHTML = '';
       const fragment = Core.DOM.createFragment(this.data.portfolio.categories, (cat) => {
         const btn = document.createElement('button');
-        btn.className = `category-btn ${cat.slug === this.category ? 'active' : ''}`;
+        const isCurrent = cat.slug.toLowerCase() === this.category;
+        btn.className = `category-btn ${isCurrent ? 'active' : ''}`;
         btn.textContent = cat.name;
         btn.onclick = () => {
-          this.category = cat.slug;
-          window.history.pushState({ category: cat.slug }, '', `?category=${cat.slug}`);
+          this.category = cat.slug.toLowerCase();
+          window.history.pushState({ category: this.category }, '', `?category=${this.category}`);
           this.renderGallery();
         };
         return btn;
@@ -60,53 +70,52 @@ class GalleryLoader {
       categoriesContainer.appendChild(fragment);
     }
 
-    // Aggregate images
-    let images = [];
+    // Aggregate and enrich images once - O(N)
+    // Optimized: previously this happened inside createGalleryItem for every item (O(N^2))
+    let enrichedImages = [];
+    const imagesSource = this.data.portfolio.images;
+
     if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
+      Object.entries(imagesSource).forEach(([catSlug, catImages]) => {
+        const lowerSlug = catSlug.toLowerCase();
+        catImages.forEach(img => {
+          enrichedImages.push({ ...img, category: lowerSlug });
+        });
+      });
     } else {
-      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
+      // Case-insensitive lookup for robustness
+      const key = Object.keys(imagesSource).find(k => k.toLowerCase() === this.category);
+      const catImages = imagesSource[key] || [];
+      catImages.forEach(img => {
+        enrichedImages.push({ ...img, category: this.category });
+      });
     }
     
-    if (!images.length) {
-      grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
+    if (!enrichedImages.length) {
+      if (grid) grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
       return;
     }
 
     if (grid) {
+      // Layout adjustment for cinematics
       if (this.category === 'cinematics') {
         grid.classList.add('layout-centered');
       } else {
         grid.classList.remove('layout-centered');
       }
-    }
 
-    grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
-    grid.appendChild(galleryFragment);
+      grid.innerHTML = '';
+      // Pass pre-enriched images directly to avoid repeated data aggregation - O(N)
+      const galleryFragment = Core.DOM.createFragment(enrichedImages, (img, idx) => {
+        return Core.Media.createItem(img, idx, enrichedImages, (cat) => {
+          return this.categoryNames[cat] || cat;
+        });
+      });
+      grid.appendChild(galleryFragment);
+    }
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
-  }
-
-  createGalleryItem(image, index) {
-    // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
-  }
-
-  getGalleryData() {
-    // Helper to get raw data for lightbox with injected category
-    if (this.category === 'all') {
-      let all = [];
-      Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
-        const enriched = imgs.map(img => ({ ...img, category: catSlug }));
-        all.push(...enriched);
-      });
-      return all;
-    }
-    const imgs = this.data.portfolio.images[this.category] || [];
-    return imgs.map(img => ({ ...img, category: this.category }));
   }
 
   initAnimations() {
