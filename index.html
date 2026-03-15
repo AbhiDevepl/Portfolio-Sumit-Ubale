@@ -172,9 +172,7 @@
       <div class="mobile-menu-footer">
         <p class="mobile-menu-text">Based in Shrigonda Maharashtra India</p>
         <div class="mobile-social">
-          <a href="#" class="mobile-social-link">IG</a>
-          <a href="#" class="mobile-social-link">FB</a>
-          <a href="#" class="mobile-social-link">TW</a>
+          <a href="https://www.instagram.com/sumit_ubale_photography/" class="mobile-social-link" target="_blank" rel="noopener noreferrer">Instagram</a>
         </div>
       </div>
     </div>
@@ -275,17 +273,20 @@
       <h2 class="section-title">Client Testimonials</h2>
       <div class="testimonials-grid">
         <div class="testimonial-card" id="testimonial-1">
-          <div class="testimonial-stars">★★★★★</div>
+          <div class="testimonial-stars" aria-hidden="true">★★★★★</div>
+          <p class="sr-only">Rating: 5 out of 5 stars</p>
           <p class="testimonial-text">"Sumit is the best wedding photographer in Shrigonda. Every moment was captured with such grace and creativity. Beyond just photos, he captured the soul of our wedding."</p>
           <p class="testimonial-author">— Aniket & Priya</p>
         </div>
         <div class="testimonial-card" id="testimonial-2">
-          <div class="testimonial-stars">★★★★★</div>
+          <div class="testimonial-stars" aria-hidden="true">★★★★★</div>
+          <p class="sr-only">Rating: 5 out of 5 stars</p>
           <p class="testimonial-text">"The cinematic energy Sumit brings is unmatched. Our pre-wedding film felt like a dream. Professional, patient, and incredibly talented!"</p>
           <p class="testimonial-author">— Rahul & Sneha</p>
         </div>
         <div class="testimonial-card" id="testimonial-3">
-          <div class="testimonial-stars">★★★★★</div>
+          <div class="testimonial-stars" aria-hidden="true">★★★★★</div>
+          <p class="sr-only">Rating: 5 out of 5 stars</p>
           <p class="testimonial-text">"He has an eye for candid moments that most people miss. We are so grateful for the timeless memories he created for us in Mumbai."</p>
           <p class="testimonial-author">— Vikram & Aditi</p>
         </div>
@@ -303,9 +304,8 @@
           Fill out the form below and I'll get back to you within 24 hours.
         </p>
 
-        <!-- Contact Form -->
-        <form method="post" action="https://formsubmit.co/sumitubale5050@gmail.com" class="contact-form"
-          id="contact-form" novalidate>
+        <!-- Contact Form (submitted via JS to FormSubmit.co) -->
+        <form method="post" class="contact-form" id="contact-form" novalidate>
           <div class="form-group">
             <label for="name" class="form-label">Name</label>
             <input type="text" id="name" name="name" class="form-input" required autocomplete="name">

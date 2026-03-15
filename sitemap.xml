@@ -2,17 +2,26 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://supf.in/</loc>
-    <lastmod>2024-03-21</lastmod>
+    <lastmod>2025-03-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://supf.in/index.html</loc>
-    <lastmod>2024-03-21</lastmod>
+    <loc>https://supf.in/pages/gallery.html</loc>
+    <lastmod>2025-03-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-  <!-- Since other pages are loaded dynamically via hashes or parameters, 
-       we focus on the main entry points. If standalone pages exist, they 
-       should be listed here. -->
+  <url>
+    <loc>https://supf.in/pages/service.html</loc>
+    <lastmod>2025-03-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://supf.in/pages/albums.html</loc>
+    <lastmod>2025-03-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
 </urlset>

@@ -20,9 +20,10 @@
   --font-sans: "Inter", sans-serif;
 
   /* === Letter Spacing === */
-  --tracking-tight: -0.02em; 
+  --tracking-tight: -0.02em;
   --tracking-normal: 0;
   --tracking-wide: 0.05em;
+  --tracking-widest: 0.15em;
 
   /* === Line Heights === */
   --leading-tight: 1.1;

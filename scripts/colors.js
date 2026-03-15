@@ -58,6 +58,11 @@
       info: '#4A5D6E',            // Muted Steel Blue
     },
 
+    // Hero / Brand
+    hero: {
+      title: '#f5e1a6',          // Warm gold for hero title
+    },
+
     // Compatibility Layer (Legacy variable support)
     legacy: {
       editorial_bg: '#F5F5F2',
@@ -104,6 +109,9 @@
     '--error': Palette.semantic.error,
     '--warning': Palette.semantic.warning,
     '--info': Palette.semantic.info,
+
+    // Hero
+    '--hero-title-color': Palette.hero.title,
 
     // Global Compatibility
     '--editorial-bg': Palette.legacy.editorial_bg,

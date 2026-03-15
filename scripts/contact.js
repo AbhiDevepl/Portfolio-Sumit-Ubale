@@ -3,14 +3,15 @@
    ======================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
-  
+  const hasGsap = typeof window.gsap !== 'undefined';
+
   const contactForm = document.querySelector('.contact-form');
-  
+
   if (!contactForm) {
     console.warn('⚠️ Contact form not found');
     return;
   }
-  
+
   const nameInput = contactForm.querySelector('input[name="name"]');
   const emailInput = contactForm.querySelector('input[name="email"]');
   const messageInput = contactForm.querySelector('textarea[name="message"]');
@@ -87,14 +88,10 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     
     field.parentElement.appendChild(errorEl);
-    
-    // Animate error in
-    gsap.from(errorEl, {
-      opacity: 0,
-      y: -5,
-      duration: 0.3,
-      ease: "power2.out"
-    });
+
+    if (hasGsap) {
+      gsap.from(errorEl, { opacity: 0, y: -5, duration: 0.3, ease: "power2.out" });
+    }
   }
   
   function clearFieldError(field) {
@@ -113,20 +110,14 @@ document.addEventListener('DOMContentLoaded', () => {
   
   formInputs.forEach(input => {
     input.addEventListener('focus', () => {
-      gsap.to(input, {
-        borderColor: 'var(--accent)',
-        duration: 0.3,
-        ease: "power2.out"
-      });
+      if (hasGsap) gsap.to(input, { borderColor: 'var(--accent)', duration: 0.3, ease: "power2.out" });
+      else input.style.borderColor = 'var(--accent)';
     });
-    
+
     input.addEventListener('blur', () => {
       if (!input.value) {
-        gsap.to(input, {
-          borderColor: 'rgba(255,255,255,0.05)',
-          duration: 0.3,
-          ease: "power2.out"
-        });
+        if (hasGsap) gsap.to(input, { borderColor: 'rgba(255,255,255,0.05)', duration: 0.3, ease: "power2.out" });
+        else input.style.borderColor = 'rgba(255,255,255,0.05)';
       }
     });
   });
@@ -140,17 +131,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Validate form
     if (!validateForm()) {
-      // Shake animation for invalid form
-      gsap.fromTo(contactForm, 
-        { x: -10 },
-        { 
-          x: 0, 
-          duration: 0.1, 
-          repeat: 5, 
-          yoyo: true,
-          ease: "power1.inOut"
-        }
-      );
+      if (hasGsap) {
+        gsap.fromTo(contactForm, { x: -10 }, { x: 0, duration: 0.1, repeat: 5, yoyo: true, ease: "power1.inOut" });
+      }
       return;
     }
     
@@ -230,50 +213,34 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     
     contactForm.parentElement.insertBefore(messageEl, contactForm);
-    
-    gsap.from(messageEl, {
-      opacity: 0,
-      y: -20,
-      duration: 0.5,
-      ease: "power2.out"
-    });
-    
-    // Remove after 5 seconds
+
+    if (hasGsap) gsap.from(messageEl, { opacity: 0, y: -20, duration: 0.5, ease: "power2.out" });
+
     setTimeout(() => {
-      gsap.to(messageEl, {
-        opacity: 0,
-        y: -20,
-        duration: 0.3,
-        ease: "power2.in",
-        onComplete: () => messageEl.remove()
-      });
+      if (hasGsap) {
+        gsap.to(messageEl, { opacity: 0, y: -20, duration: 0.3, ease: "power2.in", onComplete: () => messageEl.remove() });
+      } else {
+        messageEl.remove();
+      }
     }, 5000);
   }
-  
+
   function showErrorMessage() {
     const messageEl = createMessageElement(
       'Oops! Something went wrong. Please try again later.',
       'error'
     );
-    
+
     contactForm.parentElement.insertBefore(messageEl, contactForm);
-    
-    gsap.from(messageEl, {
-      opacity: 0,
-      y: -20,
-      duration: 0.5,
-      ease: "power2.out"
-    });
-    
-    // Remove after 5 seconds
+
+    if (hasGsap) gsap.from(messageEl, { opacity: 0, y: -20, duration: 0.5, ease: "power2.out" });
+
     setTimeout(() => {
-      gsap.to(messageEl, {
-        opacity: 0,
-        y: -20,
-        duration: 0.3,
-        ease: "power2.in",
-        onComplete: () => messageEl.remove()
-      });
+      if (hasGsap) {
+        gsap.to(messageEl, { opacity: 0, y: -20, duration: 0.3, ease: "power2.in", onComplete: () => messageEl.remove() });
+      } else {
+        messageEl.remove();
+      }
     }, 5000);
   }
   

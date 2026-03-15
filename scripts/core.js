@@ -529,8 +529,7 @@ window.Core = {
             <a href="/" class="nav-logo">SUMIT UBALE</a>
             <div class="nav-menu">
               <a href="/#portfolio" class="nav-link">Everything</a>
-              <a href="/pages/service.html?s=weddings" class="nav-link">Weddings</a>
-              <a href="/pages/service.html?s=cinematics" class="nav-link">Films</a>
+              <a href="/pages/albums.html?s=all" class="nav-link">Albums</a>
               <a href="/#about" class="nav-link">About</a>
               <a href="/#contact" class="nav-cta">Enquire</a>
             </div>

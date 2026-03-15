@@ -61,13 +61,17 @@ window.GalleryManager = {
         const style = window.getComputedStyle(item);
         return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
       })
-      .map(item => ({
-        src: item.querySelector('img, video').src || item.querySelector('img, video').dataset.src,
-        title: item.querySelector('.gallery-title')?.innerText,
-        category: item.dataset.category,
-        type: item.querySelector('video') ? 'video' : 'image',
-        originalIndex: parseInt(item.dataset.index)
-      }));
+      .map(item => {
+        const media = item.querySelector('img, video');
+        const src = media?.src || media?.dataset?.src || '';
+        return {
+          src,
+          title: item.querySelector('.gallery-title')?.innerText,
+          category: item.dataset.category,
+          type: item.querySelector('video') ? 'video' : 'image',
+          originalIndex: parseInt(item.dataset.index, 10)
+        };
+      });
   },
   
   filterGallery(category) {

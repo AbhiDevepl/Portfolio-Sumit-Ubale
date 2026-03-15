@@ -2,7 +2,7 @@
 
 A minimalist, high-performance portfolio website for editorial and portrait photography. Built with vanilla HTML, CSS, and JavaScript with GSAP animations for a cinematic, magazine-quality experience.
 
-![Portfolio Preview](assets/images/og-image.jpg)
+Portfolio for **Sumit Ubale Photography** – wedding photographer in Shrigonda, Maharashtra. Images are served via CDN (Sirv/Cloudinary).
 
 ---
 
@@ -47,33 +47,55 @@ This portfolio embodies **restraint, editorial elegance, and cinematic motion**:
 /
 ├── index.html              # Main entry point
 ├── favicon.svg             # SVG favicon
-├── favicon.png             # PNG favicon (512x512)
-├── site.webmanifest        # PWA manifest
+├── favicon.png             # Optional: add 512×512 PNG for PWA/manifest
+├── site.webmanifest        # PWA manifest (single source at root)
+├── robots.txt
+├── sitemap.xml
+│
+├── pages/
+│   ├── gallery.html       # Full gallery by category
+│   ├── albums.html        # Wedding albums
+│   └── service.html       # Service landing (dynamic content)
 │
 ├── styles/
-│   ├── theme.css          # Design tokens & variables
+│   ├── theme.css          # Design tokens (colors from colors.js)
 │   ├── base.css           # Reset & typography
-│   ├── layout.css         # Grid systems & containers
-│   ├── components.css     # Section-specific styles
-│   └── animations.css     # Motion & transitions
+│   ├── layout.css         # Grid & containers
+│   ├── components.css     # Sections, nav, hero, gallery, contact
+│   ├── animations.css     # Motion & reduced-motion
+│   ├── loader.css         # Page loader
+│   ├── lightbox-video.css # Lightbox & video controls
+│   ├── service.css        # Service page
+│   └── project-card.css   # Card components
 │
 ├── scripts/
-│   ├── gsap-init.js       # GSAP configuration
-│   ├── smooth-scroll.js   # Lenis setup
+│   ├── colors.js          # Color system (injected into :root)
+│   ├── core.js            # Lightbox, VideoObserver, Media factory, DOM utils
+│   ├── loader.js          # Page loader lifecycle
+│   ├── content-loader.js  # Fetches portfolio.json, populates homepage
+│   ├── gallery.js         # Homepage gallery filter & lightbox
+│   ├── gallery-loader.js  # Gallery page
+│   ├── album-loader.js    # Albums page
+│   ├── service-loader.js  # Service page
+│   ├── navigation.js      # Mobile menu
 │   ├── hero.js            # Hero animations
-│   ├── sections.js        # Scroll-triggered reveals
-│   ├── gallery.js         # Filtering & lightbox
-│   └── contact.js         # Form validation
+│   ├── sections.js        # Scroll reveals
+│   ├── gsap-init.js       # GSAP config
+│   ├── smooth-scroll.js   # Lenis
+│   ├── contact.js         # Form validation & FormSubmit
+│   └── whatsapp.js        # WhatsApp CTA with context messages
 │
 ├── data/
-│   └── portfolio.json     # Gallery & content data
+│   ├── portfolio.json     # Gallery images by category
+│   ├── services.json      # Service copy & deliverables
+│   └── new_portfolio.json # Optional / legacy
 │
-└── assets/
-    └── images/
-        ├── hero/          # Hero section images
-        ├── portraits/     # Portfolio images
-        └── events/        # Event photography
+└── Python/                # Dev tooling: Sirv sync (not part of static deploy)
+    ├── sync-sirv.py
+    └── ...
 ```
+
+Images and video are loaded from CDN (Sirv, Cloudinary). There is no local `assets/images` folder.
 
 ---
 
@@ -136,10 +158,10 @@ I have implemented an automated synchronization workflow using **Sirv**. This is
   - `/Cinematics`
 
 #### 2. Run the Sync Script
-Run the following command in your terminal to automatically update `portfolio.json` with your latest Sirv uploads:
+From the project root, run the sync script (lives in `Python/`) to update `data/portfolio.json` with your latest Sirv uploads:
 
 ```bash
-python3 sync-sirv.py
+python3 Python/sync-sirv.py
 ```
 
 This script will:

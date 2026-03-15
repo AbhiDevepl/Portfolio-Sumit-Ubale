@@ -17,15 +17,14 @@
         loader.classList.add('hidden');
         document.body.classList.add('loaded');
         clearTimeout(safetyTimeout);
-        
+
         window.dispatchEvent(new CustomEvent('pageLoaded'));
       }
     };
 
-    // Use window.onload to ensure all assets (images/fonts) are ready
-    window.onload = () => {
-      // Small delay for smooth aesthetic transition
+    // Use load event so loader is not stuck; addEventListener avoids overwriting other handlers
+    window.addEventListener('load', () => {
       setTimeout(hideLoader, 500);
-    };
+    });
   });
 })();
