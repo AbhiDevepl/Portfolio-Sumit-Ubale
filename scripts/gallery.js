@@ -58,8 +58,18 @@ window.GalleryManager = {
   getVisibleData() {
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
+        // Optimization: avoid getComputedStyle if possible
+        if (item.offsetParent === null) return false; // display: none
+
+        const inlineOpacity = item.style.opacity;
+        if (inlineOpacity !== '' && parseFloat(inlineOpacity) <= 0.1) return false;
+
+        if (inlineOpacity === '') {
+          const style = window.getComputedStyle(item);
+          return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
+        }
+
+        return true;
       })
       .map(item => {
         const media = item.querySelector('img, video');
@@ -89,6 +99,9 @@ window.GalleryManager = {
     let matchCount = 0;
     let shownCount = 0;
 
+    const toShow = [];
+    const toHide = [];
+
     items.forEach(item => {
       const itemCategory = item.dataset.category;
       const order = parseInt(item.dataset.order || '0', 10);
@@ -113,21 +126,46 @@ window.GalleryManager = {
         }
       }
 
-      if (window.gsap) {
-        gsap.to(item, {
-          opacity: shouldShow ? 1 : 0,
-          scale: shouldShow ? 1 : 0.95,
+      if (shouldShow) {
+        toShow.push(item);
+      } else {
+        toHide.push(item);
+      }
+    });
+
+    // Batched animations for performance
+    if (window.gsap) {
+      if (toShow.length > 0) {
+        gsap.to(toShow, {
+          opacity: 1,
+          scale: 1,
           duration: 0.4,
-          display: shouldShow ? 'block' : 'none',
+          display: 'block',
           ease: "power2.out",
           overwrite: true
         });
-      } else {
-        // Graceful fallback without GSAP
-        item.style.display = shouldShow ? 'block' : 'none';
-        item.style.opacity = shouldShow ? '1' : '0';
       }
-    });
+      if (toHide.length > 0) {
+        gsap.to(toHide, {
+          opacity: 0,
+          scale: 0.95,
+          duration: 0.4,
+          display: 'none',
+          ease: "power2.out",
+          overwrite: true
+        });
+      }
+    } else {
+      // Fallback for non-GSAP environments
+      toShow.forEach(item => {
+        item.style.display = 'block';
+        item.style.opacity = '1';
+      });
+      toHide.forEach(item => {
+        item.style.display = 'none';
+        item.style.opacity = '0';
+      });
+    }
 
     const hasHidden = matchCount > shownCount;
 
