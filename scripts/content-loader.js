@@ -7,6 +7,18 @@ class ContentLoader {
   constructor() {
     this.dataUrl = '/data/portfolio.json';
     this.data = null;
+    this.categoryNames = {
+      'weddings': 'Weddings',
+      'portraits': 'Portraits',
+      'commercial': 'Commercial',
+      'events': 'Events',
+      'maternity': 'Maternity',
+      'kids': 'Kids',
+      'haldi': 'Haldi',
+      'engagement': 'Engagement',
+      'pre-wedding-photos-and-videos': 'Pre-Wedding',
+      'cinematics': 'Cinematics'
+    };
   }
 
   /**
@@ -131,19 +143,7 @@ class ContentLoader {
    * Helper to get category name from slug
    */
   getCategoryName(category) {
-    const names = {
-      'weddings': 'Weddings',
-      'portraits': 'Portraits',
-      'commercial': 'Commercial',
-      'events': 'Events',
-      'maternity': 'Maternity',
-      'kids': 'Kids',
-      'haldi': 'Haldi',
-      'engagement': 'Engagement',
-      'pre-wedding-photos-and-videos': 'Pre-Wedding',
-      'cinematics': 'Cinematics'
-    };
-    return names[category] || category;
+    return this.categoryNames[category] || category;
   }
 
 
