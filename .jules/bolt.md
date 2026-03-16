@@ -1,0 +1,3 @@
+## 2025-05-15 - [O(N²) Loop Bottleneck in Gallery Rendering]
+**Learning:** In a vanilla JS architecture with large datasets (1,200+ items), data aggregation functions (like `getGalleryData`) called inside rendering loops create $O(N^2)$ bottlenecks. This was especially severe because it re-scanned the entire portfolio array for every single image rendered.
+**Action:** Always hoist data aggregation and metadata lookups out of rendering loops. Cache these results once and pass them as arguments to item creation functions. Use lookup maps (POJOs/Maps) for O(1) metadata resolution instead of O(M) array searches.
