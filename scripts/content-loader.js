@@ -131,19 +131,22 @@ class ContentLoader {
    * Helper to get category name from slug
    */
   getCategoryName(category) {
-    const names = {
-      'weddings': 'Weddings',
-      'portraits': 'Portraits',
-      'commercial': 'Commercial',
-      'events': 'Events',
-      'maternity': 'Maternity',
-      'kids': 'Kids',
-      'haldi': 'Haldi',
-      'engagement': 'Engagement',
-      'pre-wedding-photos-and-videos': 'Pre-Wedding',
-      'cinematics': 'Cinematics'
-    };
-    return names[category] || category;
+    // Cache the mapping object to avoid re-creating it 1000+ times in loops
+    if (!this._categoryNames) {
+      this._categoryNames = {
+        'weddings': 'Weddings',
+        'portraits': 'Portraits',
+        'commercial': 'Commercial',
+        'events': 'Events',
+        'maternity': 'Maternity',
+        'kids': 'Kids',
+        'haldi': 'Haldi',
+        'engagement': 'Engagement',
+        'pre-wedding-photos-and-videos': 'Pre-Wedding',
+        'cinematics': 'Cinematics'
+      };
+    }
+    return this._categoryNames[category] || category;
   }
 
 

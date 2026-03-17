@@ -58,8 +58,14 @@ window.GalleryManager = {
   getVisibleData() {
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
+        // Fast check using offsetParent (null if display: none)
+        // This avoids getComputedStyle which can trigger layout thrashing in a loop
+        const isVisible = item.offsetParent !== null;
+        if (!isVisible) return false;
+
+        // Secondary check for opacity (usually set via GSAP)
+        const opacity = item.style.opacity;
+        return opacity === '' || parseFloat(opacity) > 0.1;
       })
       .map(item => {
         const media = item.querySelector('img, video');
@@ -89,6 +95,9 @@ window.GalleryManager = {
     let matchCount = 0;
     let shownCount = 0;
 
+    const toShow = [];
+    const toHide = [];
+
     items.forEach(item => {
       const itemCategory = item.dataset.category;
       const order = parseInt(item.dataset.order || '0', 10);
@@ -113,21 +122,46 @@ window.GalleryManager = {
         }
       }
 
-      if (window.gsap) {
-        gsap.to(item, {
-          opacity: shouldShow ? 1 : 0,
-          scale: shouldShow ? 1 : 0.95,
+      if (shouldShow) {
+        toShow.push(item);
+      } else {
+        toHide.push(item);
+      }
+    });
+
+    if (window.gsap) {
+      // Batch GSAP animations for performance with 1000+ items
+      if (toShow.length > 0) {
+        gsap.to(toShow, {
+          opacity: 1,
+          scale: 1,
           duration: 0.4,
-          display: shouldShow ? 'block' : 'none',
+          display: 'block',
           ease: "power2.out",
           overwrite: true
         });
-      } else {
-        // Graceful fallback without GSAP
-        item.style.display = shouldShow ? 'block' : 'none';
-        item.style.opacity = shouldShow ? '1' : '0';
       }
-    });
+      if (toHide.length > 0) {
+        gsap.to(toHide, {
+          opacity: 0,
+          scale: 0.95,
+          duration: 0.4,
+          display: 'none',
+          ease: "power2.out",
+          overwrite: true
+        });
+      }
+    } else {
+      // Graceful fallback
+      toShow.forEach(item => {
+        item.style.display = 'block';
+        item.style.opacity = '1';
+      });
+      toHide.forEach(item => {
+        item.style.display = 'none';
+        item.style.opacity = '0';
+      });
+    }
 
     const hasHidden = matchCount > shownCount;
 
