@@ -15,6 +15,15 @@ class GalleryLoader {
 
     try {
       await this.loadData();
+
+      // Build O(1) category name lookup map
+      this.categoryNames = {};
+      if (this.data?.portfolio?.categories) {
+        this.data.portfolio.categories.forEach(cat => {
+          this.categoryNames[cat.slug.toLowerCase()] = cat.name;
+        });
+      }
+
       Core.Lightbox.init();
       this.renderGallery();
       this.initAnimations();
@@ -60,16 +69,10 @@ class GalleryLoader {
       categoriesContainer.appendChild(fragment);
     }
 
-    // Aggregate images
-    let images = [];
-    if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
-    } else {
-      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
-    }
+    // Aggregate and enrich images for rendering and lightbox
+    const galleryData = this.getGalleryData();
     
-    if (!images.length) {
+    if (!galleryData.length) {
       grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
       return;
     }
@@ -83,20 +86,24 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+
+    // Use enriched galleryData for rendering to ensure categories are present
+    const galleryFragment = Core.DOM.createFragment(galleryData, (img, idx) => this.createGalleryItem(img, idx, galleryData));
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
+  createGalleryItem(image, index, allItems) {
     // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+    // Uses pre-computed categoryNames lookup for O(1) slug resolution
+    return Core.Media.createItem(image, index, allItems, (cat) => this.categoryNames[cat.toLowerCase()] || cat);
   }
 
   getGalleryData() {
     // Helper to get raw data for lightbox with injected category
+    // Robust against category slug casing
     if (this.category === 'all') {
       let all = [];
       Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
@@ -105,8 +112,9 @@ class GalleryLoader {
       });
       return all;
     }
-    const imgs = this.data.portfolio.images[this.category] || [];
-    return imgs.map(img => ({ ...img, category: this.category }));
+    const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
+    const imgs = this.data.portfolio.images[key] || [];
+    return imgs.map(img => ({ ...img, category: key }));
   }
 
   initAnimations() {
