@@ -38,10 +38,16 @@ class GalleryLoader {
     const grid = document.getElementById('gallery-grid');
     const titleEl = document.getElementById('category-title');
     const categoriesContainer = document.getElementById('gallery-categories');
+
+    // Build category lookup map for O(1) resolution and correct naming
+    const categoryNames = {};
+    this.data.portfolio.categories.forEach(cat => {
+      categoryNames[cat.slug.toLowerCase()] = cat.name;
+    });
     
     // Update category title
-    const categoryInfo = this.data.portfolio.categories.find(c => c.slug.toLowerCase() === this.category);
-    if (titleEl) titleEl.textContent = categoryInfo ? categoryInfo.name : this.category.toUpperCase();
+    const categoryName = categoryNames[this.category] || this.category.toUpperCase();
+    if (titleEl) titleEl.textContent = categoryName;
 
     // Render category buttons (navigation)
     if (categoriesContainer) {
@@ -60,14 +66,9 @@ class GalleryLoader {
       categoriesContainer.appendChild(fragment);
     }
 
-    // Aggregate images
-    let images = [];
-    if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
-    } else {
-      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
-    }
+    // Aggregate images for current view
+    // Using getGalleryData() once avoids O(N^2) bottlenecks previously caused by repeated calls in the rendering loop
+    const images = this.getGalleryData();
     
     if (!images.length) {
       grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
@@ -83,16 +84,16 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+
+    // Pass pre-cached lookup map to creator for O(1) category resolution
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => {
+      return Core.Media.createItem(img, idx, images, (cat) => categoryNames[cat.toLowerCase()] || cat);
+    });
+
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
-  }
-
-  createGalleryItem(image, index) {
-    // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
   }
 
   getGalleryData() {
