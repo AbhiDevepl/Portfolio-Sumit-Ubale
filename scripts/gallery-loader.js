@@ -60,18 +60,22 @@ class GalleryLoader {
       categoriesContainer.appendChild(fragment);
     }
 
-    // Aggregate images
-    let images = [];
-    if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
-    } else {
-      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
-    }
+    // Performance Optimization: Hoist data aggregation out of the rendering loop.
+    // getGalleryData() handles the heavy lifting of mapping/enriching ~1200 items.
+    // Calling it once here instead of N times inside the loop reduces complexity from O(N^2) to O(N).
+    const allItems = this.getGalleryData();
     
-    if (!images.length) {
+    if (!allItems.length) {
       grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
       return;
+    }
+
+    // Performance Optimization: Create a lookup map for category names to avoid O(N*M) repeated searching.
+    const categoryNames = {};
+    if (this.data.portfolio.categories) {
+      this.data.portfolio.categories.forEach(cat => {
+        categoryNames[cat.slug] = cat.name;
+      });
     }
 
     if (grid) {
@@ -83,16 +87,14 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+    // Use the pre-aggregated allItems and the cached categoryNames lookup.
+    const galleryFragment = Core.DOM.createFragment(allItems, (img, idx) => {
+      return Core.Media.createItem(img, idx, allItems, (catSlug) => categoryNames[catSlug] || catSlug);
+    });
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
-  }
-
-  createGalleryItem(image, index) {
-    // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
   }
 
   getGalleryData() {
