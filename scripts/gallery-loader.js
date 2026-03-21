@@ -7,6 +7,7 @@ class GalleryLoader {
   constructor() {
     this.data = null;
     this.category = this.getCategoryFromURL();
+    this._galleryDataCache = {};
   }
 
   async init() {
@@ -83,30 +84,40 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+    const allGalleryData = this.getGalleryData(); // Hoist expensive call
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, allGalleryData));
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
+  createGalleryItem(image, index, allItems) {
     // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+    return Core.Media.createItem(image, index, allItems, (cat) => this.category);
   }
 
   getGalleryData() {
+    // Return cached data if available for current category
+    if (this._galleryDataCache[this.category]) {
+      return this._galleryDataCache[this.category];
+    }
+
     // Helper to get raw data for lightbox with injected category
+    let result = [];
     if (this.category === 'all') {
-      let all = [];
       Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
         const enriched = imgs.map(img => ({ ...img, category: catSlug }));
-        all.push(...enriched);
+        result.push(...enriched);
       });
-      return all;
+    } else {
+      const imgs = this.data.portfolio.images[this.category] || [];
+      result = imgs.map(img => ({ ...img, category: this.category }));
     }
-    const imgs = this.data.portfolio.images[this.category] || [];
-    return imgs.map(img => ({ ...img, category: this.category }));
+
+    // Store in cache before returning
+    this._galleryDataCache[this.category] = result;
+    return result;
   }
 
   initAnimations() {
