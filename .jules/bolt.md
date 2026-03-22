@@ -1,0 +1,3 @@
+## 2025-05-15 - [Layout Thrashing and O(N²) Rendering]
+**Learning:** In a vanilla JS architecture with 1,200+ DOM nodes, `window.getComputedStyle` triggers severe layout thrashing when called in a loop for visibility checks. Additionally, calling data aggregation getters (like `getGalleryData()`) inside a rendering loop creates an O(N²) bottleneck that scales poorly with large datasets.
+**Action:** Use `element.offsetParent === null` for fast visibility checks and hoist data aggregation out of rendering loops to ensure O(N) complexity. Always subset massive data lists for homepage "previews" to keep DOM weight manageable.

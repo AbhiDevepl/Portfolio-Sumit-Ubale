@@ -49,6 +49,7 @@ class GalleryLoader {
       const fragment = Core.DOM.createFragment(this.data.portfolio.categories, (cat) => {
         const btn = document.createElement('button');
         btn.className = `category-btn ${cat.slug === this.category ? 'active' : ''}`;
+        btn.dataset.category = cat.slug;
         btn.textContent = cat.name;
         btn.onclick = () => {
           this.category = cat.slug;
@@ -83,16 +84,20 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+    // Optimization: Cache full gallery data once before the loop to avoid O(N^2) complexity
+    const galleryData = this.getGalleryData();
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, galleryData));
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
+  createGalleryItem(image, index, allItems = null) {
     // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+    // Optimization: use passed in allItems if available to avoid redundant computation
+    const galleryData = allItems || this.getGalleryData();
+    return Core.Media.createItem(image, index, galleryData, (cat) => this.category);
   }
 
   getGalleryData() {
