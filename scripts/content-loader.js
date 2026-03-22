@@ -118,10 +118,16 @@ class ContentLoader {
       });
     }
 
+    // Optimization: Filter for preview items only on the homepage to reduce DOM weight.
+    // Total 1200+ items is too many for a single page.
+    const previewItems = allImages.filter(img => img.isPreview).slice(0, 25);
+    // Fallback: If no isPreview items, just take the first 25
+    const finalItems = previewItems.length > 0 ? previewItems : allImages.slice(0, 25);
+
     // Create gallery items using DocumentFragment for performance
-    const fragment = Core.DOM.createFragment(allImages, (image, index) => {
+    const fragment = Core.DOM.createFragment(finalItems, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists
-      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
+      return Core.Media.createItem(image, index, finalItems, (cat) => this.getCategoryName(cat));
     });
     
     galleryGrid.appendChild(fragment);
