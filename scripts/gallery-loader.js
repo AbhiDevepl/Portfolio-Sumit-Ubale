@@ -83,16 +83,19 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+    const allGalleryData = this.getGalleryData();
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, allGalleryData));
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
+  createGalleryItem(image, index, galleryData) {
     // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+    // Optimization: Use passed galleryData instead of calling this.getGalleryData() repeatedly
+    const dataForLightbox = galleryData || this.getGalleryData();
+    return Core.Media.createItem(image, index, dataForLightbox, (cat) => this.category);
   }
 
   getGalleryData() {
