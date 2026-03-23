@@ -118,10 +118,17 @@ class ContentLoader {
       });
     }
 
+    // Pre-calculate category names to avoid O(N*M) lookups in the loop
+    const categories = this.data.portfolio.categories || [];
+    const categoryMap = categories.reduce((map, cat) => {
+      map[cat.slug] = cat.name;
+      return map;
+    }, {});
+
     // Create gallery items using DocumentFragment for performance
     const fragment = Core.DOM.createFragment(allImages, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists
-      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
+      return Core.Media.createItem(image, index, allImages, (cat) => categoryMap[cat] || this.getCategoryName(cat));
     });
     
     galleryGrid.appendChild(fragment);
