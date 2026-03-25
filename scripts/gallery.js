@@ -56,17 +56,28 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
+    // Optimization: Use offsetParent to check for visibility instead of expensive getComputedStyle.
+    // Elements with display: none will have offsetParent === null.
+    // We also check inline opacity which is set by GSAP during filtering.
+    // Using .textContent instead of .innerText for better performance as it avoids layout reflows.
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
+        const isVisible = item.offsetParent !== null;
+        if (!isVisible) return false;
+
+        // If GSAP has set an inline opacity, respect it.
+        // Otherwise assume 1 if not explicitly hidden.
+        const inlineOpacity = item.style.opacity;
+        if (inlineOpacity !== "" && parseFloat(inlineOpacity) <= 0.1) return false;
+
+        return true;
       })
       .map(item => {
         const media = item.querySelector('img, video');
         const src = media?.src || media?.dataset?.src || '';
         return {
           src,
-          title: item.querySelector('.gallery-title')?.innerText,
+          title: item.querySelector('.gallery-title')?.textContent,
           category: item.dataset.category,
           type: item.querySelector('video') ? 'video' : 'image',
           originalIndex: parseInt(item.dataset.index, 10)

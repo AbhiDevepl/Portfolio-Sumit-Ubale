@@ -49,6 +49,7 @@ class GalleryLoader {
       const fragment = Core.DOM.createFragment(this.data.portfolio.categories, (cat) => {
         const btn = document.createElement('button');
         btn.className = `category-btn ${cat.slug === this.category ? 'active' : ''}`;
+        btn.dataset.category = cat.slug; // Ensure dataset is set for automation and filtering
         btn.textContent = cat.name;
         btn.onclick = () => {
           this.category = cat.slug;
@@ -83,16 +84,19 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+    const galleryData = this.getGalleryData(); // Pre-calculate for performance
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, galleryData));
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
+  createGalleryItem(image, index, galleryData = null) {
     // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+    // galleryData is pre-calculated in renderGallery for better performance
+    const data = galleryData || this.getGalleryData();
+    return Core.Media.createItem(image, index, data, (cat) => this.category);
   }
 
   getGalleryData() {
