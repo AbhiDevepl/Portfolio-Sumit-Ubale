@@ -60,16 +60,23 @@ class GalleryLoader {
       categoriesContainer.appendChild(fragment);
     }
 
-    // Aggregate images
-    let images = [];
+    // Aggregate images for the current view and lightbox
+    // Optimization: Build the full data set and category name map once to avoid O(N²) aggregation during rendering
+    const categoryNames = {};
+    this.data.portfolio.categories.forEach(cat => categoryNames[cat.slug] = cat.name);
+
+    let allItems = [];
     if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
+      Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
+        allItems.push(...imgs.map(img => ({ ...img, category: catSlug })));
+      });
     } else {
       const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
+      const imgs = this.data.portfolio.images[key] || [];
+      allItems = imgs.map(img => ({ ...img, category: key }));
     }
     
-    if (!images.length) {
+    if (!allItems.length) {
       grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
       return;
     }
@@ -83,16 +90,24 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+    // Pass pre-calculated allItems to avoid redundant array creation in each loop iteration
+    const galleryFragment = Core.DOM.createFragment(allItems, (img, idx) => {
+      return this.createGalleryItem(img, idx, allItems, categoryNames);
+    });
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
-    // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+  createGalleryItem(image, index, galleryData = this.getGalleryData(), categoryNames = null) {
+    // Optimization: Use pre-calculated galleryData to eliminate O(N²) bottlenecks during bulk rendering
+    const formatter = (cat) => {
+      if (categoryNames && categoryNames[cat]) return categoryNames[cat];
+      return this.category;
+    };
+
+    return Core.Media.createItem(image, index, galleryData, formatter);
   }
 
   getGalleryData() {
