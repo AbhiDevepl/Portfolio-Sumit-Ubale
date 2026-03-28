@@ -39,9 +39,17 @@ class GalleryLoader {
     const titleEl = document.getElementById('category-title');
     const categoriesContainer = document.getElementById('gallery-categories');
     
+    // Performance: Build O(1) lookup map for category names
+    const categoryNames = {};
+    if (this.data && this.data.portfolio && this.data.portfolio.categories) {
+      this.data.portfolio.categories.forEach(cat => {
+        categoryNames[cat.slug] = cat.name;
+      });
+    }
+
     // Update category title
-    const categoryInfo = this.data.portfolio.categories.find(c => c.slug.toLowerCase() === this.category);
-    if (titleEl) titleEl.textContent = categoryInfo ? categoryInfo.name : this.category.toUpperCase();
+    const categoryName = categoryNames[this.category] || this.category.toUpperCase();
+    if (titleEl) titleEl.textContent = categoryName;
 
     // Render category buttons (navigation)
     if (categoriesContainer) {
@@ -60,17 +68,14 @@ class GalleryLoader {
       categoriesContainer.appendChild(fragment);
     }
 
-    // Aggregate images
-    let images = [];
-    if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
-    } else {
-      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
-    }
+    // Optimization: Cache enriched gallery data once to avoid O(N²) bottleneck in rendering loop
+    const galleryData = this.getGalleryData();
+
+    // Use enriched data for filtering/display
+    const images = galleryData;
     
     if (!images.length) {
-      grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
+      if (grid) grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
       return;
     }
 
@@ -80,19 +85,23 @@ class GalleryLoader {
       } else {
         grid.classList.remove('layout-centered');
       }
+      grid.innerHTML = '';
+      const galleryFragment = Core.DOM.createFragment(images, (img, idx) =>
+        this.createGalleryItem(img, idx, galleryData, categoryNames)
+      );
+      grid.appendChild(galleryFragment);
     }
-
-    grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
-    grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
-    // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+  createGalleryItem(image, index, allItems = null, categoryNames = null) {
+    // Optimization: Use pre-calculated data and O(1) lookup map to prevent O(N²) re-aggregation
+    const galleryData = allItems || this.getGalleryData();
+    const formatter = (catSlug) => categoryNames ? (categoryNames[catSlug] || catSlug) : catSlug;
+
+    return Core.Media.createItem(image, index, galleryData, formatter);
   }
 
   getGalleryData() {

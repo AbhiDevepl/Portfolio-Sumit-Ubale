@@ -58,17 +58,23 @@ window.GalleryManager = {
   getVisibleData() {
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
+        // Optimization: Use offsetParent for display check to avoid triggering getComputedStyle reflows
+        // offsetParent is null if display: none or position: fixed (which doesn't apply to items)
+        const isDisplayed = item.offsetParent !== null;
+        if (!isDisplayed) return false;
+
+        // Only fallback to getComputedStyle for opacity if not set inline (GSAP sets it inline)
+        const opacity = item.style.opacity || window.getComputedStyle(item).opacity;
+        return parseFloat(opacity) > 0.1;
       })
       .map(item => {
         const media = item.querySelector('img, video');
         const src = media?.src || media?.dataset?.src || '';
         return {
           src,
-          title: item.querySelector('.gallery-title')?.innerText,
+          title: item.querySelector('.gallery-title')?.textContent, // textContent is faster than innerText (no reflow)
           category: item.dataset.category,
-          type: item.querySelector('video') ? 'video' : 'image',
+          type: media?.tagName?.toLowerCase() === 'video' ? 'video' : 'image',
           originalIndex: parseInt(item.dataset.index, 10)
         };
       });
