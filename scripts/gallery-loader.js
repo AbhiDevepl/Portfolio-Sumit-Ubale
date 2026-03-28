@@ -83,18 +83,31 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+
+    // Performance optimization: Cache enriched gallery data once to avoid O(N²) complexity during rendering
+    const allGalleryData = this.getGalleryData();
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, allGalleryData));
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
+  /**
+   * Creates a gallery item using shared media logic
+   * @param {Object} image - The image data object
+   * @param {number} index - The index of the item
+   * @param {Array} allItems - Pre-calculated list of all items for lightbox navigation
+   */
+  createGalleryItem(image, index, allItems) {
     // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+    return Core.Media.createItem(image, index, allItems, (cat) => this.category);
   }
 
+  /**
+   * Aggregates and enriches portfolio data for lightbox use.
+   * Cached in renderGallery to maintain O(N) rendering performance.
+   */
   getGalleryData() {
     // Helper to get raw data for lightbox with injected category
     if (this.category === 'all') {
@@ -105,7 +118,10 @@ class GalleryLoader {
       });
       return all;
     }
-    const imgs = this.data.portfolio.images[this.category] || [];
+
+    // Case-insensitive lookup for consistency with renderGallery
+    const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
+    const imgs = this.data.portfolio.images[key] || [];
     return imgs.map(img => ({ ...img, category: this.category }));
   }
 
