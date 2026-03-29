@@ -7,11 +7,11 @@ class GalleryLoader {
   constructor() {
     this.data = null;
     this.category = this.getCategoryFromURL();
+    this.categoryNames = {}; // Instance property for O(1) lookups
   }
 
   async init() {
     this.category = (this.category || 'all').toLowerCase();
-    // if (!this.category) { window.location.href = '/'; return; } // Removed redirect
 
     try {
       await this.loadData();
@@ -32,6 +32,13 @@ class GalleryLoader {
   async loadData() {
     const response = await fetch('/data/portfolio.json');
     this.data = await response.json();
+
+    // Build category name lookup map once during data load
+    if (this.data?.portfolio?.categories) {
+      this.data.portfolio.categories.forEach(cat => {
+        this.categoryNames[cat.slug.toLowerCase()] = cat.name;
+      });
+    }
   }
 
   renderGallery() {
@@ -40,8 +47,8 @@ class GalleryLoader {
     const categoriesContainer = document.getElementById('gallery-categories');
     
     // Update category title
-    const categoryInfo = this.data.portfolio.categories.find(c => c.slug.toLowerCase() === this.category);
-    if (titleEl) titleEl.textContent = categoryInfo ? categoryInfo.name : this.category.toUpperCase();
+    const categoryName = this.categoryNames[this.category];
+    if (titleEl) titleEl.textContent = categoryName || this.category.toUpperCase();
 
     // Render category buttons (navigation)
     if (categoriesContainer) {
@@ -51,7 +58,7 @@ class GalleryLoader {
         btn.className = `category-btn ${cat.slug === this.category ? 'active' : ''}`;
         btn.textContent = cat.name;
         btn.onclick = () => {
-          this.category = cat.slug;
+          this.category = cat.slug.toLowerCase();
           window.history.pushState({ category: cat.slug }, '', `?category=${cat.slug}`);
           this.renderGallery();
         };
@@ -83,16 +90,24 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+    // Optimized: getGalleryData aggregated once outside the loop
+    const galleryData = this.getGalleryData();
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, galleryData));
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
+  createGalleryItem(image, index, galleryData) {
     // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+    // Optimized: category name resolution uses O(1) lookup map
+    const data = galleryData || this.getGalleryData();
+    return Core.Media.createItem(image, index, data, (cat) => {
+       const lowerCat = cat ? cat.toLowerCase() : '';
+       if (this.categoryNames[lowerCat]) return this.categoryNames[lowerCat];
+       return this.category === 'all' ? cat : (this.categoryNames[this.category] || this.category);
+    });
   }
 
   getGalleryData() {

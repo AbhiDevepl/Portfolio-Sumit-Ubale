@@ -1,0 +1,3 @@
+## 2025-05-15 - O(N^2) Gallery Rendering Bottleneck
+**Learning:** In the `GalleryLoader` class, the `createGalleryItem` method was calling `getGalleryData()` for every single item being rendered. Since `getGalleryData()` re-aggregates the entire portfolio dataset (~1,200 items), the rendering complexity became O(N^2), resulting in a massive performance penalty (measured ~1.6s for 1,200 items in simulation).
+**Action:** Always hoist data aggregation and metadata lookups out of loops. Pass pre-calculated data to item creators instead of allowing them to re-fetch or re-process the entire dataset.
