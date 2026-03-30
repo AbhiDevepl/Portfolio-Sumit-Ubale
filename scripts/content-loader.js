@@ -128,22 +128,27 @@ class ContentLoader {
   }
 
   /**
+   * Performance optimization: Hoist category names lookup to a static property
+   * to avoid redundant object creation on every call in the gallery loop.
+   */
+  static CATEGORY_NAMES = {
+    'weddings': 'Weddings',
+    'portraits': 'Portraits',
+    'commercial': 'Commercial',
+    'events': 'Events',
+    'maternity': 'Maternity',
+    'kids': 'Kids',
+    'haldi': 'Haldi',
+    'engagement': 'Engagement',
+    'pre-wedding-photos-and-videos': 'Pre-Wedding',
+    'cinematics': 'Cinematics'
+  };
+
+  /**
    * Helper to get category name from slug
    */
   getCategoryName(category) {
-    const names = {
-      'weddings': 'Weddings',
-      'portraits': 'Portraits',
-      'commercial': 'Commercial',
-      'events': 'Events',
-      'maternity': 'Maternity',
-      'kids': 'Kids',
-      'haldi': 'Haldi',
-      'engagement': 'Engagement',
-      'pre-wedding-photos-and-videos': 'Pre-Wedding',
-      'cinematics': 'Cinematics'
-    };
-    return names[category] || category;
+    return ContentLoader.CATEGORY_NAMES[category] || category;
   }
 
 
