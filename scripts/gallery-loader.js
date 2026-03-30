@@ -32,6 +32,14 @@ class GalleryLoader {
   async loadData() {
     const response = await fetch('/data/portfolio.json');
     this.data = await response.json();
+
+    // Optimization: Build lookup map for category names once during load
+    this.categoryNames = {};
+    if (this.data?.portfolio?.categories) {
+      this.data.portfolio.categories.forEach(cat => {
+        this.categoryNames[cat.slug.toLowerCase()] = cat.name;
+      });
+    }
   }
 
   renderGallery() {
@@ -50,6 +58,7 @@ class GalleryLoader {
         const btn = document.createElement('button');
         btn.className = `category-btn ${cat.slug === this.category ? 'active' : ''}`;
         btn.textContent = cat.name;
+        btn.dataset.category = cat.slug; // Needed for Playwright selection
         btn.onclick = () => {
           this.category = cat.slug;
           window.history.pushState({ category: cat.slug }, '', `?category=${cat.slug}`);
@@ -60,16 +69,12 @@ class GalleryLoader {
       categoriesContainer.appendChild(fragment);
     }
 
-    // Aggregate images
-    let images = [];
-    if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
-    } else {
-      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
-    }
+    // Optimization: Hoist expensive data aggregation out of the loop
+    // This reduces rendering logic from O(N^2) to O(N) by calculating lightbox data once.
+    // Note: getGalleryData respects this.category for filtering.
+    const galleryData = this.getGalleryData();
     
-    if (!images.length) {
+    if (!galleryData.length) {
       grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
       return;
     }
@@ -83,16 +88,31 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+    const galleryFragment = Core.DOM.createFragment(galleryData, (img, idx) =>
+      this.createGalleryItem(img, idx, galleryData)
+    );
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
-    // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+  /**
+   * Create an individual gallery item
+   * @param {Object} image - Image data
+   * @param {number} index - Index in current list
+   * @param {Array} allItems - Pre-calculated list for lightbox navigation
+   */
+  createGalleryItem(image, index, allItems = null) {
+    const galleryData = allItems || this.getGalleryData();
+
+    // Performance: Use pre-cached lookup map for category formatting
+    const categoryFormatter = (slug) => {
+      if (!slug) return this.categoryNames?.[this.category] || this.category;
+      return this.categoryNames?.[slug.toLowerCase()] || slug;
+    };
+
+    return Core.Media.createItem(image, index, galleryData, categoryFormatter);
   }
 
   getGalleryData() {
