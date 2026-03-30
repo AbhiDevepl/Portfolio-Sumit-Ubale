@@ -1,0 +1,3 @@
+## 2026-03-11 - [Optimize Gallery Visibility and Event Handling]
+**Learning:** `window.getComputedStyle` inside a loop for 1,000+ items triggers severe layout thrashing. `item.offsetParent === null` is a much faster way to detect `display: none`. Also, registering 1,200+ individual click listeners is memory-intensive; event delegation should be paired with a way to skip individual handler registration (e.g., a `skipHandler` flag in the factory).
+**Action:** Always prefer `offsetParent` and inline style checks for visibility logic. Use factory options to conditionally skip listener attachment when delegation is available.
