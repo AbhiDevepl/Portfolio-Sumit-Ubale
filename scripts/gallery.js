@@ -55,18 +55,28 @@ window.GalleryManager = {
     // Integrated Hover Effects removed
   },
 
+  /**
+   * Get data for items currently visible in the UI
+   * Optimized to avoid expensive layout reflows on high item counts
+   */
   getVisibleData() {
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
+        // Optimization: item.offsetParent === null is a fast way to check if an element
+        // is hidden via display: none without triggering a full getComputedStyle layout reflow.
+        if (item.offsetParent === null) return false;
+
+        // Secondary check for opacity (some items might be hidden via opacity by GSAP)
+        // We only fall back to computed style if offsetParent is present
+        const style = item.style.opacity || window.getComputedStyle(item).opacity;
+        return parseFloat(style) > 0.1;
       })
       .map(item => {
         const media = item.querySelector('img, video');
         const src = media?.src || media?.dataset?.src || '';
         return {
           src,
-          title: item.querySelector('.gallery-title')?.innerText,
+          title: item.querySelector('.gallery-title')?.textContent, // textContent is faster than innerText
           category: item.dataset.category,
           type: item.querySelector('video') ? 'video' : 'image',
           originalIndex: parseInt(item.dataset.index, 10)
