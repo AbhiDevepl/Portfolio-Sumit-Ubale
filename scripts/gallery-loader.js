@@ -83,16 +83,17 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+    const allItems = this.getGalleryData();
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, allItems));
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
+  createGalleryItem(image, index, allItems) {
     // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+    return Core.Media.createItem(image, index, allItems, (cat) => this.category);
   }
 
   getGalleryData() {
@@ -173,6 +174,7 @@ class GalleryLoader {
 Core.DOM.injectGlobalComponents();
 
 document.addEventListener('DOMContentLoaded', () => {
-    const loader = new GalleryLoader();
+    window.galleryLoader = new GalleryLoader();
+    const loader = window.galleryLoader;
     loader.init();
 });
