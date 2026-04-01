@@ -32,6 +32,14 @@ class GalleryLoader {
   async loadData() {
     const response = await fetch('/data/portfolio.json');
     this.data = await response.json();
+
+    // Optimization: Build a category name lookup map once
+    this.categoryNames = {};
+    if (this.data?.portfolio?.categories) {
+      this.data.portfolio.categories.forEach(cat => {
+        this.categoryNames[cat.slug.toLowerCase()] = cat.name;
+      });
+    }
   }
 
   renderGallery() {
@@ -40,8 +48,8 @@ class GalleryLoader {
     const categoriesContainer = document.getElementById('gallery-categories');
     
     // Update category title
-    const categoryInfo = this.data.portfolio.categories.find(c => c.slug.toLowerCase() === this.category);
-    if (titleEl) titleEl.textContent = categoryInfo ? categoryInfo.name : this.category.toUpperCase();
+    const categoryName = this.categoryNames[this.category];
+    if (titleEl) titleEl.textContent = categoryName || this.category.toUpperCase();
 
     // Render category buttons (navigation)
     if (categoriesContainer) {
@@ -60,13 +68,23 @@ class GalleryLoader {
       categoriesContainer.appendChild(fragment);
     }
 
-    // Aggregate images
+    // Optimization: Pre-calculate gallery data for the lightbox once per renderGallery call
+    // This hoisting reduces complexity from O(N^2) to O(N) by avoiding repeated calls to getGalleryData()
+    const galleryData = this.getGalleryData();
+
+    // Aggregate images for current filtered view
     let images = [];
     if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
+      images = galleryData;
     } else {
       const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
+      const rawImages = this.data.portfolio.images[key] || [];
+      // Optimization: Enrich filtered images with category slug so lookup works in createGalleryItem
+      images = rawImages.map(img => ({ ...img, category: key }));
+
+      // Ensure currentGalleryData is also enriched for consistency
+      galleryData.length = 0;
+      galleryData.push(...images);
     }
     
     if (!images.length) {
@@ -83,16 +101,23 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+    // Use the pre-calculated galleryData to avoid O(N^2) complexity in Core.Media.createItem
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => {
+        return this.createGalleryItem(img, idx, galleryData);
+    });
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
+  createGalleryItem(image, index, galleryData) {
     // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
+    // Optimization: Pass pre-calculated galleryData instead of calling getGalleryData() inside the loop
+    return Core.Media.createItem(image, index, galleryData || this.getGalleryData(), (cat) => {
+        if (!cat) return '';
+        return this.categoryNames[cat.toLowerCase()] || cat;
+    });
   }
 
   getGalleryData() {
@@ -173,6 +198,6 @@ class GalleryLoader {
 Core.DOM.injectGlobalComponents();
 
 document.addEventListener('DOMContentLoaded', () => {
-    const loader = new GalleryLoader();
-    loader.init();
+    window.galleryLoader = new GalleryLoader();
+    window.galleryLoader.init();
 });
