@@ -41,6 +41,15 @@ class ContentLoader {
       }
       
       this.data = await response.json();
+
+      // Build category lookup map for O(1) resolution
+      this.categoryMap = {};
+      if (this.data?.portfolio?.categories) {
+        this.data.portfolio.categories.forEach(cat => {
+          this.categoryMap[cat.slug.toLowerCase()] = cat.name;
+        });
+      }
+
       return this.data;
     } catch (error) {
       throw new Error(`Failed to load portfolio data: ${error.message}`);
@@ -131,19 +140,8 @@ class ContentLoader {
    * Helper to get category name from slug
    */
   getCategoryName(category) {
-    const names = {
-      'weddings': 'Weddings',
-      'portraits': 'Portraits',
-      'commercial': 'Commercial',
-      'events': 'Events',
-      'maternity': 'Maternity',
-      'kids': 'Kids',
-      'haldi': 'Haldi',
-      'engagement': 'Engagement',
-      'pre-wedding-photos-and-videos': 'Pre-Wedding',
-      'cinematics': 'Cinematics'
-    };
-    return names[category] || category;
+    if (!this.categoryMap || !category) return category || '';
+    return this.categoryMap[category.toLowerCase()] || category;
   }
 
 
