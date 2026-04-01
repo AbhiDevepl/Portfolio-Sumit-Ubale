@@ -533,6 +533,7 @@
 }
 
 /* Hover overlay removed as per request */
+/* .gallery-item:hover .gallery-overlay { opacity: 1; } */
 
 .gallery-title {
   font-family: var(--font-serif);

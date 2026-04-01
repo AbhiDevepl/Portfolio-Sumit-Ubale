@@ -56,22 +56,37 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => {
-        const style = window.getComputedStyle(item);
-        return style.display !== 'none' && parseFloat(style.opacity) > 0.1;
-      })
-      .map(item => {
+    // Optimization: Use a single loop and avoid getComputedStyle which triggers layout reflow.
+    // For 1,000+ items, this is significantly faster.
+    const items = document.querySelectorAll('.gallery-item');
+    const visibleData = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
+      // offsetParent is null if element (or any ancestor) has display: none.
+      // This is the fastest way to check for display:none.
+      if (item.offsetParent !== null) {
+        // Check inline opacity (set by GSAP/filterGallery).
+        // If it's empty, it means it's at default (1).
+        const op = item.style.opacity;
+        if (op !== '' && parseFloat(op) < 0.1) continue;
+
         const media = item.querySelector('img, video');
         const src = media?.src || media?.dataset?.src || '';
-        return {
+
+        visibleData.push({
           src,
-          title: item.querySelector('.gallery-title')?.innerText,
+          // textContent is faster than innerText as it doesn't trigger layout/reflow.
+          title: item.querySelector('.gallery-title')?.textContent?.trim(),
           category: item.dataset.category,
           type: item.querySelector('video') ? 'video' : 'image',
           originalIndex: parseInt(item.dataset.index, 10)
-        };
-      });
+        });
+      }
+    }
+
+    return visibleData;
   },
   
   filterGallery(category) {
