@@ -323,7 +323,13 @@ window.Core = {
           if (imgEl.complete) imgEl.style.opacity = '1';
         }
         
-        capEl.innerHTML = `<h3>${item.title || ''}</h3><p>${item.category || ''}</p>`;
+        let categoryLabel = item.category || '';
+        if (window.contentLoader && window.contentLoader.getCategoryName) {
+          categoryLabel = window.contentLoader.getCategoryName(item.category);
+        } else if (window.galleryLoader && window.galleryLoader.categoryNames) {
+          categoryLabel = window.galleryLoader.categoryNames[item.category?.toLowerCase()] || item.category;
+        }
+        capEl.innerHTML = `<h3>${item.title || ''}</h3><p>${categoryLabel}</p>`;
       });
     }
   },
