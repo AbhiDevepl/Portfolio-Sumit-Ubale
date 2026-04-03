@@ -32,6 +32,14 @@ class GalleryLoader {
   async loadData() {
     const response = await fetch('/data/portfolio.json');
     this.data = await response.json();
+
+    // Pre-cache category names for O(1) lookup
+    this.categoryNames = {};
+    if (this.data.portfolio.categories) {
+      this.data.portfolio.categories.forEach(cat => {
+        this.categoryNames[cat.slug.toLowerCase()] = cat.name;
+      });
+    }
   }
 
   renderGallery() {
@@ -40,8 +48,8 @@ class GalleryLoader {
     const categoriesContainer = document.getElementById('gallery-categories');
     
     // Update category title
-    const categoryInfo = this.data.portfolio.categories.find(c => c.slug.toLowerCase() === this.category);
-    if (titleEl) titleEl.textContent = categoryInfo ? categoryInfo.name : this.category.toUpperCase();
+    const categoryName = this.categoryNames[this.category.toLowerCase()];
+    if (titleEl) titleEl.textContent = categoryName || this.category.toUpperCase();
 
     // Render category buttons (navigation)
     if (categoriesContainer) {
@@ -83,7 +91,15 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+
+    // Performance: Hoist the expensive data aggregation out of the loop.
+    // getGalleryData() was being called for every single item, leading to O(N^2) complexity.
+    const allItems = this.getGalleryData();
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => {
+        return Core.Media.createItem(img, idx, allItems, (slug) => {
+            return this.categoryNames[slug?.toLowerCase()] || slug;
+        });
+    });
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
@@ -91,7 +107,7 @@ class GalleryLoader {
   }
 
   createGalleryItem(image, index) {
-    // Delegate to Core.Media to ensure consistent behavior across app
+    // This method is now bypassed in renderGallery for performance reasons (hoisting getGalleryData)
     return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
   }
 
