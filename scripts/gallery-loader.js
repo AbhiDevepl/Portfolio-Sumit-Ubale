@@ -43,12 +43,19 @@ class GalleryLoader {
     const categoryInfo = this.data.portfolio.categories.find(c => c.slug.toLowerCase() === this.category);
     if (titleEl) titleEl.textContent = categoryInfo ? categoryInfo.name : this.category.toUpperCase();
 
+    // Create category name lookup map for O(1) resolution during rendering
+    const categoryNames = {};
+    this.data.portfolio.categories.forEach(cat => {
+      categoryNames[cat.slug.toLowerCase()] = cat.name;
+    });
+
     // Render category buttons (navigation)
     if (categoriesContainer) {
       categoriesContainer.innerHTML = '';
       const fragment = Core.DOM.createFragment(this.data.portfolio.categories, (cat) => {
         const btn = document.createElement('button');
         btn.className = `category-btn ${cat.slug === this.category ? 'active' : ''}`;
+        btn.dataset.category = cat.slug;
         btn.textContent = cat.name;
         btn.onclick = () => {
           this.category = cat.slug;
@@ -82,17 +89,24 @@ class GalleryLoader {
       }
     }
 
+    // Performance Optimization: Hoist expensive data aggregation out of the rendering loop.
+    // This reduces O(N^2) complexity to O(N) by pre-calculating the lightbox dataset once.
+    const allGalleryData = this.getGalleryData();
+
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => {
+      // Resolve category name once per item using pre-calculated map
+      const categoryFormatter = (cat) => {
+         if (!cat) return '';
+         return categoryNames[cat.toLowerCase()] || cat;
+      };
+
+      return Core.Media.createItem(img, idx, allGalleryData, categoryFormatter);
+    });
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
-  }
-
-  createGalleryItem(image, index) {
-    // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
   }
 
   getGalleryData() {
