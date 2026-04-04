@@ -1,0 +1,4 @@
+## 2025-05-15 - [Gallery Rendering Optimization]
+**Learning:** In a vanilla JS architecture with large datasets (~1,200 items), calling expensive data aggregation methods like `getGalleryData()` (which iterates and creates new objects) inside a rendering loop creates a significant $O(N^2)$ bottleneck. Hoisting this aggregation and using $O(1)$ lookup maps for metadata (like category names) is critical. Additionally, using `offsetParent` instead of `getComputedStyle` and `textContent` instead of `innerText` prevents layout thrashing during high-frequency DOM operations.
+
+**Action:** Always profile rendering loops for hidden $O(N^2)$ complexities. Hoist data processing outside loops and use cached lookups for metadata. Favor low-level DOM properties over layout-triggering methods in performance-critical paths.
