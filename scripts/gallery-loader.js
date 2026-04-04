@@ -7,6 +7,7 @@ class GalleryLoader {
   constructor() {
     this.data = null;
     this.category = this.getCategoryFromURL();
+    this.categoryNames = {};
   }
 
   async init() {
@@ -32,6 +33,13 @@ class GalleryLoader {
   async loadData() {
     const response = await fetch('/data/portfolio.json');
     this.data = await response.json();
+
+    // Build category name lookup map for O(1) access
+    if (this.data.portfolio.categories) {
+      this.data.portfolio.categories.forEach(cat => {
+        this.categoryNames[cat.slug.toLowerCase()] = cat.name;
+      });
+    }
   }
 
   renderGallery() {
@@ -40,8 +48,8 @@ class GalleryLoader {
     const categoriesContainer = document.getElementById('gallery-categories');
     
     // Update category title
-    const categoryInfo = this.data.portfolio.categories.find(c => c.slug.toLowerCase() === this.category);
-    if (titleEl) titleEl.textContent = categoryInfo ? categoryInfo.name : this.category.toUpperCase();
+    const categoryName = this.categoryNames[this.category] || this.category.toUpperCase();
+    if (titleEl) titleEl.textContent = categoryName;
 
     // Render category buttons (navigation)
     if (categoriesContainer) {
@@ -60,16 +68,44 @@ class GalleryLoader {
       categoriesContainer.appendChild(fragment);
     }
 
-    // Aggregate images
-    let images = [];
+    // Aggregate images and enrich with categories (Performance: Hoisted outside the loop)
+    let galleryItems = [];
+    const allImages = this.data.portfolio.images;
+
     if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
+      for (const catSlug in allImages) {
+        const imgs = allImages[catSlug];
+        for (let i = 0; i < imgs.length; i++) {
+          const img = imgs[i];
+          galleryItems.push({
+            ...img,
+            category: catSlug
+          });
+        }
+      }
     } else {
-      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
+      // Robust lookup: find the correct key regardless of case
+      const targetCategory = this.category.toLowerCase();
+      let actualKey = this.category;
+
+      for (const key in allImages) {
+        if (key.toLowerCase() === targetCategory) {
+          actualKey = key;
+          break;
+        }
+      }
+
+      const imgs = allImages[actualKey] || [];
+      for (let i = 0; i < imgs.length; i++) {
+        const img = imgs[i];
+        galleryItems.push({
+          ...img,
+          category: actualKey
+        });
+      }
     }
     
-    if (!images.length) {
+    if (!galleryItems.length) {
       grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
       return;
     }
@@ -83,31 +119,20 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx));
+
+    // Use O(1) lookup for category names in the loop
+    const galleryFragment = Core.DOM.createFragment(galleryItems, (img, idx) => {
+      return Core.Media.createItem(img, idx, galleryItems, (cat) => {
+        return this.categoryNames[cat?.toLowerCase()] || cat;
+      });
+    });
+
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
-  createGalleryItem(image, index) {
-    // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, this.getGalleryData(), (cat) => this.category);
-  }
-
-  getGalleryData() {
-    // Helper to get raw data for lightbox with injected category
-    if (this.category === 'all') {
-      let all = [];
-      Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
-        const enriched = imgs.map(img => ({ ...img, category: catSlug }));
-        all.push(...enriched);
-      });
-      return all;
-    }
-    const imgs = this.data.portfolio.images[this.category] || [];
-    return imgs.map(img => ({ ...img, category: this.category }));
-  }
 
   initAnimations() {
     const hasGsap = typeof window !== 'undefined' && window.gsap;
