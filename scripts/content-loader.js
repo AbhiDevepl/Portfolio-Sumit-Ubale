@@ -118,10 +118,24 @@ class ContentLoader {
       });
     }
 
+    // Performance: Use a static lookup map to avoid multiple function calls or switch logic inside the O(N) loop
+    const categoryNameMap = {
+      'weddings': 'Weddings',
+      'portraits': 'Portraits',
+      'commercial': 'Commercial',
+      'events': 'Events',
+      'maternity': 'Maternity',
+      'kids': 'Kids',
+      'haldi': 'Haldi',
+      'engagement': 'Engagement',
+      'pre-wedding-photos-and-videos': 'Pre-Wedding',
+      'cinematics': 'Cinematics'
+    };
+
     // Create gallery items using DocumentFragment for performance
     const fragment = Core.DOM.createFragment(allImages, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists
-      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
+      return Core.Media.createItem(image, index, allImages, (cat) => categoryNameMap[cat] || cat);
     });
     
     galleryGrid.appendChild(fragment);

@@ -1,0 +1,3 @@
+## 2025-05-15 - O(N^2) Rendering Bottleneck in GalleryLoader
+**Learning:** In the `GalleryLoader.renderGallery()` method, calling `getGalleryData()` (which iterates over the entire portfolio) inside the `forEach` loop that creates gallery items caused an O(N^2) complexity. For a portfolio of ~1,200 items, this resulted in ~1.4 million operations and ~600ms of UI-blocking logic. Additionally, layout thrashing in `GalleryManager` was caused by `getComputedStyle` and `innerText`.
+**Action:** Always hoist data aggregation and metadata lookups outside of rendering loops. Use `offsetParent !== null` as a performant alternative to `getComputedStyle` for visibility checks, and `textContent` over `innerText` for reading static text to avoid layout reflows.
