@@ -5,3 +5,7 @@
 ## 2025-05-15 - Layout thrashing via getComputedStyle and innerText
 **Learning:** Using `window.getComputedStyle(item).display` for visibility checks on 1,200 items triggered expensive layout reflows. Similarly, `innerText` is slower than `textContent` because it requires layout awareness.
 **Action:** Use `item.offsetParent !== null` to check for `display: none` (works when parent is not `display: none` and item is not `fixed`) and prefer `textContent` for DOM reads that don't require layout-aware text rendering.
+
+## 2025-05-16 - GSAP overhead with many individual tweens
+**Learning:** Animating ~1,200 elements individually via `gsap.to(item, ...)` in a loop creates significant overhead in tween initialization and management, causing a measurable delay in UI-blocking logic (up to 1.2s).
+**Action:** Batch animations by passing arrays of targets to GSAP (e.g., `gsap.to([items], ...)`). This reduces the number of GSAP calls from O(N) to O(1) per animation state, drastically improving execution speed.
