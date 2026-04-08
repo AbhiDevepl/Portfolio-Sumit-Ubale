@@ -74,7 +74,6 @@ class ContentLoader {
     // Clear existing content
     galleryGrid.innerHTML = '';
 
-    // Flatten images from object structure if necessary
     const rawImages = this.data.portfolio.images;
     let allImages = [];
 
@@ -82,52 +81,53 @@ class ContentLoader {
       // Fallback for flat array (if still used)
       allImages = rawImages.map(img => ({ ...img, isPreview: true }));
     } else {
-      // Grouped by category slug
+      // Optimization: Perform single global sort with pre-calculated values (Schwartzian Transform)
+      // This avoids O(N log N) regex executions (approx 20,000 matches for 1,200 items).
+      const sortable = [];
+      const numRegex = /(\d+)\.(jpe?g|mp4|mov)$/i;
+
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
-        // 1. Filter only .jpg and .jpeg (and videos for cinematics)
-        const validImages = images.filter(img => {
-          if (!img.src) return false;
+        images.forEach(img => {
+          if (!img.src) return;
+
           const lowerSrc = img.src.toLowerCase();
           const urlWithoutParams = lowerSrc.split('?')[0];
           
           const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
           const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
           
+          // Filter logic
           if (categorySlug === 'cinematics') {
-            return isJpg || isVideo;
+             if (!isJpg && !isVideo) return;
+          } else {
+             if (!isJpg) return;
           }
-          return isJpg;
-        });
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+          // Pre-calculate numeric value for sorting
+          const match = urlWithoutParams.match(numRegex);
+          const num = match ? parseInt(match[1], 10) : 0;
 
-        // 3. Assign order
-        validImages.forEach((image, idx) => {
-          allImages.push({
-            ...image,
-            category: categorySlug,
-            order: idx // used for pagination logic later
+          sortable.push({
+            img: { ...img, category: categorySlug },
+            num: num,
+            src: img.src
           });
         });
       });
 
-      // 4. Final Global Sort by filename number (Rule 2)
-      allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
+      // Single Global Sort
+      sortable.sort((a, b) => {
+        if (a.num !== b.num) return a.num - b.num;
         return a.src.localeCompare(b.src);
+      });
+
+      // Single pass to assign order and collect final array
+      const categoryCounters = {};
+      allImages = sortable.map(item => {
+        const cat = item.img.category;
+        item.img.order = categoryCounters[cat] || 0;
+        categoryCounters[cat] = (categoryCounters[cat] || 0) + 1;
+        return item.img;
       });
     }
 
