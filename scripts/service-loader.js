@@ -91,11 +91,12 @@ class ServiceLoader {
       gallery.classList.remove('layout-centered');
     }
 
-    s.gallery.forEach((item, index) => {
+    // Use DocumentFragment for performance
+    const fragment = Core.DOM.createFragment(s.gallery, (item, index) => {
       item.category = s.slug;
-        const mediaItem = Core.Media.createItem(item, index, s.gallery);
-      gallery.appendChild(mediaItem);
+      return Core.Media.createItem(item, index, s.gallery);
     });
+    gallery.appendChild(fragment);
 
     document.body.classList.remove('loading');
   }
