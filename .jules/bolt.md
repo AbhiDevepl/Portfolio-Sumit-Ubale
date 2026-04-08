@@ -5,3 +5,7 @@
 ## 2025-05-15 - Layout thrashing via getComputedStyle and innerText
 **Learning:** Using `window.getComputedStyle(item).display` for visibility checks on 1,200 items triggered expensive layout reflows. Similarly, `innerText` is slower than `textContent` because it requires layout awareness.
 **Action:** Use `item.offsetParent !== null` to check for `display: none` (works when parent is not `display: none` and item is not `fixed`) and prefer `textContent` for DOM reads that don't require layout-aware text rendering.
+
+## 2025-05-15 - Scalability of Event Listeners and Lightbox Navigation
+**Learning:** Attaching individual click listeners to 1,200+ items increases memory overhead and slows down initialization. Furthermore, performing DOM queries to find "visible" items every time the Lightbox opens is $O(N)$ and causes perceived lag.
+**Action:** Use Event Delegation on the parent container to handle interactions for all children with a single listener. Maintain a `visibleData` tracking array that is updated only during filtering to ensure $O(1)$ Lightbox index lookups.

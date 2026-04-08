@@ -1,10 +1,12 @@
 window.GalleryManager = {
   activeCategory: 'all',
   currentLimit: 3,
+  itemsCache: [],
+  visibleData: [],
   
   init() {
-    this.initFiltering();
     this.initGalleryInteractions();
+    this.initFiltering();
     Core.Lightbox.init();
     this.checkURLState();
   },
@@ -42,121 +44,149 @@ window.GalleryManager = {
     const grid = document.getElementById('gallery-grid');
     if (!grid) return;
 
-    // Lightbox Click
-    grid.addEventListener('click', (e) => {
-      const item = e.target.closest('.gallery-item');
-      if (item && !e.target.closest('video')) {
-        const visibleItems = this.getVisibleData();
-        const index = visibleItems.findIndex(d => d.originalIndex === parseInt(item.dataset.index));
-        if (index !== -1) Core.Lightbox.open(index, visibleItems);
-      }
+    // Cache all gallery items' DOM references and metadata once for O(1) access
+    const itemElements = grid.querySelectorAll('.gallery-item');
+    this.itemsCache = Array.from(itemElements).map(el => {
+      const media = el.querySelector('img, video');
+      return {
+        el,
+        category: el.dataset.category,
+        order: parseInt(el.dataset.order || '0', 10),
+        index: parseInt(el.dataset.index, 10),
+        metadata: {
+          src: media?.src || media?.dataset?.src || '',
+          title: el.querySelector('.gallery-title')?.textContent || '',
+          category: el.dataset.category || '',
+          type: el.querySelector('video') ? 'video' : 'image',
+          originalIndex: parseInt(el.dataset.index, 10)
+        }
+      };
     });
 
-    // Integrated Hover Effects removed
+    // Event Delegation: Single listener for the entire grid
+    grid.addEventListener('click', (e) => {
+      const itemEl = e.target.closest('.gallery-item');
+      if (!itemEl) return;
+
+      const overlay = e.target.closest('.gallery-overlay');
+      const video = itemEl.querySelector('video');
+      const isVideo = !!video;
+
+      // Logic:
+      // 1. If video and NOT clicking overlay -> toggle play (handled by VideoHover)
+      // 2. Otherwise (image OR clicking video overlay) -> open Lightbox
+      if (isVideo && !overlay) return;
+
+      const originalIndex = parseInt(itemEl.dataset.index, 10);
+      const index = this.visibleData.findIndex(d => d.originalIndex === originalIndex);
+      if (index !== -1) Core.Lightbox.open(index, this.visibleData);
+    });
   },
 
+  // No longer used, replaced by O(1) this.visibleData lookup
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => {
-        // Optimization: use offsetParent to check visibility (faster than getComputedStyle)
-        // offsetParent is null when display is none
-        const isVisible = item.offsetParent !== null;
-        if (!isVisible) return false;
-
-        // Fallback for opacity if needed, but display: none is the primary filter
-        return parseFloat(item.style.opacity || '1') > 0.1;
-      })
-      .map(item => {
-        const media = item.querySelector('img, video');
-        const src = media?.src || media?.dataset?.src || '';
-        return {
-          src,
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.dataset.category,
-          type: item.querySelector('video') ? 'video' : 'image',
-          originalIndex: parseInt(item.dataset.index, 10)
-        };
-      });
+    return this.visibleData;
   },
   
   filterGallery(category) {
     this.activeCategory = category;
     
+    // Update category buttons
     document.querySelectorAll('.category-btn').forEach(btn => {
       const isActive = btn.dataset.category === category;
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-selected', isActive);
     });
     
-    // Convert to array to sort
-    const items = Array.from(document.querySelectorAll('.gallery-item'));
-    
     let matchCount = 0;
     let shownCount = 0;
+    const toShow = [];
+    const toHide = [];
+    const newVisibleData = [];
 
-    items.forEach(item => {
-      const itemCategory = item.dataset.category;
-      const order = parseInt(item.dataset.order || '0', 10);
-      const isMatch = category === 'all' || itemCategory === category;
-      
+    // Use cached items instead of DOM queries for O(N) performance
+    this.itemsCache.forEach(item => {
+      const isMatch = category === 'all' || item.category === category;
       let shouldShow = false;
+
       if (isMatch) {
         matchCount++;
-        
         if (category === 'all') {
-          // Use a simple global counter for 'all'
           if (shownCount < this.currentLimit) {
             shouldShow = true;
             shownCount++;
           }
         } else {
-          // Use the per-category 'order' for specific categories
-          if (order < this.currentLimit) {
+          if (item.order < this.currentLimit) {
             shouldShow = true;
             shownCount++;
           }
         }
       }
 
-      if (window.gsap) {
-        gsap.to(item, {
-          opacity: shouldShow ? 1 : 0,
-          scale: shouldShow ? 1 : 0.95,
-          duration: 0.4,
-          display: shouldShow ? 'block' : 'none',
-          ease: "power2.out",
-          overwrite: true
-        });
+      // Check current visibility to avoid redundant GSAP calls
+      const isCurrentlyVisible = item.el.offsetParent !== null;
+
+      if (shouldShow) {
+        if (!isCurrentlyVisible) toShow.push(item.el);
+        newVisibleData.push(item.metadata);
       } else {
-        // Graceful fallback without GSAP
-        item.style.display = shouldShow ? 'block' : 'none';
-        item.style.opacity = shouldShow ? '1' : '0';
+        if (isCurrentlyVisible) toHide.push(item.el);
       }
     });
 
-    const hasHidden = matchCount > shownCount;
+    // Update visibility data cache for Lightbox (O(1) access)
+    this.visibleData = newVisibleData;
 
+    // Batch GSAP animations to minimize frame overhead
+    if (window.gsap) {
+      if (toShow.length) {
+        gsap.to(toShow, {
+          opacity: 1,
+          scale: 1,
+          duration: 0.4,
+          display: 'block',
+          ease: "power2.out",
+          overwrite: true,
+          stagger: toShow.length > 20 ? 0.01 : 0 // Only stagger large batches
+        });
+      }
+      if (toHide.length) {
+        gsap.to(toHide, {
+          opacity: 0,
+          scale: 0.95,
+          duration: 0.3,
+          display: 'none',
+          ease: "power2.out",
+          overwrite: true
+        });
+      }
+    } else {
+      toShow.forEach(el => { el.style.display = 'block'; el.style.opacity = '1'; });
+      toHide.forEach(el => { el.style.display = 'none'; el.style.opacity = '0'; });
+    }
+
+    const hasHidden = matchCount > shownCount;
     const grid = document.getElementById('gallery-grid');
     if (grid) {
-      if (category === 'cinematics') {
-        grid.classList.add('layout-centered');
-      } else {
-        grid.classList.remove('layout-centered');
-      }
+      grid.classList.toggle('layout-centered', category === 'cinematics');
     }
 
     const moreContainer = document.getElementById('portfolio-more');
     if (moreContainer) {
-      if (window.gsap) {
-        gsap.to(moreContainer, { 
-          display: hasHidden ? 'flex' : 'none', 
-          opacity: hasHidden ? 1 : 0,
-          duration: 0.3,
-          overwrite: true
-        });
-      } else {
-        moreContainer.style.display = hasHidden ? 'flex' : 'none';
-        moreContainer.style.opacity = hasHidden ? '1' : '0';
+      const isVisible = moreContainer.offsetParent !== null;
+      if (hasHidden !== isVisible) {
+        if (window.gsap) {
+          gsap.to(moreContainer, {
+            display: hasHidden ? 'flex' : 'none',
+            opacity: hasHidden ? 1 : 0,
+            duration: 0.3,
+            overwrite: true
+          });
+        } else {
+          moreContainer.style.display = hasHidden ? 'flex' : 'none';
+          moreContainer.style.opacity = hasHidden ? '1' : '0';
+        }
       }
     }
     
