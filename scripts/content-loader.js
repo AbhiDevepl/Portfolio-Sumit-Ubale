@@ -99,18 +99,17 @@ class ContentLoader {
           return isJpg;
         });
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+        // 2. Sort numerically based on filename (Schwartzian Transform for performance)
+        const sortedImages = validImages
+          .map(img => {
+            const match = img.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+            return { img, num: match ? parseInt(match[1], 10) : 0 };
+          })
+          .sort((a, b) => a.num - b.num)
+          .map(item => item.img);
 
         // 3. Assign order
-        validImages.forEach((image, idx) => {
+        sortedImages.forEach((image, idx) => {
           allImages.push({
             ...image,
             category: categorySlug,
@@ -119,22 +118,24 @@ class ContentLoader {
         });
       });
 
-      // 4. Final Global Sort by filename number (Rule 2)
-      allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
-        return a.src.localeCompare(b.src);
-      });
+      // 4. Final Global Sort by filename number (Schwartzian Transform for performance)
+      allImages = allImages
+        .map(image => {
+          const match = image.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+          return { image, num: match ? parseInt(match[1], 10) : 0 };
+        })
+        .sort((a, b) => {
+          if (a.num !== b.num) return a.num - b.num;
+          return a.image.src.localeCompare(b.image.src);
+        })
+        .map(item => item.image);
     }
 
     // Create gallery items using DocumentFragment for performance
     const fragment = Core.DOM.createFragment(allImages, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists
-      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
+      // Pass skipHandler: true to enable event delegation on the homepage
+      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat), { skipHandler: true });
     });
     
     galleryGrid.appendChild(fragment);
