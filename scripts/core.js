@@ -420,7 +420,15 @@ window.Core = {
    * MEDIA FACTORY
    */
   Media: {
-    createItem(image, index, allItems, categoryFormatter = null) {
+    /**
+     * Creates a gallery item element
+     * @param {Object} image - Image data
+     * @param {number} index - Index in the collection
+     * @param {Array} allItems - Entire collection for lightbox navigation
+     * @param {Function} categoryFormatter - Optional function to format category slug
+     * @param {Object} options - Options (skipHandler: boolean to skip individual click listeners)
+     */
+    createItem(image, index, allItems, categoryFormatter = null, options = {}) {
       const item = document.createElement('div');
       const sizeClass = image.aspectRatio === '16/9' ? 'landscape' : (image.aspectRatio || 'portrait');
       item.className = `gallery-item ${sizeClass} reveal-item loading`;
@@ -482,22 +490,25 @@ window.Core = {
       overlay.innerHTML = `<h3 class="gallery-title">${image.title || ''}</h3><p class="gallery-category">${displayCategory}</p>`;
       item.appendChild(overlay);
 
-      item.onclick = (e) => {
-        if (!e.target.closest('video')) { // If not clicking video directly (which toggles play)
-             if (window.Core && window.Core.Lightbox) window.Core.Lightbox.open(index, allItems);
+      // Performance optimization: skip individual handlers for event delegation
+      if (!options.skipHandler) {
+        item.onclick = (e) => {
+          if (!e.target.closest('video')) { // If not clicking video directly (which toggles play)
+               if (window.Core && window.Core.Lightbox) window.Core.Lightbox.open(index, allItems);
+          }
+        };
+
+        // For video items, we want custom behavior:
+        // Clicking the video toggles play (handled in VideoHover).
+        // Clicking the OVERLAY opens lightbox.
+        if (isVideo) {
+            overlay.onclick = (e) => {
+                e.stopPropagation(); // Stop video toggle
+                if (window.Core && window.Core.Lightbox) window.Core.Lightbox.open(index, allItems);
+            };
+        } else {
+             item.onclick = () => { if (window.Core.Lightbox) window.Core.Lightbox.open(index, allItems); };
         }
-      };
-      
-      // For video items, we want custom behavior: 
-      // Clicking the video toggles play (handled in VideoHover).
-      // Clicking the OVERLAY opens lightbox.
-      if (isVideo) {
-          overlay.onclick = (e) => {
-              e.stopPropagation(); // Stop video toggle
-              if (window.Core && window.Core.Lightbox) window.Core.Lightbox.open(index, allItems);
-          };
-      } else {
-           item.onclick = () => { if (window.Core.Lightbox) window.Core.Lightbox.open(index, allItems); };
       }
 
       return item;
