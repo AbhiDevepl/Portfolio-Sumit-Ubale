@@ -1,12 +1,47 @@
 window.GalleryManager = {
   activeCategory: 'all',
   currentLimit: 3,
+  itemsCache: [], // Cache for DOM references and metadata
   
   init() {
+    this.refresh();
     this.initFiltering();
     this.initGalleryInteractions();
     Core.Lightbox.init();
     this.checkURLState();
+  },
+
+  /**
+   * Refreshes the cache and re-filters the gallery
+   */
+  refresh() {
+    this.refreshItemsCache();
+    this.filterGallery(this.activeCategory);
+  },
+
+  /**
+   * Caches DOM references and extracts metadata to avoid repeated DOM queries.
+   * This is critical for performance when dealing with 1,000+ items.
+   */
+  refreshItemsCache() {
+    this.itemsCache = Array.from(document.querySelectorAll('.gallery-item')).map(item => {
+      const media = item.querySelector('img, video');
+      const title = item.querySelector('.gallery-title');
+      const category = item.dataset.category;
+      const type = item.querySelector('video') ? 'video' : 'image';
+      const order = parseInt(item.dataset.order || '0', 10);
+      const index = parseInt(item.dataset.index, 10);
+
+      return {
+        element: item,
+        media,
+        title: title ? title.textContent : '',
+        category,
+        type,
+        order,
+        index
+      };
+    });
   },
   
   initFiltering() {
@@ -42,9 +77,14 @@ window.GalleryManager = {
     const grid = document.getElementById('gallery-grid');
     if (!grid) return;
 
-    // Lightbox Click
+    /**
+     * EVENT DELEGATION: Lightbox Click
+     * Instead of 1,200+ individual listeners, we use a single listener on the grid.
+     * This significantly reduces memory overhead and improves initialization speed.
+     */
     grid.addEventListener('click', (e) => {
       const item = e.target.closest('.gallery-item');
+      // If clicking anything in the item EXCEPT the video itself (which toggles play)
       if (item && !e.target.closest('video')) {
         const visibleItems = this.getVisibleData();
         const index = visibleItems.findIndex(d => d.originalIndex === parseInt(item.dataset.index));
@@ -56,27 +96,23 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
+    // Use cached metadata and fast visibility checks
+    return this.itemsCache
       .filter(item => {
-        // Optimization: use offsetParent to check visibility (faster than getComputedStyle)
-        // offsetParent is null when display is none
-        const isVisible = item.offsetParent !== null;
+        // offsetParent check is very fast to determine if item is display: none
+        const isVisible = item.element.offsetParent !== null;
         if (!isVisible) return false;
 
-        // Fallback for opacity if needed, but display: none is the primary filter
-        return parseFloat(item.style.opacity || '1') > 0.1;
+        // Final check for opacity to ensure filtering animation completed or is active
+        return parseFloat(item.element.style.opacity || '1') > 0.1;
       })
-      .map(item => {
-        const media = item.querySelector('img, video');
-        const src = media?.src || media?.dataset?.src || '';
-        return {
-          src,
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.dataset.category,
-          type: item.querySelector('video') ? 'video' : 'image',
-          originalIndex: parseInt(item.dataset.index, 10)
-        };
-      });
+      .map(item => ({
+        src: item.media?.src || item.media?.dataset?.src || '',
+        title: item.title,
+        category: item.category,
+        type: item.type,
+        originalIndex: item.index
+      }));
   },
   
   filterGallery(category) {
@@ -88,15 +124,13 @@ window.GalleryManager = {
       btn.setAttribute('aria-selected', isActive);
     });
     
-    // Convert to array to sort
-    const items = Array.from(document.querySelectorAll('.gallery-item'));
-    
     let matchCount = 0;
     let shownCount = 0;
 
-    items.forEach(item => {
-      const itemCategory = item.dataset.category;
-      const order = parseInt(item.dataset.order || '0', 10);
+    // Use itemsCache to avoid repeated querySelectorAll and dataset lookups
+    this.itemsCache.forEach(item => {
+      const itemCategory = item.category;
+      const order = item.order;
       const isMatch = category === 'all' || itemCategory === category;
       
       let shouldShow = false;
@@ -119,7 +153,7 @@ window.GalleryManager = {
       }
 
       if (window.gsap) {
-        gsap.to(item, {
+        gsap.to(item.element, {
           opacity: shouldShow ? 1 : 0,
           scale: shouldShow ? 1 : 0.95,
           duration: 0.4,
@@ -129,8 +163,8 @@ window.GalleryManager = {
         });
       } else {
         // Graceful fallback without GSAP
-        item.style.display = shouldShow ? 'block' : 'none';
-        item.style.opacity = shouldShow ? '1' : '0';
+        item.element.style.display = shouldShow ? 'block' : 'none';
+        item.element.style.opacity = shouldShow ? '1' : '0';
       }
     });
 

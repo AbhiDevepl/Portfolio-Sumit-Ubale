@@ -32,7 +32,12 @@ class ContentLoader {
       
       // Initialize Gallery Interactions (after content is loaded)
       if (window.GalleryManager) {
+      // If already initialized, just refresh the items cache and re-apply filter
+      if (window.GalleryManager.itemsCache && window.GalleryManager.itemsCache.length > 0) {
+        window.GalleryManager.refresh();
+      } else {
         window.GalleryManager.init();
+      }
       }
       
       this.populateEvents();
@@ -132,9 +137,10 @@ class ContentLoader {
     }
 
     // Create gallery items using DocumentFragment for performance
+    // Use skipHandler: true to enable efficient event delegation in GalleryManager
     const fragment = Core.DOM.createFragment(allImages, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists
-      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
+      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat), { skipHandler: true });
     });
     
     galleryGrid.appendChild(fragment);
