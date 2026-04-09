@@ -8,7 +8,7 @@ window.GalleryManager = {
     Core.Lightbox.init();
     this.checkURLState();
   },
-  
+
   initFiltering() {
     const container = document.querySelector('.portfolio-categories');
     if (container) {
@@ -42,39 +42,36 @@ window.GalleryManager = {
     const grid = document.getElementById('gallery-grid');
     if (!grid) return;
 
-    // Lightbox Click
+    // Lightbox Click via Event Delegation to avoid attaching 1,200+ individual listeners
     grid.addEventListener('click', (e) => {
       const item = e.target.closest('.gallery-item');
       if (item && !e.target.closest('video')) {
         const visibleItems = this.getVisibleData();
-        const index = visibleItems.findIndex(d => d.originalIndex === parseInt(item.dataset.index));
+        const itemIndex = parseInt(item.dataset.index, 10);
+        const index = visibleItems.findIndex(d => d.originalIndex === itemIndex);
         if (index !== -1) Core.Lightbox.open(index, visibleItems);
       }
     });
-
-    // Integrated Hover Effects removed
   },
 
   getVisibleData() {
+    // Map currently visible items for the Lightbox
+    // Use offsetParent !== null instead of getComputedStyle to avoid layout thrashing
     return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => {
-        // Optimization: use offsetParent to check visibility (faster than getComputedStyle)
-        // offsetParent is null when display is none
-        const isVisible = item.offsetParent !== null;
+      .filter(el => {
+        const isVisible = el.offsetParent !== null;
         if (!isVisible) return false;
-
-        // Fallback for opacity if needed, but display: none is the primary filter
-        return parseFloat(item.style.opacity || '1') > 0.1;
+        // Check opacity for items currently animating out
+        return parseFloat(el.style.opacity || '1') > 0.1;
       })
-      .map(item => {
-        const media = item.querySelector('img, video');
-        const src = media?.src || media?.dataset?.src || '';
+      .map(el => {
+        const media = el.querySelector('img, video');
         return {
-          src,
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.dataset.category,
-          type: item.querySelector('video') ? 'video' : 'image',
-          originalIndex: parseInt(item.dataset.index, 10)
+          src: media?.src || media?.dataset?.src || '',
+          title: el.querySelector('.gallery-title')?.textContent || '',
+          category: el.dataset.category,
+          type: !!el.querySelector('video') ? 'video' : 'image',
+          originalIndex: parseInt(el.dataset.index, 10)
         };
       });
   },
@@ -88,15 +85,13 @@ window.GalleryManager = {
       btn.setAttribute('aria-selected', isActive);
     });
     
-    // Convert to array to sort
-    const items = Array.from(document.querySelectorAll('.gallery-item'));
-    
     let matchCount = 0;
     let shownCount = 0;
 
-    items.forEach(item => {
-      const itemCategory = item.dataset.category;
-      const order = parseInt(item.dataset.order || '0', 10);
+    // Toggle visibility based on category and limit
+    document.querySelectorAll('.gallery-item').forEach(el => {
+      const itemCategory = el.dataset.category;
+      const itemOrder = parseInt(el.dataset.order || '0', 10);
       const isMatch = category === 'all' || itemCategory === category;
       
       let shouldShow = false;
@@ -104,14 +99,12 @@ window.GalleryManager = {
         matchCount++;
         
         if (category === 'all') {
-          // Use a simple global counter for 'all'
           if (shownCount < this.currentLimit) {
             shouldShow = true;
             shownCount++;
           }
         } else {
-          // Use the per-category 'order' for specific categories
-          if (order < this.currentLimit) {
+          if (itemOrder < this.currentLimit) {
             shouldShow = true;
             shownCount++;
           }
@@ -119,7 +112,7 @@ window.GalleryManager = {
       }
 
       if (window.gsap) {
-        gsap.to(item, {
+        gsap.to(el, {
           opacity: shouldShow ? 1 : 0,
           scale: shouldShow ? 1 : 0.95,
           duration: 0.4,
@@ -128,9 +121,8 @@ window.GalleryManager = {
           overwrite: true
         });
       } else {
-        // Graceful fallback without GSAP
-        item.style.display = shouldShow ? 'block' : 'none';
-        item.style.opacity = shouldShow ? '1' : '0';
+        el.style.display = shouldShow ? 'block' : 'none';
+        el.style.opacity = shouldShow ? '1' : '0';
       }
     });
 
@@ -176,5 +168,3 @@ window.GalleryManager = {
     this.filterGallery(category);
   }
 };
-
-// Auto-init removed. Will be called by ContentLoader.

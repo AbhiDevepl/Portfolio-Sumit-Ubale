@@ -88,13 +88,23 @@ class GalleryLoader {
     const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, allItems));
     grid.appendChild(galleryFragment);
 
+    // Lightbox Click via Event Delegation
+    grid.onclick = (e) => {
+      const item = e.target.closest('.gallery-item');
+      if (item && !e.target.closest('video')) {
+        const index = parseInt(item.dataset.index);
+        if (!isNaN(index)) Core.Lightbox.open(index, allItems);
+      }
+    };
+
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }
 
   createGalleryItem(image, index, allItems) {
     // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, allItems, (cat) => this.category);
+    // Pass skipHandler: true for performance (event delegation is used on grid)
+    return Core.Media.createItem(image, index, allItems, (cat) => this.category, { skipHandler: true });
   }
 
   getGalleryData() {
