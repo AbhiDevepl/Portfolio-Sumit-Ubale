@@ -56,27 +56,27 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => {
-        // Optimization: use offsetParent to check visibility (faster than getComputedStyle)
-        // offsetParent is null when display is none
-        const isVisible = item.offsetParent !== null;
-        if (!isVisible) return false;
+    // Optimization: Use pre-calculated data from ContentLoader instead of DOM scraping
+    if (window.contentLoader && window.contentLoader.allImages) {
+      const category = this.activeCategory;
+      const limit = this.currentLimit;
 
-        // Fallback for opacity if needed, but display: none is the primary filter
-        return parseFloat(item.style.opacity || '1') > 0.1;
-      })
-      .map(item => {
-        const media = item.querySelector('img, video');
-        const src = media?.src || media?.dataset?.src || '';
-        return {
-          src,
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.dataset.category,
-          type: item.querySelector('video') ? 'video' : 'image',
-          originalIndex: parseInt(item.dataset.index, 10)
-        };
-      });
+      let filtered = window.contentLoader.allImages;
+      if (category !== 'all') {
+        filtered = filtered.filter(img => img.category === category);
+      }
+
+      // Limit to current visible count
+      const visible = filtered.slice(0, limit);
+
+      return visible.map((img, idx) => ({
+        ...img,
+        originalIndex: window.contentLoader.allImages.indexOf(img)
+      }));
+    }
+
+    // Fallback if contentLoader not ready (should not happen in production)
+    return [];
   },
   
   filterGallery(category) {

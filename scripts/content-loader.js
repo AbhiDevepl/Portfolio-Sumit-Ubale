@@ -26,6 +26,7 @@ class ContentLoader {
    * Initialize content loading
    */
   async init() {
+    window.contentLoader = this;
     try {
       await this.loadData();
       this.populateGallery();
@@ -76,65 +77,66 @@ class ContentLoader {
 
     // Flatten images from object structure if necessary
     const rawImages = this.data.portfolio.images;
-    let allImages = [];
+    let processedImages = [];
 
     if (Array.isArray(rawImages)) {
       // Fallback for flat array (if still used)
-      allImages = rawImages.map(img => ({ ...img, isPreview: true }));
+      processedImages = rawImages.map(img => ({ ...img, isPreview: true }));
     } else {
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
-        // 1. Filter only .jpg and .jpeg (and videos for cinematics)
-        const validImages = images.filter(img => {
-          if (!img.src) return false;
+        // 1. Filter and pre-extract numbers for sorting (Schwartzian Transform prep)
+        const validMapped = [];
+        for (let i = 0; i < images.length; i++) {
+          const img = images[i];
+          if (!img.src) continue;
+
           const lowerSrc = img.src.toLowerCase();
           const urlWithoutParams = lowerSrc.split('?')[0];
           
           const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
           const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
           
-          if (categorySlug === 'cinematics') {
-            return isJpg || isVideo;
+          const isValid = (categorySlug === 'cinematics') ? (isJpg || isVideo) : isJpg;
+
+          if (isValid) {
+            const match = urlWithoutParams.match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+            validMapped.push({
+              img,
+              num: match ? parseInt(match[1], 10) : 0
+            });
           }
-          return isJpg;
-        });
+        }
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+        // 2. Sort numerically based on pre-extracted number
+        validMapped.sort((a, b) => a.num - b.num);
 
-        // 3. Assign order
-        validImages.forEach((image, idx) => {
-          allImages.push({
-            ...image,
+        // 3. Assign order and collect
+        validMapped.forEach((item, idx) => {
+          processedImages.push({
+            ...item.img,
             category: categorySlug,
-            order: idx // used for pagination logic later
+            order: idx,
+            _sortNum: item.num // Keep for global sort
           });
         });
       });
 
-      // 4. Final Global Sort by filename number (Rule 2)
-      allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
+      // 4. Final Global Sort (Schwartzian Transform)
+      processedImages.sort((a, b) => {
+        if (a._sortNum !== b._sortNum) return a._sortNum - b._sortNum;
         return a.src.localeCompare(b.src);
       });
     }
 
+    // Store globally for GalleryManager to access without DOM scraping
+    this.allImages = processedImages;
+
     // Create gallery items using DocumentFragment for performance
-    const fragment = Core.DOM.createFragment(allImages, (image, index) => {
+    const fragment = Core.DOM.createFragment(this.allImages, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists
-      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
+      // On homepage, we use skipHandler: true for event delegation
+      return Core.Media.createItem(image, index, this.allImages, (cat) => this.getCategoryName(cat), { skipHandler: true });
     });
     
     galleryGrid.appendChild(fragment);
@@ -163,15 +165,7 @@ class ContentLoader {
     // Clear existing content
     eventsGrid.innerHTML = '';
 
-    // Create event items (reusing gallery item structure for consistency)
-    this.data.recentEvents.forEach((event, index) => {
-      // Use createGalleryItem styling/structure but appended to events grid
-      // We manually recreate it here to ensure specific event classes if needed
-      // or we can reuse createGalleryItem if we want identical behavior.
-      // User asked for "like Portfolio", so let's stick to the Project Card style 
-      // or the Gallery Item style. The HTML had .event-item structure.
-      // Let's use the .event-item structure but make it dynamic.
-      
+    const fragment = Core.DOM.createFragment(this.data.recentEvents, (event) => {
       const item = document.createElement('div');
       item.className = 'event-item';
       
@@ -181,21 +175,12 @@ class ContentLoader {
       img.className = 'event-image';
       img.loading = 'lazy';
       
-      // Maintain aspect ratio via CSS or style if variable
-      // The CSS has :nth-child rules for aspect ratios, but data has valid aspect ratios.
-      // We can override via style if needed, or let CSS handle it.
-      // Let's adhere to the data if provided.
       if (event.aspectRatio) {
         img.style.aspectRatio = event.aspectRatio;
       }
       
-      // Optional: Add overlay content like portfolio if desired?
-      // The original HTML structure for events was just image.
-      // "make same as a Recent Events like Portfolio" implies showing title/category.
-      // Let's add an overlay similar to gallery items.
-      
       const overlay = document.createElement('div');
-      overlay.className = 'gallery-overlay'; // Reuse gallery overlay class
+      overlay.className = 'gallery-overlay';
       
       const title = document.createElement('h3');
       title.className = 'gallery-title';
@@ -211,12 +196,10 @@ class ContentLoader {
       item.appendChild(img);
       item.appendChild(overlay);
       
-      // Add click listener for lightbox if we want events to open there too
-      // We need to add it to the GalleryManager access if we do that.
-      // For now, let's just make it visual.
-      
-      eventsGrid.appendChild(item);
+      return item;
     });
+
+    eventsGrid.appendChild(fragment);
   }
 
   /**
@@ -227,37 +210,39 @@ class ContentLoader {
     const publicationsContainer = document.getElementById('publications');
     if (publicationsContainer && this.data?.socialProof?.publications) {
       publicationsContainer.innerHTML = '';
-      this.data.socialProof.publications.forEach(pub => {
+      const pubFragment = Core.DOM.createFragment(this.data.socialProof.publications, (pub) => {
         const pubItem = document.createElement('span');
         pubItem.className = 'publication-item';
         pubItem.textContent = pub;
-        publicationsContainer.appendChild(pubItem);
+        return pubItem;
       });
+      publicationsContainer.appendChild(pubFragment);
     }
 
     // Populate awards
     const awardsContainer = document.getElementById('awards');
     if (awardsContainer && this.data?.socialProof?.awards) {
       awardsContainer.innerHTML = '';
-      this.data.socialProof.awards.forEach(award => {
+      const awardFragment = Core.DOM.createFragment(this.data.socialProof.awards, (award) => {
         const awardItem = document.createElement('li');
         awardItem.textContent = award;
-        awardsContainer.appendChild(awardItem);
+        return awardItem;
       });
+      awardsContainer.appendChild(awardFragment);
     }
 
     // Populate clients
     const clientsContainer = document.getElementById('clients');
     if (clientsContainer && this.data?.socialProof?.clients) {
       clientsContainer.innerHTML = '';
-      this.data.socialProof.clients.forEach(client => {
+      const clientFragment = Core.DOM.createFragment(this.data.socialProof.clients, (client) => {
         const clientItem = document.createElement('span');
         clientItem.className = 'client-item';
         clientItem.textContent = client;
-        clientsContainer.appendChild(clientItem);
+        return clientItem;
       });
+      clientsContainer.appendChild(clientFragment);
     }
-
   }
 
   /**
