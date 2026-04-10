@@ -61,6 +61,16 @@ class ContentLoader {
   }
 
   /**
+   * Helper to extract numeric value from filename for sorting
+   * Optimization: Extracted to avoid redundant regex matches in sort loops
+   */
+  getNumericSortValue(src) {
+    if (!src) return 0;
+    const match = src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+    return match ? parseInt(match[1], 10) : 0;
+  }
+
+  /**
    * Populate gallery grid with images
    */
   populateGallery() {
@@ -100,35 +110,34 @@ class ContentLoader {
         });
 
         // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+        // Optimization: Schwartzian Transform to eliminate O(N log N) regex overhead
+        const mapped = validImages.map(img => ({
+          img,
+          num: this.getNumericSortValue(img.src)
+        }));
+
+        mapped.sort((a, b) => a.num - b.num);
 
         // 3. Assign order
-        validImages.forEach((image, idx) => {
+        mapped.forEach((item, idx) => {
           allImages.push({
-            ...image,
+            ...item.img,
             category: categorySlug,
-            order: idx // used for pagination logic later
+            order: idx, // used for pagination logic later
+            _sortVal: item.num // Store for global sort optimization
           });
         });
       });
 
-      // 4. Final Global Sort by filename number (Rule 2)
+      // 4. Final Global Sort by filename number
       allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
+        if (a._sortVal !== b._sortVal) return a._sortVal - b._sortVal;
         // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
         return a.src.localeCompare(b.src);
       });
+
+      // Clean up temporary property
+      allImages.forEach(img => delete img._sortVal);
     }
 
     // Create gallery items using DocumentFragment for performance
@@ -163,15 +172,8 @@ class ContentLoader {
     // Clear existing content
     eventsGrid.innerHTML = '';
 
-    // Create event items (reusing gallery item structure for consistency)
-    this.data.recentEvents.forEach((event, index) => {
-      // Use createGalleryItem styling/structure but appended to events grid
-      // We manually recreate it here to ensure specific event classes if needed
-      // or we can reuse createGalleryItem if we want identical behavior.
-      // User asked for "like Portfolio", so let's stick to the Project Card style 
-      // or the Gallery Item style. The HTML had .event-item structure.
-      // Let's use the .event-item structure but make it dynamic.
-      
+    // Create event items using DocumentFragment for performance
+    const fragment = Core.DOM.createFragment(this.data.recentEvents, (event, index) => {
       const item = document.createElement('div');
       item.className = 'event-item';
       
@@ -181,21 +183,12 @@ class ContentLoader {
       img.className = 'event-image';
       img.loading = 'lazy';
       
-      // Maintain aspect ratio via CSS or style if variable
-      // The CSS has :nth-child rules for aspect ratios, but data has valid aspect ratios.
-      // We can override via style if needed, or let CSS handle it.
-      // Let's adhere to the data if provided.
       if (event.aspectRatio) {
         img.style.aspectRatio = event.aspectRatio;
       }
       
-      // Optional: Add overlay content like portfolio if desired?
-      // The original HTML structure for events was just image.
-      // "make same as a Recent Events like Portfolio" implies showing title/category.
-      // Let's add an overlay similar to gallery items.
-      
       const overlay = document.createElement('div');
-      overlay.className = 'gallery-overlay'; // Reuse gallery overlay class
+      overlay.className = 'gallery-overlay';
       
       const title = document.createElement('h3');
       title.className = 'gallery-title';
@@ -211,12 +204,10 @@ class ContentLoader {
       item.appendChild(img);
       item.appendChild(overlay);
       
-      // Add click listener for lightbox if we want events to open there too
-      // We need to add it to the GalleryManager access if we do that.
-      // For now, let's just make it visual.
-      
-      eventsGrid.appendChild(item);
+      return item;
     });
+
+    eventsGrid.appendChild(fragment);
   }
 
   /**
