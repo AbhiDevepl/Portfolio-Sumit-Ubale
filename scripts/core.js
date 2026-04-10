@@ -420,7 +420,7 @@ window.Core = {
    * MEDIA FACTORY
    */
   Media: {
-    createItem(image, index, allItems, categoryFormatter = null) {
+    createItem(image, index, allItems, categoryFormatter = null, options = {}) {
       const item = document.createElement('div');
       const sizeClass = image.aspectRatio === '16/9' ? 'landscape' : (image.aspectRatio || 'portrait');
       item.className = `gallery-item ${sizeClass} reveal-item loading`;
@@ -482,22 +482,25 @@ window.Core = {
       overlay.innerHTML = `<h3 class="gallery-title">${image.title || ''}</h3><p class="gallery-category">${displayCategory}</p>`;
       item.appendChild(overlay);
 
-      item.onclick = (e) => {
-        if (!e.target.closest('video')) { // If not clicking video directly (which toggles play)
-             if (window.Core && window.Core.Lightbox) window.Core.Lightbox.open(index, allItems);
+      // Support event delegation by skipping individual handlers
+      if (!options.skipHandler) {
+        item.onclick = (e) => {
+          if (!e.target.closest('video')) { // If not clicking video directly (which toggles play)
+               if (window.Core && window.Core.Lightbox) window.Core.Lightbox.open(index, allItems);
+          }
+        };
+
+        // For video items, we want custom behavior:
+        // Clicking the video toggles play (handled in VideoHover).
+        // Clicking the OVERLAY opens lightbox.
+        if (isVideo) {
+            overlay.onclick = (e) => {
+                e.stopPropagation(); // Stop video toggle
+                if (window.Core && window.Core.Lightbox) window.Core.Lightbox.open(index, allItems);
+            };
+        } else {
+             item.onclick = () => { if (window.Core.Lightbox) window.Core.Lightbox.open(index, allItems); };
         }
-      };
-      
-      // For video items, we want custom behavior: 
-      // Clicking the video toggles play (handled in VideoHover).
-      // Clicking the OVERLAY opens lightbox.
-      if (isVideo) {
-          overlay.onclick = (e) => {
-              e.stopPropagation(); // Stop video toggle
-              if (window.Core && window.Core.Lightbox) window.Core.Lightbox.open(index, allItems);
-          };
-      } else {
-           item.onclick = () => { if (window.Core.Lightbox) window.Core.Lightbox.open(index, allItems); };
       }
 
       return item;

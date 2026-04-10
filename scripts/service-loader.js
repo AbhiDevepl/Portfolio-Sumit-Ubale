@@ -70,32 +70,37 @@ class ServiceLoader {
 
     // Populate Deliverables
     const list = document.getElementById('deliverables-list');
-    list.innerHTML = '';
-    s.deliverables.forEach(item => {
-      const li = document.createElement('li');
-      li.textContent = item;
-      list.appendChild(li);
-    });
+    if (list) {
+      list.innerHTML = '';
+      const delFragment = Core.DOM.createFragment(s.deliverables, (item) => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        return li;
+      });
+      list.appendChild(delFragment);
+    }
 
     // Populate Random Featured Image
     this.renderRandomFeature(s);
 
     // Populate Gallery
     const gallery = document.getElementById('service-gallery');
-    gallery.innerHTML = '';
+    if (gallery) {
+      gallery.innerHTML = '';
 
-    // Apply centered layout for cinematics or video-heavy pages
-    if (s.slug === 'cinematics' || s.mediaType === 'videos') {
-      gallery.classList.add('layout-centered');
-    } else {
-      gallery.classList.remove('layout-centered');
+      // Apply centered layout for cinematics or video-heavy pages
+      if (s.slug === 'cinematics' || s.mediaType === 'videos') {
+        gallery.classList.add('layout-centered');
+      } else {
+        gallery.classList.remove('layout-centered');
+      }
+
+      const galFragment = Core.DOM.createFragment(s.gallery, (item, index) => {
+        item.category = s.slug;
+        return Core.Media.createItem(item, index, s.gallery);
+      });
+      gallery.appendChild(galFragment);
     }
-
-    s.gallery.forEach((item, index) => {
-      item.category = s.slug;
-        const mediaItem = Core.Media.createItem(item, index, s.gallery);
-      gallery.appendChild(mediaItem);
-    });
 
     document.body.classList.remove('loading');
   }
