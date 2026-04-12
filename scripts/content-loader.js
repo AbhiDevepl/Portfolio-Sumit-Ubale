@@ -80,60 +80,70 @@ class ContentLoader {
 
     if (Array.isArray(rawImages)) {
       // Fallback for flat array (if still used)
-      allImages = rawImages.map(img => ({ ...img, isPreview: true }));
+      allImages = rawImages.map((img, idx) => ({
+        ...img,
+        isPreview: true,
+        order: idx,
+        sortVal: 0,
+        type: (img.src.toLowerCase().split('?')[0].match(/\.(mp4|mov)$/i)) ? 'video' : 'image'
+      }));
     } else {
+      // Optimization: Use Schwartzian Transform to pre-calculate sort values
+      // This avoids redundant regex/split calls inside O(N log N) sort loops.
+      const getSortValue = (src) => {
+        const urlWithoutParams = src.split('?')[0];
+        const match = urlWithoutParams.match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+        return match ? parseInt(match[1], 10) : 0;
+      };
+
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
         // 1. Filter only .jpg and .jpeg (and videos for cinematics)
-        const validImages = images.filter(img => {
-          if (!img.src) return false;
-          const lowerSrc = img.src.toLowerCase();
-          const urlWithoutParams = lowerSrc.split('?')[0];
-          
-          const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
-          const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
-          
-          if (categorySlug === 'cinematics') {
-            return isJpg || isVideo;
-          }
-          return isJpg;
-        });
+        const validWithSort = images
+          .filter(img => {
+            if (!img.src) return false;
+            const lowerSrc = img.src.toLowerCase();
+            const urlWithoutParams = lowerSrc.split('?')[0];
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+            const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
+            const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
 
-        // 3. Assign order
-        validImages.forEach((image, idx) => {
+            return categorySlug === 'cinematics' ? (isJpg || isVideo) : isJpg;
+          })
+          .map(img => ({
+            img,
+            sortVal: getSortValue(img.src)
+          }));
+
+        // 2. Sort numerically based on filename using pre-calculated values
+        validWithSort.sort((a, b) => a.sortVal - b.sortVal);
+
+        // 3. Assign order and push to global list
+        validWithSort.forEach((item, idx) => {
           allImages.push({
-            ...image,
+            ...item.img,
             category: categorySlug,
-            order: idx // used for pagination logic later
+            order: idx, // used for pagination logic later
+            sortVal: item.sortVal, // preserve for global sort
+            type: (item.img.src.toLowerCase().split('?')[0].match(/\.(mp4|mov)$/i)) ? 'video' : 'image'
           });
         });
       });
 
       // 4. Final Global Sort by filename number (Rule 2)
       allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
+        if (a.sortVal !== b.sortVal) return a.sortVal - b.sortVal;
+        // If numbers are same (e.g. 1.jpg from different folders), sort by src
         return a.src.localeCompare(b.src);
       });
     }
 
+    this.allImages = allImages; // Expose for GalleryManager to avoid DOM scraping
+
     // Create gallery items using DocumentFragment for performance
     const fragment = Core.DOM.createFragment(allImages, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists
+      image.originalIndex = index; // Store for Lightbox lookup
       return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
     });
     
