@@ -56,21 +56,47 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => {
-        // Optimization: use offsetParent to check visibility (faster than getComputedStyle)
-        // offsetParent is null when display is none
-        const isVisible = item.offsetParent !== null;
-        if (!isVisible) return false;
+    // Optimization: Use pre-processed in-memory array from contentLoader
+    // instead of scraping the DOM with querySelectorAll for 1,200+ items.
+    if (!window.contentLoader || !window.contentLoader.allImages) {
+        console.warn('GalleryManager: window.contentLoader.allImages not found, falling back to DOM scraping.');
+        return this.getVisibleDataFromDOM();
+    }
 
-        // Fallback for opacity if needed, but display: none is the primary filter
-        return parseFloat(item.style.opacity || '1') > 0.1;
+    const { activeCategory, currentLimit } = this;
+
+    return window.contentLoader.allImages
+      .filter(img => {
+        const isMatch = activeCategory === 'all' || img.category === activeCategory;
+        if (!isMatch) return false;
+
+        // Filter by the same limit logic as filterGallery
+        if (activeCategory === 'all') {
+            // For 'all', items are shown based on global index being less than currentLimit
+            // However, filterGallery uses a counter, and items are sorted by sortVal.
+            // We need to mirror the logic exactly.
+            return true; // We'll slice below
+        } else {
+            return img.order < currentLimit;
+        }
       })
+      .slice(0, activeCategory === 'all' ? currentLimit : Infinity)
+      .map((img, idx) => ({
+        ...img,
+        index: idx // Provide index for compatibility if needed
+      }));
+  },
+
+  /**
+   * Fallback for DOM-based scraping (mostly for safety or non-standard page states)
+   */
+  getVisibleDataFromDOM() {
+    return Array.from(document.querySelectorAll('.gallery-item'))
+      .filter(item => item.offsetParent !== null && parseFloat(item.style.opacity || '1') > 0.1)
       .map(item => {
         const media = item.querySelector('img, video');
-        const src = media?.src || media?.dataset?.src || '';
         return {
-          src,
+          src: media?.src || media?.dataset?.src || '',
           title: item.querySelector('.gallery-title')?.textContent,
           category: item.dataset.category,
           type: item.querySelector('video') ? 'video' : 'image',
