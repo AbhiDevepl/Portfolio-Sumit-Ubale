@@ -82,6 +82,12 @@ class ContentLoader {
       // Fallback for flat array (if still used)
       allImages = rawImages.map(img => ({ ...img, isPreview: true }));
     } else {
+      // Optimization: Extract numeric sort key once per item (Schwartzian Transform)
+      const getSortNum = (src) => {
+        const match = src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+        return match ? parseInt(match[1], 10) : 0;
+      };
+
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
         // 1. Filter only .jpg and .jpeg (and videos for cinematics)
@@ -99,36 +105,34 @@ class ContentLoader {
           return isJpg;
         });
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+        // 2. Schwartzian Transform for per-category sorting
+        const mapped = validImages.map(img => ({
+          img,
+          num: getSortNum(img.src)
+        }));
 
-        // 3. Assign order
-        validImages.forEach((image, idx) => {
+        mapped.sort((a, b) => a.num - b.num);
+
+        // 3. Assign order and prepare for global sort
+        mapped.forEach((item, idx) => {
           allImages.push({
-            ...image,
+            ...item.img,
             category: categorySlug,
-            order: idx // used for pagination logic later
+            order: idx, // used for pagination logic later
+            _sortNum: item.num // Store pre-calculated num for final global sort
           });
         });
       });
 
-      // 4. Final Global Sort by filename number (Rule 2)
+      // 4. Final Global Sort using pre-calculated numbers
       allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
+        if (a._sortNum !== b._sortNum) return a._sortNum - b._sortNum;
         // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
         return a.src.localeCompare(b.src);
       });
+
+      // Cleanup temporary sort key to keep data objects clean
+      allImages.forEach(img => delete img._sortNum);
     }
 
     // Create gallery items using DocumentFragment for performance
