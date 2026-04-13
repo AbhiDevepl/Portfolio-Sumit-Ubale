@@ -99,36 +99,33 @@ class ContentLoader {
           return isJpg;
         });
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
-
-        // 3. Assign order
-        validImages.forEach((image, idx) => {
-          allImages.push({
-            ...image,
-            category: categorySlug,
-            order: idx // used for pagination logic later
+        // 2. & 3. Sort and pre-calculate numeric values using Schwartzian Transform
+        // This avoids redundant regex matches and string operations within the sort comparator
+        validImages
+          .map(img => {
+            const match = img.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+            return { img, val: match ? parseInt(match[1], 10) : 0 };
+          })
+          .sort((a, b) => a.val - b.val)
+          .forEach((pair, idx) => {
+            allImages.push({
+              ...pair.img,
+              category: categorySlug,
+              order: idx, // used for pagination logic later
+              _sortVal: pair.val // pre-calculated for global sort
+            });
           });
-        });
       });
 
       // 4. Final Global Sort by filename number (Rule 2)
       allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
+        if (a._sortVal !== b._sortVal) return a._sortVal - b._sortVal;
+        // If numbers are same (e.g. 1.jpg from different folders), sort by src
         return a.src.localeCompare(b.src);
       });
+
+      // Clean up temporary sort value
+      allImages.forEach(img => delete img._sortVal);
     }
 
     // Create gallery items using DocumentFragment for performance
