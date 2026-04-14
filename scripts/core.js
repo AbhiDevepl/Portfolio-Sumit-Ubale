@@ -420,7 +420,10 @@ window.Core = {
    * MEDIA FACTORY
    */
   Media: {
-    createItem(image, index, allItems, categoryFormatter = null) {
+    createItem(image, index, allItems, options = {}) {
+      const categoryFormatter = typeof options === 'function' ? options : options.categoryFormatter;
+      const skipHandler = options.skipHandler || false;
+
       const item = document.createElement('div');
       const sizeClass = image.aspectRatio === '16/9' ? 'landscape' : (image.aspectRatio || 'portrait');
       item.className = `gallery-item ${sizeClass} reveal-item loading`;
@@ -482,22 +485,25 @@ window.Core = {
       overlay.innerHTML = `<h3 class="gallery-title">${image.title || ''}</h3><p class="gallery-category">${displayCategory}</p>`;
       item.appendChild(overlay);
 
-      item.onclick = (e) => {
-        if (!e.target.closest('video')) { // If not clicking video directly (which toggles play)
-             if (window.Core && window.Core.Lightbox) window.Core.Lightbox.open(index, allItems);
-        }
-      };
-      
-      // For video items, we want custom behavior: 
-      // Clicking the video toggles play (handled in VideoHover).
-      // Clicking the OVERLAY opens lightbox.
-      if (isVideo) {
+      // Skip individual handlers if parent manager uses event delegation
+      if (!skipHandler) {
+        const openLightbox = () => {
+          if (window.Core?.Lightbox) window.Core.Lightbox.open(index, allItems);
+        };
+
+        if (isVideo) {
+          // Videos: toggle play on video click, open Lightbox on overlay click
           overlay.onclick = (e) => {
-              e.stopPropagation(); // Stop video toggle
-              if (window.Core && window.Core.Lightbox) window.Core.Lightbox.open(index, allItems);
+            e.stopPropagation();
+            openLightbox();
           };
-      } else {
-           item.onclick = () => { if (window.Core.Lightbox) window.Core.Lightbox.open(index, allItems); };
+
+          item.onclick = (e) => {
+            if (!e.target.closest('video')) openLightbox();
+          };
+        } else {
+          item.onclick = openLightbox;
+        }
       }
 
       return item;

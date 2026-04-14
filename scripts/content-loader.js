@@ -84,30 +84,33 @@ class ContentLoader {
     } else {
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
-        // 1. Filter only .jpg and .jpeg (and videos for cinematics)
-        const validImages = images.filter(img => {
-          if (!img.src) return false;
-          const lowerSrc = img.src.toLowerCase();
-          const urlWithoutParams = lowerSrc.split('?')[0];
-          
-          const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
-          const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
-          
-          if (categorySlug === 'cinematics') {
-            return isJpg || isVideo;
-          }
-          return isJpg;
-        });
+        // 1. Pre-process and Filter only .jpg and .jpeg (and videos for cinematics)
+        const validImages = images
+          .map(img => {
+            if (!img.src) return null;
+            const urlWithoutParams = img.src.split('?')[0].toLowerCase();
+            const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
+            const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+            // Schwartzian Transform: pre-extract numeric sort value
+            const match = urlWithoutParams.match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+            const num = match ? parseInt(match[1], 10) : 0;
+
+            return {
+              ...img,
+              type: isVideo ? 'video' : 'image',
+              isMedia: isJpg || isVideo,
+              num
+            };
+          })
+          .filter(img => {
+            if (!img || !img.isMedia) return false;
+            if (categorySlug === 'cinematics') return true;
+            return img.type === 'image';
+          });
+
+        // 2. Sort numerically based on pre-calculated num
+        validImages.sort((a, b) => a.num - b.num);
 
         // 3. Assign order
         validImages.forEach((image, idx) => {
@@ -121,20 +124,22 @@ class ContentLoader {
 
       // 4. Final Global Sort by filename number (Rule 2)
       allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
+        if (a.num !== b.num) return a.num - b.num;
         // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
         return a.src.localeCompare(b.src);
       });
     }
 
+    // Global access for GalleryManager optimization
+    this.allImages = allImages;
+
     // Create gallery items using DocumentFragment for performance
     const fragment = Core.DOM.createFragment(allImages, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists
-      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
+      return Core.Media.createItem(image, index, allImages, {
+        categoryFormatter: (cat) => this.getCategoryName(cat),
+        skipHandler: true // Optimization: use event delegation in GalleryManager
+      });
     });
     
     galleryGrid.appendChild(fragment);

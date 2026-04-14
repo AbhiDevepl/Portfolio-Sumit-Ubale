@@ -42,12 +42,18 @@ window.GalleryManager = {
     const grid = document.getElementById('gallery-grid');
     if (!grid) return;
 
-    // Lightbox Click
+    // Lightbox Click (Event Delegation)
     grid.addEventListener('click', (e) => {
       const item = e.target.closest('.gallery-item');
       if (item && !e.target.closest('video')) {
         const visibleItems = this.getVisibleData();
-        const index = visibleItems.findIndex(d => d.originalIndex === parseInt(item.dataset.index));
+
+        // Find by matching src as index might vary if DOM/Data out of sync
+        // media.src returns absolute URL, so we use getAttribute('src') for relative path matching
+        const media = item.querySelector('img, video');
+        const targetSrc = media?.getAttribute('src') || media?.dataset?.src;
+        const index = visibleItems.findIndex(d => d.src === targetSrc);
+
         if (index !== -1) Core.Lightbox.open(index, visibleItems);
       }
     });
@@ -56,25 +62,45 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => {
-        // Optimization: use offsetParent to check visibility (faster than getComputedStyle)
-        // offsetParent is null when display is none
-        const isVisible = item.offsetParent !== null;
-        if (!isVisible) return false;
+    // High-performance data retrieval using pre-processed data
+    // This avoids O(N) DOM scraping and layout-sensitive reads
+    if (window.contentLoader && window.contentLoader.allImages) {
+      const category = this.activeCategory;
+      const limit = this.currentLimit;
 
-        // Fallback for opacity if needed, but display: none is the primary filter
-        return parseFloat(item.style.opacity || '1') > 0.1;
-      })
-      .map(item => {
+      return window.contentLoader.allImages
+        .filter(img => {
+          const isMatch = category === 'all' || img.category === category;
+          if (!isMatch) return false;
+
+          // Check against current visible limit
+          if (category === 'all') {
+             // In 'all' view, we just check global count (rendered in order)
+             // But wait, the filterGallery logic uses a global count for 'all'.
+             // We need to mirror that logic exactly.
+             return true; // We'll slice later
+          } else {
+             return img.order < limit;
+          }
+        })
+        .slice(0, category === 'all' ? limit : Infinity)
+        .map((img, index) => ({
+          ...img,
+          index // Lightbox expects the current visible index
+        }));
+    }
+
+    // Fallback to DOM scraping if data not yet loaded
+    return Array.from(document.querySelectorAll('.gallery-item'))
+      .filter(item => item.offsetParent !== null)
+      .map((item, index) => {
         const media = item.querySelector('img, video');
-        const src = media?.src || media?.dataset?.src || '';
         return {
-          src,
+          src: media?.src || media?.dataset?.src || '',
           title: item.querySelector('.gallery-title')?.textContent,
           category: item.dataset.category,
           type: item.querySelector('video') ? 'video' : 'image',
-          originalIndex: parseInt(item.dataset.index, 10)
+          index
         };
       });
   },
