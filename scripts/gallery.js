@@ -56,7 +56,7 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
+    const items = Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => {
         // Optimization: use offsetParent to check visibility (faster than getComputedStyle)
         // offsetParent is null when display is none
@@ -65,18 +65,34 @@ window.GalleryManager = {
 
         // Fallback for opacity if needed, but display: none is the primary filter
         return parseFloat(item.style.opacity || '1') > 0.1;
-      })
-      .map(item => {
-        const media = item.querySelector('img, video');
-        const src = media?.src || media?.dataset?.src || '';
+      });
+
+    // If window.contentLoader.allImages is available, use it as a source of truth
+    // to avoid expensive DOM scraping for each item.
+    if (window.contentLoader && window.contentLoader.allImages) {
+      return items.map(item => {
+        const idx = parseInt(item.dataset.index, 10);
+        const data = window.contentLoader.allImages[idx];
         return {
-          src,
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.dataset.category,
-          type: item.querySelector('video') ? 'video' : 'image',
-          originalIndex: parseInt(item.dataset.index, 10)
+          ...data,
+          originalIndex: idx,
+          type: data.type || (data.src.match(/\.(mp4|mov)/i) ? 'video' : 'image')
         };
       });
+    }
+
+    // Fallback to DOM scraping if data source is missing
+    return items.map(item => {
+      const media = item.querySelector('img, video');
+      const src = media?.src || media?.dataset?.src || '';
+      return {
+        src,
+        title: item.querySelector('.gallery-title')?.textContent,
+        category: item.dataset.category,
+        type: item.querySelector('video') ? 'video' : 'image',
+        originalIndex: parseInt(item.dataset.index, 10)
+      };
+    });
   },
   
   filterGallery(category) {
