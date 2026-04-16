@@ -84,32 +84,33 @@ class ContentLoader {
     } else {
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
-        // 1. Filter only .jpg and .jpeg (and videos for cinematics)
-        const validImages = images.filter(img => {
-          if (!img.src) return false;
-          const lowerSrc = img.src.toLowerCase();
-          const urlWithoutParams = lowerSrc.split('?')[0];
-          
-          const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
-          const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
-          
-          if (categorySlug === 'cinematics') {
-            return isJpg || isVideo;
-          }
-          return isJpg;
-        });
+        // 1. Map to include metadata (Schwartzian Transform) and Filter
+        const validImages = images
+          .map(img => {
+            if (!img.src) return null;
+            const urlWithoutParams = img.src.split('?')[0];
+            const match = urlWithoutParams.match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+            const isVid = /\.(mp4|mov)$/i.test(urlWithoutParams);
+            const isImg = /\.jpe?g$/i.test(urlWithoutParams);
+            return {
+              ...img,
+              _num: match ? parseInt(match[1], 10) : 0,
+              type: isVid ? 'video' : 'image',
+              _isVid: isVid,
+              _isImg: isImg
+            };
+          })
+          .filter(img => {
+            if (!img) return false;
+            // Filter only .jpg and .jpeg (and videos for cinematics)
+            if (categorySlug === 'cinematics') return img._isImg || img._isVid;
+            return img._isImg;
+          });
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+        // 2. Sort numerically based on pre-calculated _num
+        validImages.sort((a, b) => a._num - b._num);
 
-        // 3. Assign order
+        // 3. Assign order and push to allImages
         validImages.forEach((image, idx) => {
           allImages.push({
             ...image,
@@ -119,14 +120,10 @@ class ContentLoader {
         });
       });
 
-      // 4. Final Global Sort by filename number (Rule 2)
+      // 4. Final Global Sort using pre-calculated _num
       allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
+        if (a._num !== b._num) return a._num - b._num;
+        // If numbers are same (e.g. 1.jpg from different folders), sort by src
         return a.src.localeCompare(b.src);
       });
     }

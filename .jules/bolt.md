@@ -5,3 +5,7 @@
 ## 2025-05-15 - Layout thrashing via getComputedStyle and innerText
 **Learning:** Using `window.getComputedStyle(item).display` for visibility checks on 1,200 items triggered expensive layout reflows. Similarly, `innerText` is slower than `textContent` because it requires layout awareness.
 **Action:** Use `item.offsetParent !== null` to check for `display: none` (works when parent is not `display: none` and item is not `fixed`) and prefer `textContent` for DOM reads that don't require layout-aware text rendering.
+
+## 2025-05-15 - Inefficient sorting with regex in comparators
+**Learning:** Performing regex operations or string splits inside a `sort()` comparator for large arrays (1,000+ items) is a significant bottleneck because the comparator is called O(N log N) times.
+**Action:** Use a Schwartzian Transform (pre-calculate sort keys) to perform the expensive operations only once per item (O(N)), then sort based on the pre-calculated keys.
