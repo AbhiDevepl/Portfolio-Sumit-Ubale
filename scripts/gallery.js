@@ -42,10 +42,18 @@ window.GalleryManager = {
     const grid = document.getElementById('gallery-grid');
     if (!grid) return;
 
-    // Lightbox Click
+    // Lightbox Click (Event Delegation)
     grid.addEventListener('click', (e) => {
       const item = e.target.closest('.gallery-item');
-      if (item && !e.target.closest('video')) {
+      if (!item) return;
+
+      const isVideo = item.querySelector('video');
+      const isOverlay = e.target.closest('.gallery-overlay');
+
+      // Logic:
+      // 1. If it's a video, only open lightbox if clicking the overlay
+      // 2. If it's an image, clicking anywhere opens lightbox
+      if ((isVideo && isOverlay) || (!isVideo && !e.target.closest('video'))) {
         const visibleItems = this.getVisibleData();
         const index = visibleItems.findIndex(d => d.originalIndex === parseInt(item.dataset.index));
         if (index !== -1) Core.Lightbox.open(index, visibleItems);
@@ -56,27 +64,52 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => {
-        // Optimization: use offsetParent to check visibility (faster than getComputedStyle)
-        // offsetParent is null when display is none
-        const isVisible = item.offsetParent !== null;
-        if (!isVisible) return false;
+    if (!window.contentLoader || !window.contentLoader.allImages) {
+        // Fallback to DOM scraping if data not ready
+        return Array.from(document.querySelectorAll('.gallery-item'))
+          .filter(item => item.offsetParent !== null)
+          .map(item => {
+            const media = item.querySelector('img, video');
+            return {
+              src: media?.src || media?.dataset?.src || '',
+              title: item.querySelector('.gallery-title')?.textContent,
+              category: item.dataset.category,
+              type: item.querySelector('video') ? 'video' : 'image',
+              originalIndex: parseInt(item.dataset.index, 10)
+            };
+          });
+    }
 
-        // Fallback for opacity if needed, but display: none is the primary filter
-        return parseFloat(item.style.opacity || '1') > 0.1;
-      })
-      .map(item => {
-        const media = item.querySelector('img, video');
-        const src = media?.src || media?.dataset?.src || '';
-        return {
-          src,
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.dataset.category,
-          type: item.querySelector('video') ? 'video' : 'image',
-          originalIndex: parseInt(item.dataset.index, 10)
-        };
-      });
+    const category = this.activeCategory;
+    const limit = this.currentLimit;
+    const visibleData = [];
+    let shownCount = 0;
+
+    window.contentLoader.allImages.forEach((img, idx) => {
+      const isMatch = category === 'all' || img.category === category;
+      if (!isMatch) return;
+
+      let shouldShow = false;
+      if (category === 'all') {
+        if (shownCount < limit) {
+          shouldShow = true;
+          shownCount++;
+        }
+      } else {
+        if (img.order < limit) {
+          shouldShow = true;
+        }
+      }
+
+      if (shouldShow) {
+        visibleData.push({
+          ...img,
+          originalIndex: idx
+        });
+      }
+    });
+
+    return visibleData;
   },
   
   filterGallery(category) {
