@@ -85,32 +85,31 @@ class ContentLoader {
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
         // 1. Filter only .jpg and .jpeg (and videos for cinematics)
-        const validImages = images.filter(img => {
-          if (!img.src) return false;
-          const lowerSrc = img.src.toLowerCase();
-          const urlWithoutParams = lowerSrc.split('?')[0];
-          
-          const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
-          const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
-          
-          if (categorySlug === 'cinematics') {
-            return isJpg || isVideo;
-          }
-          return isJpg;
-        });
+        // 2. Pre-calculate type and sortKey for Schwartzian Transform
+        const processedImages = images
+          .map(img => {
+            if (!img.src) return null;
+            const urlWithoutParams = img.src.toLowerCase().split('?')[0];
+            const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
+            const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+            if (categorySlug === 'cinematics' ? (isJpg || isVideo) : isJpg) {
+              const match = urlWithoutParams.match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+              return {
+                ...img,
+                type: isVideo ? 'video' : 'image',
+                sortKey: match ? parseInt(match[1], 10) : 0
+              };
+            }
+            return null;
+          })
+          .filter(img => img !== null);
 
-        // 3. Assign order
-        validImages.forEach((image, idx) => {
+        // 3. Sort numerically based on pre-calculated sortKey
+        processedImages.sort((a, b) => a.sortKey - b.sortKey);
+
+        // 4. Assign order and category
+        processedImages.forEach((image, idx) => {
           allImages.push({
             ...image,
             category: categorySlug,
@@ -119,22 +118,22 @@ class ContentLoader {
         });
       });
 
-      // 4. Final Global Sort by filename number (Rule 2)
+      // 5. Final Global Sort using pre-calculated sortKey
       allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
+        if (a.sortKey !== b.sortKey) return a.sortKey - b.sortKey;
+        // If numbers are same (e.g. 1.jpg from different folders), sort by src
         return a.src.localeCompare(b.src);
       });
     }
 
+    // Assign to instance for global access (used in GalleryManager event delegation)
+    this.allImages = allImages;
+
     // Create gallery items using DocumentFragment for performance
     const fragment = Core.DOM.createFragment(allImages, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists
-      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
+      // Use skipHandler: true for homepage as GalleryManager uses event delegation
+      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat), { skipHandler: true });
     });
     
     galleryGrid.appendChild(fragment);
