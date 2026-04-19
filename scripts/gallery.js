@@ -1,6 +1,6 @@
 window.GalleryManager = {
   activeCategory: 'all',
-  currentLimit: 3,
+  filteredItems: [],
   
   init() {
     this.initFiltering();
@@ -16,24 +16,20 @@ window.GalleryManager = {
         const btn = e.target.closest('.category-btn');
         if (btn) {
           const cat = btn.dataset.category;
-          this.currentLimit = 3; // Reset limit on category change
           this.filterGallery(cat);
           this.updateURL(cat);
         }
       });
     }
 
-    const loadMoreBtn = document.getElementById('load-more-btn');
-    if (loadMoreBtn) {
-      loadMoreBtn.onclick = () => {
-        // Increase limit by 3 and re-filter
-        this.currentLimit += 3;
-        this.filterGallery(this.activeCategory);
-      };
-    }
+    document.querySelectorAll('.category-btn').forEach((btn) => {
+      btn.addEventListener('pointerdown', () => btn.classList.add('is-pressing'));
+      btn.addEventListener('pointerup', () => btn.classList.remove('is-pressing'));
+      btn.addEventListener('pointercancel', () => btn.classList.remove('is-pressing'));
+      btn.addEventListener('pointerleave', () => btn.classList.remove('is-pressing'));
+    });
     
     window.addEventListener('popstate', (e) => {
-      this.currentLimit = 3;
       this.filterGallery(e.state?.category || 'all');
     });
   },
@@ -41,39 +37,20 @@ window.GalleryManager = {
   initGalleryInteractions() {
     const grid = document.getElementById('gallery-grid');
     if (!grid) return;
-
-    // Lightbox Click
-    grid.addEventListener('click', (e) => {
-      const item = e.target.closest('.gallery-item');
-      if (item && !e.target.closest('video')) {
-        const visibleItems = this.getVisibleData();
-        const index = visibleItems.findIndex(d => d.originalIndex === parseInt(item.dataset.index));
-        if (index !== -1) Core.Lightbox.open(index, visibleItems);
-      }
-    });
-
-    // Integrated Hover Effects removed
   },
 
   getVisibleData() {
     return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => {
-        // Optimization: use offsetParent to check visibility (faster than getComputedStyle)
-        // offsetParent is null when display is none
-        const isVisible = item.offsetParent !== null;
-        if (!isVisible) return false;
-
-        // Fallback for opacity if needed, but display: none is the primary filter
-        return parseFloat(item.style.opacity || '1') > 0.1;
-      })
+      .filter(item => !item.classList.contains('is-hidden'))
       .map(item => {
         const media = item.querySelector('img, video');
         const src = media?.src || media?.dataset?.src || '';
         return {
           src,
           title: item.querySelector('.gallery-title')?.textContent,
-          category: item.dataset.category,
+          category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
           type: item.querySelector('video') ? 'video' : 'image',
+          poster: item.querySelector('video')?.poster || '',
           originalIndex: parseInt(item.dataset.index, 10)
         };
       });
@@ -88,53 +65,55 @@ window.GalleryManager = {
       btn.setAttribute('aria-selected', isActive);
     });
     
-    // Convert to array to sort
     const items = Array.from(document.querySelectorAll('.gallery-item'));
-    
-    let matchCount = 0;
-    let shownCount = 0;
+    const visibleItems = [];
 
-    items.forEach(item => {
-      const itemCategory = item.dataset.category;
-      const order = parseInt(item.dataset.order || '0', 10);
-      const isMatch = category === 'all' || itemCategory === category;
-      
-      let shouldShow = false;
-      if (isMatch) {
-        matchCount++;
-        
-        if (category === 'all') {
-          // Use a simple global counter for 'all'
-          if (shownCount < this.currentLimit) {
-            shouldShow = true;
-            shownCount++;
-          }
-        } else {
-          // Use the per-category 'order' for specific categories
-          if (order < this.currentLimit) {
-            shouldShow = true;
-            shownCount++;
-          }
-        }
-      }
+    items.forEach((item) => {
+      const isMatch = category === 'all' || item.dataset.category === category;
+      item.classList.toggle('is-filtered-in', isMatch);
+      item.classList.toggle('is-filtered-out', !isMatch);
 
       if (window.gsap) {
-        gsap.to(item, {
-          opacity: shouldShow ? 1 : 0,
-          scale: shouldShow ? 1 : 0.95,
-          duration: 0.4,
-          display: shouldShow ? 'block' : 'none',
-          ease: "power2.out",
-          overwrite: true
-        });
+        gsap.killTweensOf(item);
+
+        if (isMatch) {
+          item.classList.remove('is-hidden');
+          gsap.set(item, { display: '', pointerEvents: 'auto' });
+          gsap.fromTo(
+            item,
+            { autoAlpha: 0, scale: 0.96, y: 14 },
+            { autoAlpha: 1, scale: 1, y: 0, duration: 0.35, ease: 'power2.out', overwrite: true }
+          );
+        } else {
+          gsap.to(item, {
+            autoAlpha: 0,
+            scale: 0.96,
+            y: 10,
+            duration: 0.24,
+            ease: 'power2.out',
+            overwrite: true,
+            onComplete: () => {
+              item.classList.add('is-hidden');
+              item.style.display = 'none';
+              item.style.pointerEvents = 'none';
+            }
+          });
+        }
       } else {
-        // Graceful fallback without GSAP
-        item.style.display = shouldShow ? 'block' : 'none';
-        item.style.opacity = shouldShow ? '1' : '0';
+        item.classList.toggle('is-hidden', !isMatch);
+        item.style.display = isMatch ? '' : 'none';
+        item.style.opacity = isMatch ? '1' : '0';
+        item.style.transform = isMatch ? 'scale(1)' : 'scale(0.96)';
+      }
+
+      if (isMatch) {
+        item.style.display = '';
+        item.style.pointerEvents = 'auto';
+        visibleItems.push(item);
       }
     });
 
-    const hasHidden = matchCount > shownCount;
+    this.filteredItems = visibleItems;
 
     const grid = document.getElementById('gallery-grid');
     if (grid) {
@@ -147,21 +126,12 @@ window.GalleryManager = {
 
     const moreContainer = document.getElementById('portfolio-more');
     if (moreContainer) {
-      if (window.gsap) {
-        gsap.to(moreContainer, { 
-          display: hasHidden ? 'flex' : 'none', 
-          opacity: hasHidden ? 1 : 0,
-          duration: 0.3,
-          overwrite: true
-        });
-      } else {
-        moreContainer.style.display = hasHidden ? 'flex' : 'none';
-        moreContainer.style.opacity = hasHidden ? '1' : '0';
-      }
+      moreContainer.style.display = 'none';
+      moreContainer.style.opacity = '0';
     }
     
     if (window.ScrollTrigger) {
-      setTimeout(() => ScrollTrigger.refresh(), 500);
+      setTimeout(() => ScrollTrigger.refresh(), 200);
     }
   },
   

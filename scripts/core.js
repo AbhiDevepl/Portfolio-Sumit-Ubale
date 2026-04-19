@@ -12,19 +12,22 @@ window.Core = {
       active: false,
       currentIndex: 0,
       items: [],
-      container: null
+      container: null,
+      touchStartX: 0,
+      touchCurrentX: 0,
+      touchActive: false
     },
 
     init() {
       if (document.getElementById('lightbox')) return;
       
       const html = `
-        <div id="lightbox" class="lightbox" aria-hidden="true" role="dialog">
+        <div id="lightbox" class="lightbox" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Fullscreen gallery preview">
           <div class="lightbox-overlay"></div>
           <div class="lightbox-content">
-            <button class="lightbox-close" aria-label="Close">&times;</button>
-            <button class="lightbox-prev" aria-label="Previous image">&#8249;</button>
-            <button class="lightbox-next" aria-label="Next image">&#8250;</button>
+            <button class="lightbox-close" type="button" aria-label="Close preview">&times;</button>
+            <button class="lightbox-prev" type="button" aria-label="Previous item">&#8249;</button>
+            <button class="lightbox-next" type="button" aria-label="Next item">&#8250;</button>
             <div class="lightbox-media-container">
               <div class="lightbox-loading" style="display: none;">
                 <div class="spinner"></div>
@@ -32,9 +35,9 @@ window.Core = {
               </div>
               <img class="lightbox-image" src="" alt="" style="display: none;">
               <div class="lightbox-video-wrapper" style="display: none;">
-                <video class="lightbox-video" playsinline></video>
+                <video class="lightbox-video" playsinline controls></video>
                 <div class="video-overlay-controls">
-                  <button class="video-play-pause" aria-label="Play/Pause">
+                  <button class="video-play-pause" type="button" aria-label="Play or pause video">
                     <svg class="play-icon" width="80" height="80" viewBox="0 0 24 24" fill="white">
                       <path d="M8 5v14l11-7z"/>
                     </svg>
@@ -44,7 +47,7 @@ window.Core = {
                   </button>
                 </div>
                 <div class="video-controls-bar">
-                  <button class="video-control-btn play-pause-small" aria-label="Play/Pause">
+                  <button class="video-control-btn play-pause-small" type="button" aria-label="Play or pause video">
                     <svg class="play-icon-small" width="24" height="24" viewBox="0 0 24 24" fill="white">
                       <path d="M8 5v14l11-7z"/>
                     </svg>
@@ -57,7 +60,7 @@ window.Core = {
                     <div class="video-progress-filled"></div>
                   </div>
                   <span class="video-time">0:00 / 0:00</span>
-                  <button class="video-control-btn mute-btn" aria-label="Mute/Unmute">
+                  <button class="video-control-btn mute-btn" type="button" aria-label="Mute or unmute video">
                     <svg class="volume-icon" width="24" height="24" viewBox="0 0 24 24" fill="white">
                       <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
                     </svg>
@@ -74,7 +77,7 @@ window.Core = {
                     <option value="1.5">1.5x</option>
                     <option value="2">2x</option>
                   </select>
-                  <button class="video-control-btn fullscreen-btn" aria-label="Fullscreen">
+                  <button class="video-control-btn fullscreen-btn" type="button" aria-label="Open video fullscreen">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
                       <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
                     </svg>
@@ -82,7 +85,13 @@ window.Core = {
                 </div>
               </div>
             </div>
-            <div class="lightbox-caption"></div>
+            <div class="lightbox-caption">
+              <div class="lightbox-caption-copy">
+                <h3></h3>
+                <p></p>
+              </div>
+              <div class="lightbox-counter" aria-live="polite"></div>
+            </div>
           </div>
         </div>
       `;
@@ -97,6 +106,7 @@ window.Core = {
       container.querySelector('.lightbox-overlay').onclick = () => this.close();
       container.querySelector('.lightbox-prev').onclick = () => this.nav(-1);
       container.querySelector('.lightbox-next').onclick = () => this.nav(1);
+      this.bindTouch();
 
       // Video controls
       this.bindVideoControls();
@@ -110,6 +120,33 @@ window.Core = {
           e.preventDefault();
           this.togglePlayPause();
         }
+      });
+    },
+
+    bindTouch() {
+      const mediaContainer = this.state.container.querySelector('.lightbox-media-container');
+      if (!mediaContainer) return;
+
+      mediaContainer.addEventListener('touchstart', (e) => {
+        if (!this.state.active || e.touches.length !== 1) return;
+        this.state.touchActive = true;
+        this.state.touchStartX = e.touches[0].clientX;
+        this.state.touchCurrentX = e.touches[0].clientX;
+      }, { passive: true });
+
+      mediaContainer.addEventListener('touchmove', (e) => {
+        if (!this.state.touchActive || e.touches.length !== 1) return;
+        this.state.touchCurrentX = e.touches[0].clientX;
+      }, { passive: true });
+
+      mediaContainer.addEventListener('touchend', () => {
+        if (!this.state.touchActive) return;
+
+        const deltaX = this.state.touchCurrentX - this.state.touchStartX;
+        this.state.touchActive = false;
+
+        if (Math.abs(deltaX) < 48) return;
+        this.nav(deltaX < 0 ? 1 : -1);
       });
     },
 
@@ -243,6 +280,7 @@ window.Core = {
       this.updateContent();
       
       this.state.container.style.display = 'flex';
+      this.state.container.setAttribute('aria-hidden', 'false');
       requestAnimationFrame(() => this.state.container.classList.add('active'));
       document.body.classList.add('no-scroll');
       if (window.lenis) window.lenis.stop();
@@ -251,6 +289,7 @@ window.Core = {
     close() {
       this.state.active = false;
       this.state.container.classList.remove('active');
+      this.state.container.setAttribute('aria-hidden', 'true');
       const video = this.state.container.querySelector('.lightbox-video');
       if (video) { video.pause(); video.src = ''; }
       
@@ -262,9 +301,16 @@ window.Core = {
     },
 
     nav(dir) {
+      this.pauseActiveVideo();
       const len = this.state.items.length;
       this.state.currentIndex = (this.state.currentIndex + dir + len) % len;
       this.updateContent();
+    },
+
+    pauseActiveVideo() {
+      const video = this.state.container.querySelector('.lightbox-video');
+      if (!video) return;
+      video.pause();
     },
 
     updateContent() {
@@ -275,7 +321,9 @@ window.Core = {
       const vidWrapper = this.state.container.querySelector('.lightbox-video-wrapper');
       const vidEl = this.state.container.querySelector('.lightbox-video');
       const loadingEl = this.state.container.querySelector('.lightbox-loading');
-      const capEl = this.state.container.querySelector('.lightbox-caption');
+      const captionTitle = this.state.container.querySelector('.lightbox-caption-copy h3');
+      const captionCategory = this.state.container.querySelector('.lightbox-caption-copy p');
+      const counterEl = this.state.container.querySelector('.lightbox-counter');
 
       const isVid = item.type === 'video';
       
@@ -283,6 +331,7 @@ window.Core = {
       imgEl.style.opacity = '0';
       vidWrapper.style.opacity = '0';
       loadingEl.style.display = 'none';
+      vidEl.pause();
 
       // Slight delay to allow transition visibility
       requestAnimationFrame(() => {
@@ -291,15 +340,18 @@ window.Core = {
           imgEl.style.display = 'none';
           vidWrapper.style.display = 'block';
           
+          vidEl.removeAttribute('poster');
           vidEl.src = item.src;
           vidEl.muted = false;
           vidEl.volume = 1;
+          vidEl.controls = true;
+          if (item.poster) vidEl.poster = item.poster;
 
           // Event listeners with cleanup would be ideal, but for simplicity:
           const onCanPlay = () => {
              loadingEl.style.display = 'none';
              vidWrapper.style.opacity = '1';
-             vidEl.play().catch(e => console.warn('Autoplay prevented:', e));
+             vidEl.play().catch(() => {});
           };
           
           vidEl.oncanplay = onCanPlay;
@@ -318,12 +370,15 @@ window.Core = {
           
           imgEl.style.display = 'block';
           imgEl.src = item.src;
+          imgEl.alt = item.title || item.category || 'Gallery preview';
           
           imgEl.onload = () => { imgEl.style.opacity = '1'; };
           if (imgEl.complete) imgEl.style.opacity = '1';
         }
         
-        capEl.innerHTML = `<h3>${item.title || ''}</h3><p>${item.category || ''}</p>`;
+        captionTitle.textContent = item.title || (isVid ? 'Video preview' : 'Image preview');
+        captionCategory.textContent = item.category || '';
+        counterEl.textContent = `${this.state.currentIndex + 1} / ${this.state.items.length}`;
       });
     }
   },
@@ -421,14 +476,32 @@ window.Core = {
    */
   Media: {
     createItem(image, index, allItems, categoryFormatter = null) {
-      const item = document.createElement('div');
-      const sizeClass = image.aspectRatio === '16/9' ? 'landscape' : (image.aspectRatio || 'portrait');
-      item.className = `gallery-item ${sizeClass} reveal-item loading`;
+      const item = document.createElement('article');
+      const isVideo = image.type === 'video';
+      item.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'} reveal-item loading`;
       item.dataset.index = index;
       if (image.category) item.dataset.category = image.category;
       if (image.order !== undefined) item.dataset.order = image.order;
+      item.setAttribute('tabindex', '0');
+      item.setAttribute('role', 'button');
+      item.setAttribute('aria-label', `${image.title || 'Open preview'}${image.category ? `, ${image.category}` : ''}`);
 
-      const isVideo = image.type === 'video';
+      const openFilteredLightbox = () => {
+        const fallbackItems = allItems.map((entry, entryIndex) => ({
+          ...entry,
+          originalIndex: entryIndex,
+          type: entry.type || 'image'
+        }));
+
+        const visibleItems = window.GalleryManager?.getVisibleData?.() || fallbackItems;
+        const itemIndex = visibleItems.findIndex((entry) => entry.originalIndex === index);
+        const targetIndex = itemIndex >= 0 ? itemIndex : index;
+
+        if (window.Core?.Lightbox) {
+          window.Core.Lightbox.open(targetIndex, visibleItems);
+        }
+      };
+
       const media = document.createElement(isVideo ? 'video' : 'img');
       media.className = 'gallery-image';
       
@@ -476,15 +549,27 @@ window.Core = {
         window.Core.VideoHover.init(media);
       }
 
+      if (isVideo) {
+        const playIcon = document.createElement('div');
+        playIcon.className = 'gallery-video-play-icon';
+        playIcon.setAttribute('aria-hidden', 'true');
+        playIcon.innerHTML = `
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+            <path d="M8 5v14l11-7z"></path>
+          </svg>
+        `;
+        item.appendChild(playIcon);
+      }
+
       const overlay = document.createElement('div');
       overlay.className = 'gallery-overlay';
       const displayCategory = categoryFormatter ? categoryFormatter(image.category) : (image.category || '');
       overlay.innerHTML = `<h3 class="gallery-title">${image.title || ''}</h3><p class="gallery-category">${displayCategory}</p>`;
       item.appendChild(overlay);
 
-      item.onclick = (e) => {
+      const openItem = (e) => {
         if (!e.target.closest('video')) { // If not clicking video directly (which toggles play)
-             if (window.Core && window.Core.Lightbox) window.Core.Lightbox.open(index, allItems);
+             openFilteredLightbox();
         }
       };
       
@@ -492,13 +577,21 @@ window.Core = {
       // Clicking the video toggles play (handled in VideoHover).
       // Clicking the OVERLAY opens lightbox.
       if (isVideo) {
+          item.onclick = openItem;
           overlay.onclick = (e) => {
               e.stopPropagation(); // Stop video toggle
-              if (window.Core && window.Core.Lightbox) window.Core.Lightbox.open(index, allItems);
+              openFilteredLightbox();
           };
       } else {
-           item.onclick = () => { if (window.Core.Lightbox) window.Core.Lightbox.open(index, allItems); };
+           item.onclick = () => openFilteredLightbox();
       }
+
+      item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openFilteredLightbox();
+        }
+      });
 
       return item;
     }

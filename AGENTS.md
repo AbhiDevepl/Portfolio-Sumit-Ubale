@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
 ## Project Overview
 
@@ -169,7 +169,7 @@ Static hosting compatible (no build step):
 
 Push to `main` branch to deploy.
 
-## Claude Instructions
+## Codex Instructions
 
 When modifying code:
 

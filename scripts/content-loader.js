@@ -84,7 +84,7 @@ class ContentLoader {
     } else {
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
-        // 1. Filter only .jpg and .jpeg (and videos for cinematics)
+        // 1. Keep supported image/video media across categories
         const validImages = images.filter(img => {
           if (!img.src) return false;
           const lowerSrc = img.src.toLowerCase();
@@ -92,11 +92,7 @@ class ContentLoader {
           
           const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
           const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
-          
-          if (categorySlug === 'cinematics') {
-            return isJpg || isVideo;
-          }
-          return isJpg;
+          return isJpg || isVideo;
         });
 
         // 2. Sort numerically based on filename
@@ -111,9 +107,13 @@ class ContentLoader {
 
         // 3. Assign order
         validImages.forEach((image, idx) => {
+          const srcWithoutParams = image.src.split('?')[0].toLowerCase();
+          const type = image.type || (srcWithoutParams.endsWith('.mp4') || srcWithoutParams.endsWith('.mov') ? 'video' : 'image');
+
           allImages.push({
             ...image,
             category: categorySlug,
+            type,
             order: idx // used for pagination logic later
           });
         });
