@@ -84,52 +84,48 @@ class ContentLoader {
     } else {
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
-        // 1. Keep supported image/video media across categories
-        const validImages = images.filter(img => {
-          if (!img.src) return false;
-          const lowerSrc = img.src.toLowerCase();
-          const urlWithoutParams = lowerSrc.split('?')[0];
-          
-          const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
-          const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
-          return isJpg || isVideo;
-        });
+        // 1. Performance Optimization: Pre-calculate sort keys and media types (Schwartzian Transform pattern)
+        // This avoids redundant regex matching and string manipulation during O(N log N) sort comparisons
+        const validImagesWithKeys = images
+          .map(img => {
+            if (!img.src) return null;
+            const urlWithoutParams = img.src.split('?')[0];
+            const lowerUrl = urlWithoutParams.toLowerCase();
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+            const isJpg = lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg');
+            const isVideo = lowerUrl.endsWith('.mp4') || lowerUrl.endsWith('.mov');
 
-        // 3. Assign order
-        validImages.forEach((image, idx) => {
-          const srcWithoutParams = image.src.split('?')[0].toLowerCase();
-          const type = image.type || (srcWithoutParams.endsWith('.mp4') || srcWithoutParams.endsWith('.mov') ? 'video' : 'image');
+            if (!isJpg && !isVideo) return null;
 
-          allImages.push({
-            ...image,
-            category: categorySlug,
-            type,
-            order: idx // used for pagination logic later
-          });
+            // Extract numeric part of filename (e.g. "10" from "10.jpg")
+            const match = urlWithoutParams.match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+            const sortKey = match ? parseInt(match[1], 10) : 0;
+            const type = img.type || (isVideo ? 'video' : 'image');
+
+            return { ...img, category: categorySlug, sortKey, type };
+          })
+          .filter(Boolean);
+
+        // 2. Sort numerically based on filename using pre-calculated keys
+        validImagesWithKeys.sort((a, b) => a.sortKey - b.sortKey);
+
+        // 3. Assign order within category and accumulate
+        validImagesWithKeys.forEach((image, idx) => {
+          image.order = idx; // used for pagination logic later
+          allImages.push(image);
         });
       });
 
-      // 4. Final Global Sort by filename number (Rule 2)
+      // 4. Final Global Sort using pre-calculated keys
       allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
+        if (a.sortKey !== b.sortKey) return a.sortKey - b.sortKey;
+        // Deterministic fallback for same numbers (e.g. 1.jpg in different categories)
         return a.src.localeCompare(b.src);
       });
     }
+
+    // Store for global access (GalleryManager and Lightbox)
+    this.allImages = allImages;
 
     // Create gallery items using DocumentFragment for performance
     const fragment = Core.DOM.createFragment(allImages, (image, index) => {
