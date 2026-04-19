@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile First Portfolio Gallery</title>
+  <style>
+    /* CSS Reset */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: #0f0f11;
+      color: #ffffff;
+      line-height: 1.5;
+    }
+
+    /* Container */
+    main {
+      padding: 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      color: #a1a1aa;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+      transition: color 0.2s ease;
+    }
+    
+    .back-link:hover {
+      color: #ffffff;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 16px 0 32px 0;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+
+    /* Grid Layout - Mobile First */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    /* Medium screens */
+    @media (min-width: 768px) {
+      .gallery-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    /* Large screens */
+    @media (min-width: 1024px) {
+      .gallery-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    /* Media Item Cards */
+    .gallery-item {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background-color: #1a1a1f;
+      /* Initial state for animation */
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+    }
+
+    /* Triggered state for animation */
+    .gallery-item.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Image Aspect Ratio */
+    .gallery-item[data-type="image"] {
+      aspect-ratio: 4 / 5;
+    }
+
+    /* Video Aspect Ratio */
+    .gallery-item[data-type="video"] {
+      aspect-ratio: 16 / 9;
+      display: flex; /* prevents line-height gaps */
+      align-items: stretch;
+    }
+
+    .gallery-item img,
+    .gallery-item video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+
+    /* Interactive Hover State */
+    .gallery-item:hover img,
+    .gallery-item:hover video {
+      transform: scale(1.05);
+    }
+
+    /* Video UI Indicator */
+    .video-indicator {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.65);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    /* --- Controls Section --- */
+    .controls-container {
+      display: flex;
+      justify-content: center;
+      padding-bottom: 32px;
+      min-height: 80px;
+    }
+
+    /* 'Load More' Button */
+    .btn-load-more {
+      background-color: #ffffff;
+      color: #000000;
+      border: none;
+      border-radius: 999px; /* Pill shape */
+      padding: 14px 36px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      outline-offset: 4px;
+    }
+
+    .btn-load-more:hover {
+      background-color: #e6e6e6;
+      transform: translateY(-2px);
+    }
+
+    .btn-load-more:active {
+      transform: translateY(0);
+    }
+
+    .btn-load-more:focus-visible {
+      outline: 2px solid #ffffff;
+    }
+
+    .btn-load-more.loading {
+      opacity: 0.8;
+      cursor: wait;
+      transform: translateY(0);
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      display: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(0, 0, 0, 0.15);
+      border-left-color: #000;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .btn-load-more.loading .spinner {
+      display: block;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* End of Data Message */
+    .no-more {
+      color: #a1a1aa;
+      font-size: 0.95rem;
+      display: none;
+      padding: 14px;
+    }
+    
+    .no-more.show {
+      display: block;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <main>
+    <a href="../index.html" class="back-link" aria-label="Back to home">
+      &larr; Back to Home
+    </a>
+    <h1>Portfolio Highlights</h1>
+    
+    <!-- Gallery Injection Container -->
+    <section id="gallery-container" class="gallery-grid" aria-label="Media gallery">
+      <!-- Generated items will appear here -->
+    </section>
+
+    <!-- Paginator / Loader -->
+    <div class="controls-container">
+      <button id="load-more-btn" class="btn-load-more" aria-label="Load more artwork">
+        <span class="spinner" aria-hidden="true"></span>
+        <span class="btn-text">Load More</span>
+      </button>
+      <p id="no-more-msg" class="no-more" aria-live="polite">All items have been loaded.</p>
+    </div>
+  </main>
+
+  <script>
+    /**
+     * 1. Data Structure 
+     * Simulating a JSON structure fetched from an API
+     */
+    const rawJsonData = `[
+      { "type": "image", "src": "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=600&q=80", "alt": "Classic wedding couple" },
+      { "type": "image", "src": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=600&q=80", "alt": "Wedding reception decor" },
+      { "type": "video", "src": "https://www.w3schools.com/html/mov_bbb.mp4", "alt": "Cinematic highlight reel" },
+      { "type": "image", "src": "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=600&q=80", "alt": "Bride portrait" },
+      { "type": "video", "src": "https://www.w3schools.com/html/mov_bbb.mp4", "alt": "Drone shot" },
+      { "type": "image", "src": "https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=600&q=80", "alt": "Groom detailed portrait" },
+      { "type": "image", "src": "https://images.unsplash.com/photo-1505932794465-14f5b1e129cf?auto=format&fit=crop&w=600&q=80", "alt": "Floral details" },
+      { "type": "image", "src": "https://images.unsplash.com/photo-1510076857177-74701254bf16?auto=format&fit=crop&w=600&q=80", "alt": "Engagement ring" },
+      { "type": "image", "src": "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=600&q=80", "alt": "Couple in nature field" },
+      { "type": "image", "src": "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&w=600&q=80", "alt": "Destination wedding setup" }
+    ]`;
+
+    const portfolioItems = JSON.parse(rawJsonData);
+
+    // 2. Application State
+    let loadedCount = 0;
+    const LOAD_AMOUNT = 4;
+    
+    // 3. DOM Cache
+    const galleryContainer = document.getElementById('gallery-container');
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    const btnText = loadMoreBtn.querySelector('.btn-text');
+    const noMoreMsg = document.getElementById('no-more-msg');
+
+    /**
+     * 4. Renders the next batch of items
+     */
+    function renderNextBatch() {
+      // Set UI to loading state
+      const isInitialLoad = loadedCount === 0;
+      loadMoreBtn.classList.add('loading');
+      btnText.textContent = 'Loading...';
+      
+      // Artificial delay (400ms) to show off the loading state visually
+      setTimeout(() => {
+        // Slice logic for loading progressively
+        const batch = portfolioItems.slice(loadedCount, loadedCount + LOAD_AMOUNT);
+        const fragment = document.createDocumentFragment();
+        
+        // Track the first newly added node for smooth scrolling later
+        let firstAppendedItem = null;
+
+        batch.forEach((media, index) => {
+          const article = document.createElement('article');
+          article.className = 'gallery-item';
+          article.setAttribute('data-type', media.type);
+          
+          if (index === 0) firstAppendedItem = article;
+
+          // Process Image vs Video
+          if (media.type === 'image') {
+            const img = document.createElement('img');
+            img.src = media.src;
+            img.alt = media.alt || 'Portfolio image';
+            img.loading = 'lazy'; // Standard lazy loading
+            article.appendChild(img);
+          } else if (media.type === 'video') {
+            const video = document.createElement('video');
+            video.src = media.src;
+            video.muted = true;
+            video.loop = true;
+            video.playsInline = true;
+            video.setAttribute('aria-label', media.alt || 'Portfolio video');
+            
+            const badge = document.createElement('span');
+            badge.className = 'video-indicator';
+            badge.textContent = 'VIDEO';
+            
+            // Hover play logic for videos
+            article.addEventListener('mouseenter', () => video.play().catch(() => {}));
+            article.addEventListener('mouseleave', () => {
+              video.pause();
+              video.currentTime = 0;
+            });
+
+            article.appendChild(video);
+            article.appendChild(badge);
+          }
+
+          fragment.appendChild(article);
+        });
+
+        galleryContainer.appendChild(fragment);
+
+        // Compute newly added elements to stagger the reveal animation
+        const renderedChildren = Array.from(galleryContainer.children);
+        const newElements = renderedChildren.slice(loadedCount);
+        
+        newElements.forEach((el, index) => {
+          // Staggered fade and slide up animation
+          setTimeout(() => {
+            el.classList.add('show');
+          }, index * 100); 
+        });
+
+        // 5. Scroll Focus Strategy
+        // Push the newly loaded items gently into view if user clicked "Load More"
+        if (!isInitialLoad && firstAppendedItem) {
+          // Add minor delay to let the layout recalculate the new DOM nodes
+          setTimeout(() => {
+            firstAppendedItem.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'nearest' // scrolls just enough to see it
+            });
+          }, 150);
+        }
+
+        // 6. Update State and View
+        loadedCount += batch.length;
+        loadMoreBtn.classList.remove('loading');
+        btnText.textContent = 'Load More';
+
+        checkDataExhaustion();
+      }, 400);
+    }
+
+    /**
+     * Checks if data ends and updates bottom text
+     */
+    function checkDataExhaustion() {
+      if (loadedCount >= portfolioItems.length) {
+        // We've loaded everything!
+        loadMoreBtn.style.display = 'none';
+        noMoreMsg.classList.add('show');
+      }
+    }
+
+    // Event Binding
+    loadMoreBtn.addEventListener('click', renderNextBatch);
+
+    // Initial load logic
+    document.addEventListener('DOMContentLoaded', renderNextBatch);
+
+  </script>
+</body>
+</html>
