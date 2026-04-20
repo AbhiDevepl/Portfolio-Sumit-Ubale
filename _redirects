@@ -1,0 +1,21 @@
+# Netlify redirect rules — supplements netlify.toml
+# Format: from  to  status  conditions
+
+# Force HTTPS — non-www
+http://supf.in/*  https://supf.in/:splat  301!
+
+# Force non-www (canonical domain)
+https://www.supf.in/*  https://supf.in/:splat  301!
+
+# Handle trailing slashes cleanly
+/pages/  /pages/portfolio.html  301
+
+# Friendly short URLs → actual pages
+/shrigonda  /pages/wedding-photographer-shrigonda.html  301
+/prewedding  /pages/pre-wedding-shoot-ahilyanagar.html  301
+/candid  /pages/candid-photographer-maharashtra.html  301
+/films  /pages/cinematic-wedding-films-maharashtra.html  301
+/services  /pages/service.html  301
+/gallery  /pages/gallery.html  301
+/albums  /pages/albums.html  301
+/portfolio  /pages/portfolio.html  301
