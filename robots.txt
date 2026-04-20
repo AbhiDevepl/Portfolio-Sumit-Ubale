@@ -1,5 +1,23 @@
 User-agent: *
 Allow: /
 
+# Block non-indexable development directories
+Disallow: /venv/
+Disallow: /.git/
+Disallow: /Python/
+Disallow: /.agent/
+Disallow: /node_modules/
+
+# Block sensitive files
+Disallow: /.env
+Disallow: /.gitignore
+
+# Allow important crawlable paths explicitly
+Allow: /pages/
+Allow: /styles/
+Allow: /scripts/
+Allow: /data/
+Allow: /images/
+
 # Sitemaps
 Sitemap: https://supf.in/sitemap.xml

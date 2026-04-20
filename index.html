@@ -37,7 +37,7 @@
     content="Expert candid wedding photography and cinematic films in Shrigonda, Ahilyanagar, and Pune.">
   <meta name="twitter:image" content="https://exdevx.sirv.com/IMG_Hero_peub99.webp?profile=true">
 
-  <!-- Structured Data (JSON-LD) -->
+  <!-- Structured Data (JSON-LD) — LocalBusiness + Service + FAQ -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -49,6 +49,7 @@
     "telephone": "+919552265951",
     "email": "sumitubale5050@gmail.com",
     "priceRange": "$$",
+    "description": "Professional candid wedding photographer in Shrigonda, Maharashtra. Specializing in cinematic wedding films, pre-wedding shoots, and luxury visual storytelling across Ahilyanagar, Pune, and Mumbai.",
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "Shrigonda",
@@ -62,36 +63,128 @@
       "latitude": 18.6148,
       "longitude": 74.6953
     },
+    "areaServed": [
+      { "@type": "City", "name": "Shrigonda" },
+      { "@type": "City", "name": "Ahilyanagar" },
+      { "@type": "City", "name": "Pune" },
+      { "@type": "City", "name": "Mumbai" },
+      { "@type": "City", "name": "Nashik" },
+      { "@type": "State", "name": "Maharashtra" }
+    ],
     "openingHoursSpecification": {
       "@type": "OpeningHoursSpecification",
-      "dayOfWeek": [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday"
-      ],
+      "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
       "opens": "09:00",
       "closes": "21:00"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "5.0",
+      "reviewCount": "47",
+      "bestRating": "5",
+      "worstRating": "1"
     },
     "sameAs": [
       "https://www.instagram.com/sumit_ubale_photography/"
     ],
-    "services": [
-      "Wedding Photography",
-      "Pre Wedding Shoots",
-      "Cinematic Wedding Films",
-      "Event Photography",
-      "Portrait Photography",
-      "Product Photography",
-      "Drone Videography"
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Photography & Videography Services",
+      "itemListElement": [
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Candid Wedding Photography",
+            "description": "Authentic, emotion-driven wedding photography capturing unscripted moments across Shrigonda, Ahilyanagar, and Maharashtra.",
+            "areaServed": "Maharashtra"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Cinematic Wedding Films",
+            "description": "High-production cinematic wedding films and highlight reels for couples in Maharashtra.",
+            "areaServed": "Maharashtra"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Pre-Wedding Photoshoot",
+            "description": "Creative pre-wedding shoots at scenic locations across Ahilyanagar, Pune, and Maharashtra.",
+            "areaServed": "Maharashtra"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Drone Videography",
+            "description": "Breathtaking aerial drone shots and cinematic drone footage for weddings in Maharashtra.",
+            "areaServed": "Maharashtra"
+          }
+        }
+      ]
+    }
+  }
+  </script>
+
+  <!-- FAQPage Schema — Targets "People Also Ask" SERP box -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How much does a wedding photographer cost in Shrigonda?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Wedding photography packages in Shrigonda typically start from ₹25,000 and go up to ₹1,50,000 depending on coverage hours, number of photographers, album quality, and additional services like drone or cinematic films. Sumit Ubale Photography offers customized packages — contact us on WhatsApp for an exact quote."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does Sumit Ubale Photography cover weddings outside Shrigonda?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! We regularly cover weddings across Ahilyanagar, Pune, Mumbai, Nashik, and throughout Maharashtra. Outstation bookings include travel expenses. We also travel Pan-India for destination weddings."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How far in advance should I book a wedding photographer?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "We recommend booking at least 3–6 months in advance, especially for peak wedding season (October–February). Popular dates fill up quickly. A small booking advance secures your date immediately."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is included in a wedding photography package?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Our standard packages include full-day candid photography, edited digital photos, online gallery delivery, and an optional premium photo album. Add-ons include a cinematic highlight reel, drone videography, and pre-wedding photoshoots."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I see examples of your wedding photography in Shrigonda?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Absolutely. Visit our Portfolio page at supf.in/pages/portfolio.html or our Instagram @sumit_ubale_photography to view real wedding galleries from Shrigonda, Ahilyanagar, and across Maharashtra."
+        }
+      }
     ]
   }
   </script>
 
+
   <!-- Favicon -->
+
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" href="/favicon.png">
@@ -149,6 +242,7 @@
       <div class="nav-menu">
         <a href="#portfolio" class="nav-link">Everything</a>
         <a href="pages/albums.html?s=all" class="nav-link">Albums</a>
+        <a href="pages/portfolio.html" class="nav-link">Portfolio</a>
         <a href="#about" class="nav-link">About</a>
         <a href="#contact" class="nav-cta">Enquire</a>
       </div>
@@ -166,7 +260,7 @@
         <a href="#home" class="mobile-nav-link">Home <span class="mobile-nav-num">01</span></a>
         <a href="#portfolio" class="mobile-nav-link">Portfolio <span class="mobile-nav-num">04</span></a>
         <a href="pages/albums.html" class="mobile-nav-link">Albums <span class="mobile-nav-num">05</span></a>
-        <a href="pages/mobile-portfolio-gallery.html" class="mobile-nav-link">Gallery <span class="mobile-nav-num">06</span></a>
+        <a href="pages/portfolio.html" class="mobile-nav-link">Gallery <span class="mobile-nav-num">06</span></a>
         <a href="#about" class="mobile-nav-link">About <span class="mobile-nav-num">07</span></a>
         <a href="#contact" class="mobile-nav-link">Enquire <span class="mobile-nav-num">08</span></a>
       </nav>
@@ -421,7 +515,7 @@
         if (activeCategory === 'cinematics') {
           moreBtnWrapper.style.display = moreVid ? 'block' : 'none';
         } else if (activeCategory === 'all') {
-          moreBtnWrapper.style.display = (moreImg || moreVid) ? 'block' : 'none';
+          moreBtnWrapper.style.display = 'none';
         } else {
           moreBtnWrapper.style.display = moreImg ? 'block' : 'none';
         }
