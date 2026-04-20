@@ -82,54 +82,56 @@ class ContentLoader {
       // Fallback for flat array (if still used)
       allImages = rawImages.map(img => ({ ...img, isPreview: true }));
     } else {
+      // Schwartzian Transform: Pre-calculate sort keys and media types to avoid redundant
+      // regex operations and string manipulations during sort comparisons.
+      // Especially effective for the ~1200 items in this portfolio.
+
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
-        // 1. Keep supported image/video media across categories
-        const validImages = images.filter(img => {
-          if (!img.src) return false;
-          const lowerSrc = img.src.toLowerCase();
-          const urlWithoutParams = lowerSrc.split('?')[0];
+        // 1. Keep supported image/video media and pre-process metadata
+        const processedImages = images.reduce((acc, img) => {
+          if (!img.src) return acc;
           
-          const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
-          const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
-          return isJpg || isVideo;
-        });
+          const srcWithoutParams = img.src.split('?')[0].toLowerCase();
+          const isVideo = srcWithoutParams.endsWith('.mp4') || srcWithoutParams.endsWith('.mov');
+          const isJpg = !isVideo && (srcWithoutParams.endsWith('.jpg') || srcWithoutParams.endsWith('.jpeg'));
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+          if (isJpg || isVideo) {
+            const match = srcWithoutParams.match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+            acc.push({
+              item: img,
+              sortKey: match ? parseInt(match[1], 10) : 0,
+              type: img.type || (isVideo ? 'video' : 'image')
+            });
+          }
+          return acc;
+        }, []);
 
-        // 3. Assign order
-        validImages.forEach((image, idx) => {
-          const srcWithoutParams = image.src.split('?')[0].toLowerCase();
-          const type = image.type || (srcWithoutParams.endsWith('.mp4') || srcWithoutParams.endsWith('.mov') ? 'video' : 'image');
+        // 2. Sort numerically based on pre-calculated key
+        processedImages.sort((a, b) => a.sortKey - b.sortKey);
 
+        // 3. Assign order and flatten
+        processedImages.forEach((processed, idx) => {
           allImages.push({
-            ...image,
+            ...processed.item,
             category: categorySlug,
-            type,
+            type: processed.type,
+            sortKey: processed.sortKey, // Carry forward for global sort
             order: idx // used for pagination logic later
           });
         });
       });
 
-      // 4. Final Global Sort by filename number (Rule 2)
+      // 4. Final Global Sort by pre-calculated key
       allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
+        if (a.sortKey !== b.sortKey) return a.sortKey - b.sortKey;
+        // If numbers are same (e.g. 1.jpg from different folders), sort by src
         return a.src.localeCompare(b.src);
       });
     }
+
+    // Expose allImages for other managers (like GalleryManager) to avoid redundant processing
+    this.allImages = allImages;
 
     // Create gallery items using DocumentFragment for performance
     const fragment = Core.DOM.createFragment(allImages, (image, index) => {
