@@ -91,11 +91,14 @@ class ServiceLoader {
       gallery.classList.remove('layout-centered');
     }
 
+    // Use DocumentFragment for batch DOM injection to prevent layout thrashing
+    const fragment = document.createDocumentFragment();
     s.gallery.forEach((item, index) => {
       item.category = s.slug;
-        const mediaItem = Core.Media.createItem(item, index, s.gallery);
-      gallery.appendChild(mediaItem);
+      const mediaItem = Core.Media.createItem(item, index, s.gallery);
+      fragment.appendChild(mediaItem);
     });
+    gallery.appendChild(fragment);
 
     document.body.classList.remove('loading');
   }
