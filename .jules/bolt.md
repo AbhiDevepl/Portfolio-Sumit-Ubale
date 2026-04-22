@@ -1,0 +1,3 @@
+## 2024-04-22 - Optimize gallery sorting and data retrieval
+**Learning:** Large datasets (1,200+ items) in the gallery caused a significant performance bottleneck during initial load due to O(N log N) sorting with expensive regex/string splits inside the comparator. Additionally, DOM scraping for Lightbox data retrieval was O(N) and triggered layout reflows.
+**Action:** Implemented a Schwartzian Transform (map-sort-map) in `content-loader.js` to pre-calculate sort keys and media types. Stored the processed data in-memory and updated `GalleryManager.getVisibleData` to use this source of truth instead of the DOM, significantly improving responsiveness. Correct mapping was maintained by assigning a `globalIndex` post-sort.
