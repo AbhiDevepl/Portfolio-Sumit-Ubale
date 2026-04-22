@@ -85,56 +85,66 @@ class ContentLoader {
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
         // 1. Keep supported image/video media across categories
-        const validImages = images.filter(img => {
-          if (!img.src) return false;
+        // Optimization: Use a map-sort-map pattern (Schwartzian Transform)
+        // to pre-calculate sort keys and avoid redundant regex/splits.
+        const mapped = [];
+        for (let i = 0; i < images.length; i++) {
+          const img = images[i];
+          if (!img.src) continue;
+
           const lowerSrc = img.src.toLowerCase();
           const urlWithoutParams = lowerSrc.split('?')[0];
-          
-          const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
           const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
-          return isJpg || isVideo;
-        });
+          const isJpg = !isVideo && (urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg'));
+
+          if (isJpg || isVideo) {
+            const match = urlWithoutParams.match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+            const num = match ? parseInt(match[1], 10) : 0;
+            mapped.push({
+              img,
+              num,
+              type: img.type || (isVideo ? 'video' : 'image'),
+              category: categorySlug
+            });
+          }
+        }
 
         // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+        mapped.sort((a, b) => a.num - b.num);
 
-        // 3. Assign order
-        validImages.forEach((image, idx) => {
-          const srcWithoutParams = image.src.split('?')[0].toLowerCase();
-          const type = image.type || (srcWithoutParams.endsWith('.mp4') || srcWithoutParams.endsWith('.mov') ? 'video' : 'image');
-
+        // 3. Assign order and push to allImages
+        for (let i = 0; i < mapped.length; i++) {
+          const item = mapped[i];
           allImages.push({
-            ...image,
-            category: categorySlug,
-            type,
-            order: idx // used for pagination logic later
+            ...item.img,
+            category: item.category,
+            type: item.type,
+            order: i, // used for pagination logic later
+            _num: item.num // Store for final global sort
           });
-        });
+        }
       });
 
       // 4. Final Global Sort by filename number (Rule 2)
       allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
+        if (a._num !== b._num) return a._num - b._num;
+        // If numbers are same (e.g. 1.jpg from different folders), sort by src
         return a.src.localeCompare(b.src);
       });
+
+      // 5. Assign global index after sorting to ensure correct Lightbox mapping
+      for (let i = 0; i < allImages.length; i++) {
+        allImages[i].globalIndex = i;
+      }
     }
+
+    this.allImages = allImages; // Store globally for GalleryManager to avoid DOM scraping
 
     // Create gallery items using DocumentFragment for performance
     const fragment = Core.DOM.createFragment(allImages, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists
-      return Core.Media.createItem(image, index, allImages, (cat) => this.getCategoryName(cat));
+      // Use the globalIndex for the item creation
+      return Core.Media.createItem(image, image.globalIndex, allImages, (cat) => this.getCategoryName(cat));
     });
     
     galleryGrid.appendChild(fragment);
@@ -163,15 +173,8 @@ class ContentLoader {
     // Clear existing content
     eventsGrid.innerHTML = '';
 
-    // Create event items (reusing gallery item structure for consistency)
-    this.data.recentEvents.forEach((event, index) => {
-      // Use createGalleryItem styling/structure but appended to events grid
-      // We manually recreate it here to ensure specific event classes if needed
-      // or we can reuse createGalleryItem if we want identical behavior.
-      // User asked for "like Portfolio", so let's stick to the Project Card style 
-      // or the Gallery Item style. The HTML had .event-item structure.
-      // Let's use the .event-item structure but make it dynamic.
-      
+    // Create event items using DocumentFragment for batch injection performance
+    const fragment = Core.DOM.createFragment(this.data.recentEvents, (event) => {
       const item = document.createElement('div');
       item.className = 'event-item';
       
@@ -181,21 +184,12 @@ class ContentLoader {
       img.className = 'event-image';
       img.loading = 'lazy';
       
-      // Maintain aspect ratio via CSS or style if variable
-      // The CSS has :nth-child rules for aspect ratios, but data has valid aspect ratios.
-      // We can override via style if needed, or let CSS handle it.
-      // Let's adhere to the data if provided.
       if (event.aspectRatio) {
         img.style.aspectRatio = event.aspectRatio;
       }
       
-      // Optional: Add overlay content like portfolio if desired?
-      // The original HTML structure for events was just image.
-      // "make same as a Recent Events like Portfolio" implies showing title/category.
-      // Let's add an overlay similar to gallery items.
-      
       const overlay = document.createElement('div');
-      overlay.className = 'gallery-overlay'; // Reuse gallery overlay class
+      overlay.className = 'gallery-overlay';
       
       const title = document.createElement('h3');
       title.className = 'gallery-title';
@@ -210,13 +204,10 @@ class ContentLoader {
       
       item.appendChild(img);
       item.appendChild(overlay);
-      
-      // Add click listener for lightbox if we want events to open there too
-      // We need to add it to the GalleryManager access if we do that.
-      // For now, let's just make it visual.
-      
-      eventsGrid.appendChild(item);
+      return item;
     });
+
+    eventsGrid.appendChild(fragment);
   }
 
   /**

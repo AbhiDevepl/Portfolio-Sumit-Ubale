@@ -40,6 +40,18 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
+    // Optimization: Use pre-processed data from ContentLoader instead of scraping the DOM.
+    // This avoids expensive O(N) DOM operations and layout reflows.
+    if (window.contentLoader && window.contentLoader.allImages) {
+      return window.contentLoader.allImages
+        .filter(item => this.activeCategory === 'all' || item.category === this.activeCategory)
+        .map((item, index) => ({
+          ...item,
+          originalIndex: item.globalIndex // Use the correct global index
+        }));
+    }
+
+    // Fallback to DOM scraping if ContentLoader is not ready
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => !item.classList.contains('is-hidden'))
       .map(item => {
