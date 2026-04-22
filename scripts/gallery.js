@@ -40,11 +40,29 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
+    // 1. High-Performance Path: Use pre-processed data from ContentLoader if available
+    if (window.contentLoader && window.contentLoader.allImages) {
+      const category = this.activeCategory || 'all';
+      const allImages = window.contentLoader.allImages;
+
+      // Filter the cached data based on active category
+      const filtered = category === 'all'
+        ? allImages
+        : allImages.filter(img => img.category === category);
+
+      // Ensure each item has the properties Lightbox expects
+      return filtered.map((img, index) => ({
+        ...img,
+        originalIndex: img.originalIndex !== undefined ? img.originalIndex : (img.index !== undefined ? img.index : index)
+      }));
+    }
+
+    // 2. Fallback Path: DOM-scraping (only if ContentLoader isn't ready or on pages without it)
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => !item.classList.contains('is-hidden'))
       .map(item => {
         const media = item.querySelector('img, video');
-        const src = media?.src || media?.dataset?.src || '';
+        const src = media?.getAttribute('src') || media?.dataset?.src || '';
         return {
           src,
           title: item.querySelector('.gallery-title')?.textContent,
