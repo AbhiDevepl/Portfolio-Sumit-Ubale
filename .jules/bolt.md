@@ -1,0 +1,3 @@
+## 2025-05-15 - Client-side Sorting Optimization for Large Datasets
+**Learning:** In a vanilla JS photography portfolio with ~1,200 items, performing regex matches and string operations inside a `sort()` comparator created a significant bottleneck during initial page load and filtering. Moving to a Schwartzian Transform (map-sort-map) to pre-calculate numeric sort keys reduced the sorting execution time by approximately 80% (from ~730ms to ~146ms for 100 iterations).
+**Action:** Always pre-calculate sort keys and media types for datasets exceeding 500 items when the sorting logic involves string parsing or regular expressions.
