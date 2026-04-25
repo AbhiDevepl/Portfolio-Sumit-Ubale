@@ -40,9 +40,24 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => !item.classList.contains('is-hidden'))
-      .map(item => {
+    // ⚡ Performance Optimization: Prefer pre-processed global data if available
+    // This avoids expensive O(N) regex checks and property lookups for ~1,200 items.
+    const allImages = window.contentLoader?.allImages;
+    const visibleItems = Array.from(document.querySelectorAll('.gallery-item:not(.is-hidden)'));
+
+    return visibleItems.map(item => {
+      const idx = parseInt(item.dataset.index, 10);
+
+      // If we have pre-processed data, use it
+      if (allImages && allImages[idx]) {
+        return {
+          ...allImages[idx],
+          originalIndex: idx,
+          index: idx // Maintain backward compatibility
+        };
+      }
+
+      // Fallback: Scraping DOM if global data is not available for this item
         const media = item.querySelector('img, video');
         const src = media?.src || media?.dataset?.src || '';
         return {
