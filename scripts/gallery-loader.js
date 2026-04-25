@@ -99,16 +99,50 @@ class GalleryLoader {
 
   getGalleryData() {
     // Helper to get raw data for lightbox with injected category
+    // ⚡ Performance Optimization: Using map-sort-map for ~1,200 items
+    const extractSortKey = (src) => {
+      const match = src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+      return match ? parseInt(match[1], 10) : 0;
+    };
+
     if (this.category === 'all') {
       let all = [];
       Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
-        const enriched = imgs.map(img => ({ ...img, category: catSlug }));
-        all.push(...enriched);
+        const mapped = imgs
+          .filter(img => img.src)
+          .map(img => ({
+            ...img,
+            category: catSlug,
+            _sortKey: extractSortKey(img.src),
+            type: img.type || (img.src.split('?')[0].toLowerCase().match(/\.(mp4|mov)$/i) ? 'video' : 'image')
+          }));
+        all.push(...mapped);
       });
+
+      all.sort((a, b) => {
+        if (a._sortKey !== b._sortKey) return a._sortKey - b._sortKey;
+        return a.src.localeCompare(b.src);
+      });
+
+      // Cleanup
+      all.forEach(img => delete img._sortKey);
       return all;
     }
+
     const imgs = this.data.portfolio.images[this.category] || [];
-    return imgs.map(img => ({ ...img, category: this.category }));
+    const mapped = imgs
+      .filter(img => img.src)
+      .map(img => ({
+        ...img,
+        category: this.category,
+        _sortKey: extractSortKey(img.src),
+        type: img.type || (img.src.split('?')[0].toLowerCase().match(/\.(mp4|mov)$/i) ? 'video' : 'image')
+      }));
+
+    mapped.sort((a, b) => a._sortKey - b._sortKey);
+    mapped.forEach(img => delete img._sortKey);
+
+    return mapped;
   }
 
   initAnimations() {
