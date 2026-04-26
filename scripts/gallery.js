@@ -40,20 +40,34 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => !item.classList.contains('is-hidden'))
-      .map(item => {
-        const media = item.querySelector('img, video');
-        const src = media?.src || media?.dataset?.src || '';
+    const visibleItems = Array.from(document.querySelectorAll('.gallery-item'))
+      .filter(item => !item.classList.contains('is-hidden'));
+
+    // PERFORMANCE: Use pre-processed data if available to avoid expensive DOM scraping
+    if (window.contentLoader && window.contentLoader.allImages) {
+      return visibleItems.map(item => {
+        const globalIndex = parseInt(item.dataset.index, 10);
+        const data = window.contentLoader.allImages[globalIndex];
+
         return {
-          src,
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
-          type: item.querySelector('video') ? 'video' : 'image',
-          poster: item.querySelector('video')?.poster || '',
-          originalIndex: parseInt(item.dataset.index, 10)
+          ...data,
+          originalIndex: globalIndex // Used for Lightbox state
         };
       });
+    }
+
+    // Fallback: Scraping (slower, but functional if contentLoader isn't ready)
+    return visibleItems.map(item => {
+      const media = item.querySelector('img, video');
+      return {
+        src: media?.getAttribute('src') || media?.dataset?.src || '',
+        title: item.querySelector('.gallery-title')?.textContent || '',
+        category: item.querySelector('.gallery-category')?.textContent || item.dataset.category || '',
+        type: item.querySelector('video') ? 'video' : 'image',
+        poster: item.querySelector('video')?.getAttribute('poster') || '',
+        originalIndex: parseInt(item.dataset.index, 10)
+      };
+    });
   },
   
   filterGallery(category) {
