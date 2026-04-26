@@ -82,53 +82,65 @@ class ContentLoader {
       // Fallback for flat array (if still used)
       allImages = rawImages.map(img => ({ ...img, isPreview: true }));
     } else {
+      // Helper for numeric extraction and type detection
+      const extractSortInfo = (img) => {
+        if (!img || !img.src) return null;
+        const cleanSrc = img.src.split('?')[0];
+        const match = cleanSrc.match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+
+        return {
+          num: match ? parseInt(match[1], 10) : null,
+          isSupported: !!cleanSrc.match(/\.(jpg|jpeg|mp4|mov)$/i),
+          type: img.type || (cleanSrc.toLowerCase().match(/\.(mp4|mov)$/) ? 'video' : 'image')
+        };
+      };
+
+      let globalMapped = [];
+
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
-        // 1. Keep supported image/video media across categories
-        const validImages = images.filter(img => {
-          if (!img.src) return false;
-          const lowerSrc = img.src.toLowerCase();
-          const urlWithoutParams = lowerSrc.split('?')[0];
-          
-          const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
-          const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
-          return isJpg || isVideo;
+        // 1. Wrap items with their sort info to avoid redundant calculations
+        const categoryItems = images.map(img => ({
+          img,
+          info: extractSortInfo(img)
+        }));
+
+        // 2. Sort category numerically (matching original behavior: only if both have numbers)
+        categoryItems.sort((a, b) => {
+          if (a.info.num !== null && b.info.num !== null) return a.info.num - b.info.num;
+          return 0;
         });
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
-
-        // 3. Assign order
-        validImages.forEach((image, idx) => {
-          const srcWithoutParams = image.src.split('?')[0].toLowerCase();
-          const type = image.type || (srcWithoutParams.endsWith('.mp4') || srcWithoutParams.endsWith('.mov') ? 'video' : 'image');
-
-          allImages.push({
-            ...image,
-            category: categorySlug,
-            type,
-            order: idx // used for pagination logic later
-          });
+        // 3. Filter and push to global list as wrapped items to preserve metadata for final sort
+        categoryItems.forEach((item, idx) => {
+          if (item.info.isSupported) {
+            globalMapped.push({
+              data: item.img,
+              num: item.info.num,
+              type: item.info.type,
+              category: categorySlug,
+              order: idx
+            });
+          }
         });
       });
 
-      // 4. Final Global Sort by filename number (Rule 2)
-      allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
-        return a.src.localeCompare(b.src);
+      // 4. Final Global Sort on wrapped items (avoids polluting final objects with temporary keys)
+      globalMapped.sort((a, b) => {
+        if (a.num !== null && b.num !== null) {
+          const diff = a.num - b.num;
+          if (diff !== 0) return diff;
+        }
+        return a.data.src.localeCompare(b.data.src);
       });
+
+      // 5. Flatten to final array (original code used spread, so we maintain that pattern)
+      allImages = globalMapped.map(item => ({
+        ...item.data,
+        category: item.category,
+        type: item.type,
+        order: item.order
+      }));
     }
 
     // Create gallery items using DocumentFragment for performance
