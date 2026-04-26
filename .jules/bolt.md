@@ -1,0 +1,3 @@
+## 2025-05-15 - [The Hidden Cost of 'delete' and Regex in Sorts]
+**Learning:** Performing expensive operations like regex matching inside an `Array.prototype.sort()` comparator significantly degrades performance as it executes O(N log N) times. Additionally, using the `delete` operator on objects in a large loop to clean up temporary sort keys can trigger "dictionary mode" in V8, impacting subsequent property access speeds.
+**Action:** Always use the Schwartzian Transform (map-sort-map) for complex sorting. Instead of `delete`, sort a wrapper object or perform a final mapping to a new object structure to keep the original objects "clean" and maintain hidden class optimizations.
