@@ -1,0 +1,3 @@
+## 2024-04-27 - Optimized Gallery Sorting with Schwartzian Transform
+**Learning:** In datasets with ~1,200 items, performing regex matching and numeric extraction inside a sort comparator creates a significant performance bottleneck (O(N log N) regex executions). Implementing a Schwartzian Transform (map-sort-map) reduces this to O(N) regex executions. Additionally, using the `delete` operator on objects after sorting triggers "dictionary mode" in V8, which can slow down subsequent property accesses.
+**Action:** Always use a map-sort-map pattern for complex sorting keys. Prefer wrapping items in a temporary object and re-mapping at the end rather than using `delete` on properties to maintain V8 "fast mode" objects.
