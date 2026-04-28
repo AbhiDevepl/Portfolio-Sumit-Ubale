@@ -660,9 +660,12 @@ class PortfolioGallery {
       'commercial'
     ];
 
+    // Pre-calculate category indices for O(1) lookup during sort
+    const categoryMap = Object.fromEntries(categoryOrder.map((cat, i) => [cat, i]));
+
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+      const catA = categoryMap[a.category] ?? 999;
+      const catB = categoryMap[b.category] ?? 999;
 
       if (catA !== catB) {
         return catA - catB;

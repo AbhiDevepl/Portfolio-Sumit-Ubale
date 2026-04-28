@@ -82,53 +82,58 @@ class ContentLoader {
       // Fallback for flat array (if still used)
       allImages = rawImages.map(img => ({ ...img, isPreview: true }));
     } else {
+      // Helper to extract sort info once (Schwartzian Transform pattern)
+      const extractSortInfo = (src) => {
+        const urlWithoutParams = src.split('?')[0];
+        const match = urlWithoutParams.match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+        return {
+          num: match ? parseInt(match[1], 10) : 0,
+          urlWithoutParams: urlWithoutParams.toLowerCase()
+        };
+      };
+
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
-        // 1. Keep supported image/video media across categories
-        const validImages = images.filter(img => {
-          if (!img.src) return false;
-          const lowerSrc = img.src.toLowerCase();
-          const urlWithoutParams = lowerSrc.split('?')[0];
+        // 1. Map to include sort keys and filter (Keep supported media)
+        const mapped = images.map(img => {
+          if (!img.src) return null;
+          const info = extractSortInfo(img.src);
+          const isJpg = info.urlWithoutParams.endsWith('.jpg') || info.urlWithoutParams.endsWith('.jpeg');
+          const isVideo = info.urlWithoutParams.endsWith('.mp4') || info.urlWithoutParams.endsWith('.mov');
           
-          const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
-          const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
-          return isJpg || isVideo;
-        });
+          if (!(isJpg || isVideo)) return null;
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+          return {
+            img,
+            sortNum: info.num,
+            isVideo
+          };
+        }).filter(item => item !== null);
 
-        // 3. Assign order
-        validImages.forEach((image, idx) => {
-          const srcWithoutParams = image.src.split('?')[0].toLowerCase();
-          const type = image.type || (srcWithoutParams.endsWith('.mp4') || srcWithoutParams.endsWith('.mov') ? 'video' : 'image');
+        // 2. Sort numerically based on pre-calculated key
+        mapped.sort((a, b) => a.sortNum - b.sortNum);
 
+        // 3. Assign order and collect
+        mapped.forEach((item, idx) => {
           allImages.push({
-            ...image,
+            ...item.img,
             category: categorySlug,
-            type,
-            order: idx // used for pagination logic later
+            type: item.img.type || (item.isVideo ? 'video' : 'image'),
+            order: idx, // used for pagination logic later
+            _sortNum: item.sortNum // temporary for global sort
           });
         });
       });
 
       // 4. Final Global Sort by filename number (Rule 2)
       allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
+        if (a._sortNum !== b._sortNum) return a._sortNum - b._sortNum;
+        // If numbers are same (e.g. 1.jpg from different folders), sort by src
         return a.src.localeCompare(b.src);
       });
+
+      // Cleanup temporary sort key
+      allImages.forEach(img => delete img._sortNum);
     }
 
     // Create gallery items using DocumentFragment for performance
