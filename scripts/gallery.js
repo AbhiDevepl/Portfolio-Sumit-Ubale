@@ -59,61 +59,97 @@ window.GalleryManager = {
   filterGallery(category) {
     this.activeCategory = category;
     
-    document.querySelectorAll('.category-btn').forEach(btn => {
+    // 1. Update UI state for buttons
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    for (let i = 0; i < categoryBtns.length; i++) {
+      const btn = categoryBtns[i];
       const isActive = btn.dataset.category === category;
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-selected', isActive);
-    });
+    }
     
     const items = Array.from(document.querySelectorAll('.gallery-item'));
-    const visibleItems = [];
+    const toShow = [];
+    const toHide = [];
 
-    items.forEach((item) => {
+    // 2. Categorize items based on filter
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
       const isMatch = category === 'all' || item.dataset.category === category;
+
       item.classList.toggle('is-filtered-in', isMatch);
       item.classList.toggle('is-filtered-out', !isMatch);
 
-      if (window.gsap) {
-        gsap.killTweensOf(item);
-
-        if (isMatch) {
-          item.classList.remove('is-hidden');
-          gsap.set(item, { display: '', pointerEvents: 'auto' });
-          gsap.fromTo(
-            item,
-            { autoAlpha: 0, scale: 0.96, y: 14 },
-            { autoAlpha: 1, scale: 1, y: 0, duration: 0.35, ease: 'power2.out', overwrite: true }
-          );
-        } else {
-          gsap.to(item, {
-            autoAlpha: 0,
-            scale: 0.96,
-            y: 10,
-            duration: 0.24,
-            ease: 'power2.out',
-            overwrite: true,
-            onComplete: () => {
-              item.classList.add('is-hidden');
-              item.style.display = 'none';
-              item.style.pointerEvents = 'none';
-            }
-          });
-        }
+      if (isMatch) {
+        toShow.push(item);
       } else {
+        toHide.push(item);
+      }
+    }
+
+    this.filteredItems = toShow;
+
+    // 3. Optimized Animations using GSAP Batching
+    if (window.gsap) {
+      // Kill all active tweens on items to prevent conflicts
+      gsap.killTweensOf(items);
+
+      // Handle items to hide
+      if (toHide.length > 0) {
+        gsap.to(toHide, {
+          autoAlpha: 0,
+          scale: 0.96,
+          y: 10,
+          duration: 0.2,
+          ease: 'power2.out',
+          stagger: {
+            amount: Math.min(0.2, toHide.length * 0.01),
+            from: "start"
+          },
+          onComplete: () => {
+            toHide.forEach(el => {
+              el.classList.add('is-hidden');
+              el.style.display = 'none';
+              el.style.pointerEvents = 'none';
+            });
+          }
+        });
+      }
+
+      // Handle items to show
+      if (toShow.length > 0) {
+        toShow.forEach(el => {
+          el.classList.remove('is-hidden');
+          el.style.display = '';
+          el.style.pointerEvents = 'auto';
+        });
+
+        gsap.fromTo(toShow,
+          { autoAlpha: 0, scale: 0.96, y: 14 },
+          {
+            autoAlpha: 1,
+            scale: 1,
+            y: 0,
+            duration: 0.3,
+            ease: 'power2.out',
+            stagger: {
+              amount: Math.min(0.3, toShow.length * 0.02),
+              from: "start"
+            }
+          }
+        );
+      }
+    } else {
+      // Fallback for no GSAP
+      items.forEach(item => {
+        const isMatch = toShow.includes(item);
         item.classList.toggle('is-hidden', !isMatch);
         item.style.display = isMatch ? '' : 'none';
         item.style.opacity = isMatch ? '1' : '0';
         item.style.transform = isMatch ? 'scale(1)' : 'scale(0.96)';
-      }
-
-      if (isMatch) {
-        item.style.display = '';
-        item.style.pointerEvents = 'auto';
-        visibleItems.push(item);
-      }
-    });
-
-    this.filteredItems = visibleItems;
+        item.style.pointerEvents = isMatch ? 'auto' : 'none';
+      });
+    }
 
     const grid = document.getElementById('gallery-grid');
     if (grid) {
