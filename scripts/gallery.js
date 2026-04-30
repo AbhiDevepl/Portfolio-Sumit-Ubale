@@ -39,81 +39,116 @@ window.GalleryManager = {
     if (!grid) return;
   },
 
+  /**
+   * Optimized getVisibleData to avoid O(N) DOM scraping
+   * Maps visible DOM elements to pre-processed data on window.contentLoader
+   */
   getVisibleData() {
+    const allImages = window.contentLoader?.allImages;
+    if (!allImages) return [];
+
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => !item.classList.contains('is-hidden'))
       .map(item => {
-        const media = item.querySelector('img, video');
-        const src = media?.src || media?.dataset?.src || '';
+        const idx = parseInt(item.dataset.index, 10);
+        const data = allImages[idx];
         return {
-          src,
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
-          type: item.querySelector('video') ? 'video' : 'image',
-          poster: item.querySelector('video')?.poster || '',
-          originalIndex: parseInt(item.dataset.index, 10)
+          ...data,
+          originalIndex: idx,
+          index: idx // Backward compatibility
         };
       });
   },
   
+  /**
+   * Batch-optimized filtering to minimize layout thrashing and GSAP overhead
+   */
   filterGallery(category) {
     this.activeCategory = category;
     
-    document.querySelectorAll('.category-btn').forEach(btn => {
+    const buttons = document.querySelectorAll('.category-btn');
+    buttons.forEach(btn => {
       const isActive = btn.dataset.category === category;
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-selected', isActive);
     });
     
     const items = Array.from(document.querySelectorAll('.gallery-item'));
-    const visibleItems = [];
+    const toShow = [];
+    const toHide = [];
 
     items.forEach((item) => {
       const isMatch = category === 'all' || item.dataset.category === category;
       item.classList.toggle('is-filtered-in', isMatch);
       item.classList.toggle('is-filtered-out', !isMatch);
 
-      if (window.gsap) {
-        gsap.killTweensOf(item);
-
-        if (isMatch) {
-          item.classList.remove('is-hidden');
-          gsap.set(item, { display: '', pointerEvents: 'auto' });
-          gsap.fromTo(
-            item,
-            { autoAlpha: 0, scale: 0.96, y: 14 },
-            { autoAlpha: 1, scale: 1, y: 0, duration: 0.35, ease: 'power2.out', overwrite: true }
-          );
-        } else {
-          gsap.to(item, {
-            autoAlpha: 0,
-            scale: 0.96,
-            y: 10,
-            duration: 0.24,
-            ease: 'power2.out',
-            overwrite: true,
-            onComplete: () => {
-              item.classList.add('is-hidden');
-              item.style.display = 'none';
-              item.style.pointerEvents = 'none';
-            }
-          });
-        }
-      } else {
-        item.classList.toggle('is-hidden', !isMatch);
-        item.style.display = isMatch ? '' : 'none';
-        item.style.opacity = isMatch ? '1' : '0';
-        item.style.transform = isMatch ? 'scale(1)' : 'scale(0.96)';
-      }
-
       if (isMatch) {
-        item.style.display = '';
-        item.style.pointerEvents = 'auto';
-        visibleItems.push(item);
+        toShow.push(item);
+      } else {
+        toHide.push(item);
       }
     });
 
-    this.filteredItems = visibleItems;
+    if (window.gsap) {
+      // 1. Kill all current animations in one pass
+      gsap.killTweensOf(items);
+
+      // 2. Batch hide non-matching items
+      if (toHide.length > 0) {
+        gsap.to(toHide, {
+          autoAlpha: 0,
+          scale: 0.96,
+          y: 10,
+          duration: 0.24,
+          ease: 'power2.out',
+          stagger: 0.005, // Subtle stagger for performance and elegance
+          onComplete: () => {
+            toHide.forEach(item => {
+              item.classList.add('is-hidden');
+              item.style.display = 'none';
+              item.style.pointerEvents = 'none';
+            });
+          }
+        });
+      }
+
+      // 3. Batch show matching items
+      if (toShow.length > 0) {
+        toShow.forEach(item => {
+          item.classList.remove('is-hidden');
+          item.style.display = '';
+          item.style.pointerEvents = 'auto';
+        });
+
+        gsap.fromTo(
+          toShow,
+          { autoAlpha: 0, scale: 0.96, y: 14 },
+          {
+            autoAlpha: 1,
+            scale: 1,
+            y: 0,
+            duration: 0.35,
+            ease: 'power2.out',
+            stagger: 0.01,
+            overwrite: true
+          }
+        );
+      }
+    } else {
+      // Fallback if GSAP is not available
+      toHide.forEach(item => {
+        item.classList.add('is-hidden');
+        item.style.display = 'none';
+      });
+      toShow.forEach(item => {
+        item.classList.remove('is-hidden');
+        item.style.display = '';
+        item.style.opacity = '1';
+        item.style.transform = 'scale(1)';
+      });
+    }
+
+    this.filteredItems = toShow;
 
     const grid = document.getElementById('gallery-grid');
     if (grid) {
