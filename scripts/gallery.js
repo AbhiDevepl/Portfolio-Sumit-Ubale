@@ -40,18 +40,35 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
+    // Optimization: Retrieve data from pre-processed array instead of scraping DOM
+    // This avoids ~5 DOM queries per item, which is O(N) where N can be > 1000.
+    const allImages = window.contentLoader?.allImages || [];
+
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => !item.classList.contains('is-hidden'))
       .map(item => {
+        const globalIndex = parseInt(item.dataset.index, 10);
+        const data = allImages[globalIndex];
+
+        if (data) {
+          return {
+            ...data,
+            // Lightbox expects originalIndex for mapping back to UI state
+            originalIndex: globalIndex,
+            // Ensure compatibility with existing UI expectations
+            index: globalIndex
+          };
+        }
+
+        // Fallback to DOM scraping if data not found (should not happen with optimized loader)
         const media = item.querySelector('img, video');
-        const src = media?.src || media?.dataset?.src || '';
         return {
-          src,
+          src: media?.src || media?.dataset?.src || '',
           title: item.querySelector('.gallery-title')?.textContent,
           category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
           type: item.querySelector('video') ? 'video' : 'image',
           poster: item.querySelector('video')?.poster || '',
-          originalIndex: parseInt(item.dataset.index, 10)
+          originalIndex: globalIndex
         };
       });
   },

@@ -1,0 +1,3 @@
+## 2026-04-30 - Optimized Gallery Data Access and Sorting
+**Learning:** In galleries with ~1,200 items, DOM scraping during interaction (e.g., opening a lightbox) triggers significant main-thread pressure due to O(N) DOM queries. Persisting a pre-processed data array during the initial load allows for O(1) metadata retrieval. Additionally, numerical sorting using regex in a sort comparator is O(N log N) regex executions; a Schwartzian Transform (map-sort-map) reduces this to O(N) regex executions.
+**Action:** Use a pre-processed global data array for interaction metadata lookups and implement Schwartzian Transform for any sort operation involving complex string parsing or regex on datasets > 500 items.
