@@ -83,9 +83,23 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    // Hoist getGalleryData to avoid O(N^2) rendering bottleneck (1192 items)
-    const allItems = this.getGalleryData();
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, allItems));
+
+    // Aggregate all items for the lightbox context
+    const allItems = this.getGalleryData().map((item, idx) => ({
+      ...item,
+      globalIndex: idx // Assign indices for optimized retrieval if needed
+    }));
+
+    // Update window.contentLoader mock for compatibility with GalleryManager optimizations
+    if (!window.contentLoader) window.contentLoader = {};
+    window.contentLoader.allImages = allItems;
+
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => {
+      // Find the global index for this specific image in the full set
+      const globalItem = allItems.find(item => item.src === img.src);
+      const renderIndex = globalItem ? globalItem.globalIndex : idx;
+      return this.createGalleryItem(img, renderIndex, allItems);
+    });
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
