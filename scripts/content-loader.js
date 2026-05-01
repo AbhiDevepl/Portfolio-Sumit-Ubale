@@ -80,55 +80,62 @@ class ContentLoader {
 
     if (Array.isArray(rawImages)) {
       // Fallback for flat array (if still used)
-      allImages = rawImages.map(img => ({ ...img, isPreview: true }));
+      allImages = rawImages.map((img, idx) => ({ ...img, isPreview: true, globalIndex: idx }));
     } else {
-      // Grouped by category slug
+      // Optimized sorting using Schwartzian Transform (Map-Sort-Map)
+      // This avoids redundant regex and string operations in O(N log N) sort
+      const sortRegex = /(\d+)\.(jpe?g|mp4|mov)$/i;
+
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
-        // 1. Keep supported image/video media across categories
-        const validImages = images.filter(img => {
-          if (!img.src) return false;
-          const lowerSrc = img.src.toLowerCase();
-          const urlWithoutParams = lowerSrc.split('?')[0];
+        // 1. Map: Extract metadata once per item
+        const mappedImages = images.map(img => {
+          if (!img.src) return null;
+          const urlWithoutParams = img.src.split('?')[0];
+          const lowerSrc = urlWithoutParams.toLowerCase();
           
-          const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
-          const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
-          return isJpg || isVideo;
-        });
+          const isJpg = lowerSrc.endsWith('.jpg') || lowerSrc.endsWith('.jpeg');
+          const isVideo = lowerSrc.endsWith('.mp4') || lowerSrc.endsWith('.mov');
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+          if (!isJpg && !isVideo) return null;
 
-        // 3. Assign order
-        validImages.forEach((image, idx) => {
-          const srcWithoutParams = image.src.split('?')[0].toLowerCase();
-          const type = image.type || (srcWithoutParams.endsWith('.mp4') || srcWithoutParams.endsWith('.mov') ? 'video' : 'image');
+          const match = urlWithoutParams.match(sortRegex);
+          const numKey = match ? parseInt(match[1], 10) : 0;
+          const type = img.type || (isVideo ? 'video' : 'image');
 
+          return { img, numKey, type };
+        }).filter(Boolean);
+
+        // 2. Intra-category Sort: Simple numeric sort
+        mappedImages.sort((a, b) => a.numKey - b.numKey);
+
+        // 3. Assign order and flatten
+        mappedImages.forEach((item, idx) => {
           allImages.push({
-            ...image,
+            ...item.img,
             category: categorySlug,
-            type,
-            order: idx // used for pagination logic later
+            type: item.type,
+            order: idx,
+            _sortKey: item.numKey // Cache for final global sort
           });
         });
       });
 
-      // 4. Final Global Sort by filename number (Rule 2)
-      allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
-        return a.src.localeCompare(b.src);
-      });
+      // 4. Final Global Sort: Use cached numeric keys
+      // 5. Map back to clean objects and assign globalIndex for O(1) lookup
+      allImages = allImages
+        .sort((a, b) => (a._sortKey - b._sortKey) || a.src.localeCompare(b.src))
+        .map((item, idx) => {
+          const { _sortKey, ...cleanItem } = item;
+          return { ...cleanItem, globalIndex: idx };
+        });
+    }
+
+    // Store for O(1) access by other components
+    this.allImages = allImages;
+
+    // Expose to GalleryManager for lightbox optimization
+    if (window.GalleryManager) {
+      window.GalleryManager.allImages = this.allImages;
     }
 
     // Create gallery items using DocumentFragment for performance
