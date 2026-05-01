@@ -40,9 +40,37 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
+    // Optimization: Avoid expensive O(N) DOM scraping when opening lightbox.
+    // Use the pre-processed source-of-truth dataset if available.
+    const allImages = this.allImages || window.contentLoader?.allImages;
+
+    if (allImages) {
+      const visibleItems = [];
+      const galleryItems = document.querySelectorAll('.gallery-item');
+
+      galleryItems.forEach(item => {
+        if (!item.classList.contains('is-hidden')) {
+          const idx = parseInt(item.dataset.index, 10);
+          const sourceData = allImages[idx];
+          if (sourceData) {
+            visibleItems.push({
+              ...sourceData,
+              // originalIndex must match the index in the allImages array
+              // that was used to set data-index during render.
+              originalIndex: sourceData.globalIndex !== undefined ? sourceData.globalIndex : idx,
+              index: visibleItems.length
+            });
+          }
+        }
+      });
+
+      return visibleItems;
+    }
+
+    // Fallback for pages where contentLoader is not used
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => !item.classList.contains('is-hidden'))
-      .map(item => {
+      .map((item, idx) => {
         const media = item.querySelector('img, video');
         const src = media?.src || media?.dataset?.src || '';
         return {
@@ -51,7 +79,8 @@ window.GalleryManager = {
           category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
           type: item.querySelector('video') ? 'video' : 'image',
           poster: item.querySelector('video')?.poster || '',
-          originalIndex: parseInt(item.dataset.index, 10)
+          originalIndex: parseInt(item.dataset.index, 10),
+          index: idx
         };
       });
   },

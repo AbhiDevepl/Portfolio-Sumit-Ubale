@@ -85,7 +85,16 @@ class GalleryLoader {
     grid.innerHTML = '';
     // Hoist getGalleryData to avoid O(N^2) rendering bottleneck (1192 items)
     const allItems = this.getGalleryData();
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, allItems));
+
+    // Ensure allItems have a consistent globalIndex for lightbox mapping
+    const processedItems = allItems.map((item, idx) => ({ ...item, globalIndex: idx }));
+
+    // Expose to GalleryManager for lightbox optimization
+    if (window.GalleryManager) {
+      window.GalleryManager.allImages = processedItems;
+    }
+
+    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, processedItems));
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();
@@ -94,7 +103,10 @@ class GalleryLoader {
 
   createGalleryItem(image, index, allItems) {
     // Delegate to Core.Media to ensure consistent behavior across app
-    return Core.Media.createItem(image, index, allItems, (cat) => this.category);
+    const item = Core.Media.createItem(image, index, allItems, (cat) => this.category);
+    // Explicitly set data-index for GalleryManager lookup
+    item.dataset.index = index;
+    return item;
   }
 
   getGalleryData() {
