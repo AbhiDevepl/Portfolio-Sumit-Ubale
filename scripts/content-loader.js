@@ -82,53 +82,59 @@ class ContentLoader {
       // Fallback for flat array (if still used)
       allImages = rawImages.map(img => ({ ...img, isPreview: true }));
     } else {
+      // Helper to extract numeric key and type once per item
+      const _extractSortInfo = (img) => {
+        const urlWithoutParams = (img.src || '').split('?')[0];
+        const lowerUrl = urlWithoutParams.toLowerCase();
+
+        const isJpg = lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg');
+        const isVideo = lowerUrl.endsWith('.mp4') || lowerUrl.endsWith('.mov');
+
+        if (!isJpg && !isVideo) return null;
+
+        const match = urlWithoutParams.match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+        return {
+          num: match ? parseInt(match[1], 10) : 0,
+          type: img.type || (isVideo ? 'video' : 'image')
+        };
+      };
+
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
-        // 1. Keep supported image/video media across categories
-        const validImages = images.filter(img => {
-          if (!img.src) return false;
-          const lowerSrc = img.src.toLowerCase();
-          const urlWithoutParams = lowerSrc.split('?')[0];
-          
-          const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
-          const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
-          return isJpg || isVideo;
-        });
+        // 1 & 2. Filter and map with sort info in one pass
+        const validWithInfo = images
+          .map(img => ({ img, info: _extractSortInfo(img) }))
+          .filter(item => item.info !== null);
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+        // Sort numerically based on filename within category
+        validWithInfo.sort((a, b) => a.info.num - b.info.num);
 
-        // 3. Assign order
-        validImages.forEach((image, idx) => {
-          const srcWithoutParams = image.src.split('?')[0].toLowerCase();
-          const type = image.type || (srcWithoutParams.endsWith('.mp4') || srcWithoutParams.endsWith('.mov') ? 'video' : 'image');
-
+        // 3. Assign to global array with category and order
+        validWithInfo.forEach((item, idx) => {
           allImages.push({
-            ...image,
+            ...item.img,
             category: categorySlug,
-            type,
+            type: item.info.type,
+            _sortKey: item.info.num, // Keep for global sort
             order: idx // used for pagination logic later
           });
         });
       });
 
-      // 4. Final Global Sort by filename number (Rule 2)
+      // 4. Final Global Sort (using Schwartzian Transform logic via _sortKey)
       allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
+        if (a._sortKey !== b._sortKey) return a._sortKey - b._sortKey;
         return a.src.localeCompare(b.src);
       });
+
+      // Cleanup temporary sort key
+      allImages.forEach(img => delete img._sortKey);
+    }
+
+    // Store processed data for other components to reuse without re-scraping
+    this.allImages = allImages;
+    if (window.GalleryManager) {
+      window.GalleryManager.allImages = allImages;
     }
 
     // Create gallery items using DocumentFragment for performance
