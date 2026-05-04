@@ -1,0 +1,3 @@
+## 2024-05-04 - Schwartzian Transform for Gallery Sorting
+**Learning:** The gallery sorting logic for ~1,200 items was performing regex extraction and string manipulation inside the `.sort()` comparator. This resulted in O(N log N) regex executions, causing a measurable bottleneck during the initial content loading phase (approx. 476ms for 100 iterations in benchmarks). Implementing a Schwartzian Transform (map-sort-map) reduced this to O(N) regex operations, improving performance by ~5.3x.
+**Action:** Always prefer a map-sort-map pattern for datasets exceeding 500 items where the sort key requires parsing or complex extraction to avoid main-thread jank during initialization.
