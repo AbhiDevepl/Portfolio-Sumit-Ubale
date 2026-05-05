@@ -85,7 +85,18 @@ class GalleryLoader {
     grid.innerHTML = '';
     // Hoist getGalleryData to avoid O(N^2) rendering bottleneck (1192 items)
     const allItems = this.getGalleryData();
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, allItems));
+
+    // Assign global index and expose to GalleryManager for optimized retrieval
+    this.allImages = allItems.map((img, idx) => ({
+      ...img,
+      globalIndex: idx
+    }));
+
+    if (window.GalleryManager) {
+      window.GalleryManager.allImages = this.allImages;
+    }
+
+    const galleryFragment = Core.DOM.createFragment(this.allImages, (img, idx) => this.createGalleryItem(img, idx, this.allImages));
     grid.appendChild(galleryFragment);
 
     if (window.ScrollTrigger) ScrollTrigger.refresh();

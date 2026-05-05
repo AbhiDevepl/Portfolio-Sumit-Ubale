@@ -40,9 +40,35 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
+    // OPTIMIZATION: Avoid expensive O(N) DOM scraping.
+    // Use pre-processed global data if available (assigned by ContentLoader or PortfolioGallery).
+    if (this.allImages && Array.isArray(this.allImages)) {
+      const visibleData = [];
+      const items = document.querySelectorAll('.gallery-item');
+
+      // Batch lookup: only process items once
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (!item.classList.contains('is-hidden')) {
+          const globalIdx = parseInt(item.dataset.index, 10);
+          const data = this.allImages[globalIdx];
+
+          if (data) {
+            visibleData.push({
+              ...data,
+              originalIndex: globalIdx,
+              index: visibleData.length // Local index in filtered set
+            });
+          }
+        }
+      }
+      return visibleData;
+    }
+
+    // Fallback to DOM scraping if global data isn't ready
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => !item.classList.contains('is-hidden'))
-      .map(item => {
+      .map((item, idx) => {
         const media = item.querySelector('img, video');
         const src = media?.src || media?.dataset?.src || '';
         return {
@@ -51,7 +77,8 @@ window.GalleryManager = {
           category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
           type: item.querySelector('video') ? 'video' : 'image',
           poster: item.querySelector('video')?.poster || '',
-          originalIndex: parseInt(item.dataset.index, 10)
+          originalIndex: parseInt(item.dataset.index, 10),
+          index: idx
         };
       });
   },

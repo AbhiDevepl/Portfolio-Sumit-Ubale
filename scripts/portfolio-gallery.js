@@ -628,50 +628,58 @@ class PortfolioGallery {
     const allItems = [];
     const images = data.portfolio?.images || {};
 
-    // Flatten all category images
+    // Category weight mapping for O(1) lookup during sort
+    const categoryWeights = {
+      'weddings': 0,
+      'pre-wedding-photos-and-videos': 1,
+      'engagement': 2,
+      'haldi': 3,
+      'maternity': 4,
+      'portraits': 5,
+      'cinematics': 6,
+      'kids': 7,
+      'events': 8,
+      'commercial': 9
+    };
+
+    // Flatten and enrich with temporary sort keys (Schwartzian Transform)
+    const mapped = [];
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
+        const catWeight = categoryWeights[category] ?? 99;
         items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
+          mapped.push({
+            img: item,
+            sortKeys: {
+              catWeight,
+              order: index
+            },
+            category
           });
         });
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+    // Single-pass sort using pre-calculated weights
+    mapped.sort((a, b) => {
+      if (a.sortKeys.catWeight !== b.sortKeys.catWeight) {
+        return a.sortKeys.catWeight - b.sortKeys.catWeight;
       }
-
-      return (a.order || 0) - (b.order || 0);
+      return a.sortKeys.order - b.sortKeys.order;
     });
 
-    return allItems;
+    // Final mapping: cleanup and assign globalIndex
+    return mapped.map((item, idx) => ({
+      ...item.img,
+      category: item.category,
+      order: item.sortKeys.order,
+      globalIndex: idx,
+      // Ensure consistent property names
+      id: item.img.id || `${item.category}-${item.sortKeys.order}`,
+      title: item.img.title || `${this.formatCategoryName(item.category)} ${item.sortKeys.order + 1}`,
+      alt: item.img.alt || item.img.title || `${this.formatCategoryName(item.category)} photography`,
+      type: item.img.type || 'image'
+    }));
   }
 
   formatCategoryName(slug) {
