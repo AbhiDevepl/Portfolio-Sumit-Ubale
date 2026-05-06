@@ -84,51 +84,48 @@ class ContentLoader {
     } else {
       // Grouped by category slug
       Object.entries(rawImages).forEach(([categorySlug, images]) => {
-        // 1. Keep supported image/video media across categories
-        const validImages = images.filter(img => {
-          if (!img.src) return false;
-          const lowerSrc = img.src.toLowerCase();
-          const urlWithoutParams = lowerSrc.split('?')[0];
-          
-          const isJpg = urlWithoutParams.endsWith('.jpg') || urlWithoutParams.endsWith('.jpeg');
-          const isVideo = urlWithoutParams.endsWith('.mp4') || urlWithoutParams.endsWith('.mov');
-          return isJpg || isVideo;
-        });
+        // 1. Map to enriched objects with pre-calculated sort keys and types
+        // This avoids redundant regex and string operations in the sort phase
+        const enriched = images
+          .filter(img => {
+            if (!img.src) return false;
+            const s = img.src.toLowerCase().split('?')[0];
+            return s.endsWith('.jpg') || s.endsWith('.jpeg') || s.endsWith('.mp4') || s.endsWith('.mov');
+          })
+          .map(img => {
+            const s = img.src.split('?')[0].toLowerCase();
+            const isVideo = s.endsWith('.mp4') || s.endsWith('.mov');
+            const match = s.match(/(\d+)\.(jpe?g|mp4|mov)$/i);
+            return {
+              ...img,
+              category: categorySlug,
+              type: img.type || (isVideo ? 'video' : 'image'),
+              _sortKey: match ? parseInt(match[1], 10) : 0
+            };
+          });
 
-        // 2. Sort numerically based on filename
-        validImages.sort((a, b) => {
-          // Extract filename from src e.g., "10.jpg" or "5.mp4"
-          const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-          const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-          const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-          return aNum - bNum;
-        });
+        // 2. Sort numerically based on filename (Local sort for category order)
+        enriched.sort((a, b) => a._sortKey - b._sortKey);
 
-        // 3. Assign order
-        validImages.forEach((image, idx) => {
-          const srcWithoutParams = image.src.split('?')[0].toLowerCase();
-          const type = image.type || (srcWithoutParams.endsWith('.mp4') || srcWithoutParams.endsWith('.mov') ? 'video' : 'image');
-
+        // 3. Assign order within category (used for pagination logic later)
+        enriched.forEach((image, idx) => {
           allImages.push({
             ...image,
-            category: categorySlug,
-            type,
-            order: idx // used for pagination logic later
+            order: idx
           });
         });
       });
 
-      // 4. Final Global Sort by filename number (Rule 2)
+      // 4. Final Global Sort by pre-calculated filename number (Rule 2)
+      // Optimized using Schwartzian Transform (sortKey pre-calculated)
       allImages.sort((a, b) => {
-        const aMatch = a.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const bMatch = b.src.split('?')[0].match(/(\d+)\.(jpe?g|mp4|mov)$/i);
-        const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
-        const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
-        if (aNum !== bNum) return aNum - bNum;
-        // If numbers are same (e.g. 1.jpg from different folders), sort by category or src
+        if (a._sortKey !== b._sortKey) return a._sortKey - b._sortKey;
+        // If numbers are same (e.g. 1.jpg from different folders), sort by src
         return a.src.localeCompare(b.src);
       });
+
+      // 5. Remove temporary sort keys
+      allImages = allImages.map(({ _sortKey, ...img }) => img);
     }
 
     // Create gallery items using DocumentFragment for performance
