@@ -74,6 +74,32 @@ class GalleryState {
 }
 
 // ========================================
+// GALLERY UTILITIES
+// ========================================
+const GalleryUtils = {
+  _catCache: new Map(),
+
+  /**
+   * Formats a slug-style category name (e.g., 'pre-wedding') to Title Case ('Pre Wedding')
+   * Bolt: Optimized with Map-based memoization to avoid redundant string operations
+   */
+  formatCategory(category) {
+    if (!category) return '';
+
+    const cached = this._catCache.get(category);
+    if (cached) return cached;
+
+    const formatted = category
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+
+    this._catCache.set(category, formatted);
+    return formatted;
+  }
+};
+
+// ========================================
 // GALLERY RENDERER
 // ========================================
 class GalleryRenderer {
@@ -184,7 +210,7 @@ class GalleryRenderer {
     overlay.className = 'gallery-overlay';
     overlay.innerHTML = `
       <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
+      <p class="gallery-item-category">${GalleryUtils.formatCategory(item.category)}</p>
     `;
     article.appendChild(overlay);
 
@@ -216,14 +242,6 @@ class GalleryRenderer {
       </svg>
     `;
     return icon;
-  }
-
-  formatCategory(category) {
-    if (!category) return '';
-    return category
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
   }
 
   openLightbox(index) {
@@ -546,6 +564,19 @@ class FilterController {
 // MAIN GALLERY CONTROLLER
 // ========================================
 class PortfolioGallery {
+  static CATEGORY_WEIGHTS = new Map([
+    ['weddings', 0],
+    ['pre-wedding-photos-and-videos', 1],
+    ['engagement', 2],
+    ['haldi', 3],
+    ['maternity', 4],
+    ['portraits', 5],
+    ['cinematics', 6],
+    ['kids', 7],
+    ['events', 8],
+    ['commercial', 9]
+  ]);
+
   constructor() {
     this.state = new GalleryState();
     this.container = null;
@@ -631,6 +662,8 @@ class PortfolioGallery {
     // Flatten all category images
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
+        // Bolt: formatCategory is memoized in GalleryUtils
+        const catName = GalleryUtils.formatCategory(category);
         items.forEach((item, index) => {
           allItems.push({
             ...item,
@@ -638,8 +671,8 @@ class PortfolioGallery {
             order: index,
             // Ensure consistent property names
             id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            title: item.title || `${catName} ${index + 1}`,
+            alt: item.alt || item.title || `${catName} photography`,
             type: item.type || 'image'
           });
         });
@@ -647,22 +680,10 @@ class PortfolioGallery {
     }
 
     // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Bolt: Use O(1) Map lookup for weights to ensure O(N log N) total sort time
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+      const catA = PortfolioGallery.CATEGORY_WEIGHTS.get(a.category) ?? 99;
+      const catB = PortfolioGallery.CATEGORY_WEIGHTS.get(b.category) ?? 99;
 
       if (catA !== catB) {
         return catA - catB;
@@ -672,13 +693,6 @@ class PortfolioGallery {
     });
 
     return allItems;
-  }
-
-  formatCategoryName(slug) {
-    return slug
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
   }
 
   retry() {
