@@ -40,20 +40,31 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => !item.classList.contains('is-hidden'))
-      .map(item => {
-        const media = item.querySelector('img, video');
-        const src = media?.src || media?.dataset?.src || '';
+    const allImages = this.allImages || window.contentLoader?.allImages || [];
+    const items = Array.from(document.querySelectorAll('.gallery-item:not(.is-hidden)'));
+
+    return items.map(item => {
+      const originalIndex = parseInt(item.dataset.index, 10);
+
+      // Use cached metadata for O(1) retrieval instead of expensive DOM scraping
+      if (allImages[originalIndex]) {
         return {
-          src,
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
-          type: item.querySelector('video') ? 'video' : 'image',
-          poster: item.querySelector('video')?.poster || '',
-          originalIndex: parseInt(item.dataset.index, 10)
+          ...allImages[originalIndex],
+          originalIndex
         };
-      });
+      }
+
+      // Fallback to DOM scraping if cache is unavailable
+      const media = item.querySelector('img, video');
+      return {
+        src: media?.src || media?.dataset?.src || '',
+        title: item.querySelector('.gallery-title')?.textContent,
+        category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
+        type: item.querySelector('video') ? 'video' : 'image',
+        poster: item.querySelector('video')?.poster || '',
+        originalIndex
+      };
+    });
   },
   
   filterGallery(category) {
