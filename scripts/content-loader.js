@@ -128,6 +128,12 @@ class ContentLoader {
       allImages = allImages.map(({ _sortKey, ...img }) => img);
     }
 
+    // Cache processed images for optimized metadata retrieval in GalleryManager
+    this.allImages = allImages;
+    if (window.GalleryManager) {
+      window.GalleryManager.allImages = allImages;
+    }
+
     // Create gallery items using DocumentFragment for performance
     const fragment = Core.DOM.createFragment(allImages, (image, index) => {
       image.category = image.category || 'uncategorized'; // Ensure category exists

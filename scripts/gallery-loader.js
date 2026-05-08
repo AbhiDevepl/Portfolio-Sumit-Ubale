@@ -85,6 +85,12 @@ class GalleryLoader {
     grid.innerHTML = '';
     // Hoist getGalleryData to avoid O(N^2) rendering bottleneck (1192 items)
     const allItems = this.getGalleryData();
+
+    // Cache processed images for optimized metadata retrieval in GalleryManager
+    if (window.GalleryManager) {
+      window.GalleryManager.allImages = allItems;
+    }
+
     const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, allItems));
     grid.appendChild(galleryFragment);
 
