@@ -7,6 +7,32 @@
  */
 
 // ========================================
+// GALLERY UTILITIES
+// ========================================
+class GalleryUtils {
+  static CATEGORY_NAME_CACHE = new Map();
+
+  /**
+   * Formats a category slug into a display name (e.g., "pre-wedding" -> "Pre Wedding")
+   * Uses memoization to avoid redundant string operations for large datasets.
+   */
+  static formatCategory(category) {
+    if (!category) return '';
+
+    let cached = this.CATEGORY_NAME_CACHE.get(category);
+    if (cached) return cached;
+
+    const formatted = category
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+
+    this.CATEGORY_NAME_CACHE.set(category, formatted);
+    return formatted;
+  }
+}
+
+// ========================================
 // GALLERY STATE MANAGEMENT
 // ========================================
 class GalleryState {
@@ -219,11 +245,7 @@ class GalleryRenderer {
   }
 
   formatCategory(category) {
-    if (!category) return '';
-    return category
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    return GalleryUtils.formatCategory(category);
   }
 
   openLightbox(index) {
@@ -546,6 +568,19 @@ class FilterController {
 // MAIN GALLERY CONTROLLER
 // ========================================
 class PortfolioGallery {
+  static CATEGORY_WEIGHTS = new Map([
+    ['weddings', 0],
+    ['pre-wedding-photos-and-videos', 1],
+    ['engagement', 2],
+    ['haldi', 3],
+    ['maternity', 4],
+    ['portraits', 5],
+    ['cinematics', 6],
+    ['kids', 7],
+    ['events', 8],
+    ['commercial', 9]
+  ]);
+
   constructor() {
     this.state = new GalleryState();
     this.container = null;
@@ -631,6 +666,9 @@ class PortfolioGallery {
     // Flatten all category images
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
+        // Pre-format category name once per category loop instead of per item
+        const formattedCategory = GalleryUtils.formatCategory(category);
+
         items.forEach((item, index) => {
           allItems.push({
             ...item,
@@ -638,8 +676,8 @@ class PortfolioGallery {
             order: index,
             // Ensure consistent property names
             id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            title: item.title || `${formattedCategory} ${index + 1}`,
+            alt: item.alt || item.title || `${formattedCategory} photography`,
             type: item.type || 'image'
           });
         });
@@ -647,25 +685,13 @@ class PortfolioGallery {
     }
 
     // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Optimization: Use Map for O(1) weight lookup instead of O(N) indexOf
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+      const weightA = PortfolioGallery.CATEGORY_WEIGHTS.get(a.category) ?? 99;
+      const weightB = PortfolioGallery.CATEGORY_WEIGHTS.get(b.category) ?? 99;
 
-      if (catA !== catB) {
-        return catA - catB;
+      if (weightA !== weightB) {
+        return weightA - weightB;
       }
 
       return (a.order || 0) - (b.order || 0);
@@ -675,10 +701,7 @@ class PortfolioGallery {
   }
 
   formatCategoryName(slug) {
-    return slug
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    return GalleryUtils.formatCategory(slug);
   }
 
   retry() {
