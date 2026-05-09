@@ -20,6 +20,7 @@ class ContentLoader {
   constructor() {
     this.dataUrl = '/data/portfolio.json';
     this.data = null;
+    this.allImages = []; // Cache for processed items
   }
 
   /**
@@ -126,6 +127,12 @@ class ContentLoader {
 
       // 5. Remove temporary sort keys
       allImages = allImages.map(({ _sortKey, ...img }) => img);
+    }
+
+    // 6. Cache for global access (O(1) lookup in lightbox/gallery)
+    this.allImages = allImages;
+    if (window.GalleryManager) {
+      window.GalleryManager.allImages = allImages;
     }
 
     // Create gallery items using DocumentFragment for performance
