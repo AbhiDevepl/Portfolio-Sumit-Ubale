@@ -104,9 +104,8 @@ class GalleryRenderer {
       }
     });
 
-    // Clear container and append new items
-    this.container.innerHTML = '';
-    this.container.appendChild(fragment);
+    // Clear container and append new items using high-performance replaceChildren
+    this.container.replaceChildren(fragment);
 
     // Trigger reveal animations
     this.triggerRevealAnimations();
@@ -184,7 +183,7 @@ class GalleryRenderer {
     overlay.className = 'gallery-overlay';
     overlay.innerHTML = `
       <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
+      <p class="gallery-item-category">${item.formattedCategory || this.formatCategory(item.category)}</p>
     `;
     article.appendChild(overlay);
 
@@ -246,21 +245,27 @@ class GalleryRenderer {
     const items = this.container.querySelectorAll('.gallery-item');
 
     if (window.GSAP && window.ScrollTrigger) {
-      // Use GSAP if available
-      window.GSAP.fromTo(items,
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          stagger: 0.05,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: this.container,
-            start: 'top 80%'
-          }
+      // Use ScrollTrigger.batch for high performance with many items
+      // This only animates items as they enter the viewport, saving CPU/GPU
+      window.ScrollTrigger.batch(items, {
+        start: 'top 90%',
+        onEnter: (batch) => {
+          window.GSAP.fromTo(batch,
+            { opacity: 0, y: 30 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.6,
+              stagger: 0.08,
+              ease: 'power2.out',
+              overwrite: true
+            }
+          );
+        },
+        onEnterBack: (batch) => {
+          window.GSAP.set(batch, { opacity: 1, y: 0, overwrite: true });
         }
-      );
+      });
     } else {
       // Fallback to CSS animations
       items.forEach((item, index) => {
@@ -546,6 +551,19 @@ class FilterController {
 // MAIN GALLERY CONTROLLER
 // ========================================
 class PortfolioGallery {
+  static CATEGORY_WEIGHTS = new Map([
+    ['weddings', 0],
+    ['pre-wedding-photos-and-videos', 1],
+    ['engagement', 2],
+    ['haldi', 3],
+    ['maternity', 4],
+    ['portraits', 5],
+    ['cinematics', 6],
+    ['kids', 7],
+    ['events', 8],
+    ['commercial', 9]
+  ]);
+
   constructor() {
     this.state = new GalleryState();
     this.container = null;
@@ -593,6 +611,11 @@ class PortfolioGallery {
       // Initial render
       this.renderer.render(allItems, 'all');
 
+      // Subscribe to state changes to enable functional filtering
+      this.state.subscribe((state) => {
+        this.renderer.render(state.filteredList, state.activeCategory);
+      });
+
       // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
       if (chipsContainer) {
@@ -627,42 +650,39 @@ class PortfolioGallery {
   processData(data) {
     const allItems = [];
     const images = data.portfolio?.images || {};
+    const formattedCache = new Map();
+
+    const getFormatted = (slug) => {
+      if (formattedCache.has(slug)) return formattedCache.get(slug);
+      const fmt = this.formatCategoryName(slug);
+      formattedCache.set(slug, fmt);
+      return fmt;
+    };
 
     // Flatten all category images
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
+        const formattedName = getFormatted(category);
         items.forEach((item, index) => {
           allItems.push({
             ...item,
             category,
+            formattedCategory: formattedName,
             order: index,
             // Ensure consistent property names
             id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            title: item.title || `${formattedName} ${index + 1}`,
+            alt: item.alt || item.title || `${formattedName} photography`,
             type: item.type || 'image'
           });
         });
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Sort by category weights (O(1) lookup), then by item order
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+      const catA = PortfolioGallery.CATEGORY_WEIGHTS.get(a.category) ?? 99;
+      const catB = PortfolioGallery.CATEGORY_WEIGHTS.get(b.category) ?? 99;
 
       if (catA !== catB) {
         return catA - catB;
