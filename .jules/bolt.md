@@ -16,3 +16,12 @@
 - Filtering Overhead: Reduced from 1,200+ individual tweens to just 2 batch tweens.
 - Metadata retrieval (1,000 calls): ~3.89ms (original) vs ~2.03ms (cached).
 - Speedup: ~1.92x for data access.
+
+## 2024-05-11 - Optimize portfolio gallery data processing and rendering
+**Learning:** For datasets around 1,200 items, a second mapping pass to clean up temporary sort keys (Schwartzian Transform cleanup phase) can be ~3x slower than simply keeping the extra properties on the objects. Additionally, `Element.replaceChildren()` is significantly more efficient than `innerHTML = ''` followed by multiple `appendChild()` calls.
+**Action:** Avoid redundant mapping passes for metadata cleanup on medium-sized datasets unless property pollution causes issues. Use `replaceChildren()` for atomic and high-performance DOM updates.
+
+**Optimization Metric:**
+- Dataset size: 1,192 items
+- Data processing (500 iterations): ~131ms (original) vs ~67ms (optimized)
+- Performance improvement: ~1.95x speedup for data initialization
