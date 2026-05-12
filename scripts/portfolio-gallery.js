@@ -7,6 +7,33 @@
  */
 
 // ========================================
+// GALLERY UTILITIES
+// ========================================
+class GalleryUtils {
+  static categoryCache = new Map();
+
+  /**
+   * Formats category slug into a readable title with memoization
+   * @param {string} category - The category slug
+   * @returns {string} Formatted category name
+   */
+  static formatCategory(category) {
+    if (!category) return '';
+    if (this.categoryCache.has(category)) {
+      return this.categoryCache.get(category);
+    }
+
+    const formatted = category
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+
+    this.categoryCache.set(category, formatted);
+    return formatted;
+  }
+}
+
+// ========================================
 // GALLERY STATE MANAGEMENT
 // ========================================
 class GalleryState {
@@ -104,9 +131,8 @@ class GalleryRenderer {
       }
     });
 
-    // Clear container and append new items
-    this.container.innerHTML = '';
-    this.container.appendChild(fragment);
+    // Clear container and append new items in a single, high-performance DOM operation
+    this.container.replaceChildren(fragment);
 
     // Trigger reveal animations
     this.triggerRevealAnimations();
@@ -184,7 +210,7 @@ class GalleryRenderer {
     overlay.className = 'gallery-overlay';
     overlay.innerHTML = `
       <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
+      <p class="gallery-item-category">${GalleryUtils.formatCategory(item.category)}</p>
     `;
     article.appendChild(overlay);
 
@@ -218,13 +244,6 @@ class GalleryRenderer {
     return icon;
   }
 
-  formatCategory(category) {
-    if (!category) return '';
-    return category
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }
 
   openLightbox(index) {
     if (!window.Core?.Lightbox) return;
@@ -546,6 +565,19 @@ class FilterController {
 // MAIN GALLERY CONTROLLER
 // ========================================
 class PortfolioGallery {
+  static CATEGORY_WEIGHTS = new Map([
+    ['weddings', 0],
+    ['pre-wedding-photos-and-videos', 1],
+    ['engagement', 2],
+    ['haldi', 3],
+    ['maternity', 4],
+    ['portraits', 5],
+    ['cinematics', 6],
+    ['kids', 7],
+    ['events', 8],
+    ['commercial', 9]
+  ]);
+
   constructor() {
     this.state = new GalleryState();
     this.container = null;
@@ -625,60 +657,43 @@ class PortfolioGallery {
   }
 
   processData(data) {
-    const allItems = [];
     const images = data.portfolio?.images || {};
+    const processed = [];
 
-    // Flatten all category images
+    // Flatten and enrich with pre-calculated metadata (Schwartzian Transform prep)
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
+        const catWeight = PortfolioGallery.CATEGORY_WEIGHTS.has(category)
+          ? PortfolioGallery.CATEGORY_WEIGHTS.get(category)
+          : 99;
+
+        const catName = GalleryUtils.formatCategory(category);
+
         items.forEach((item, index) => {
-          allItems.push({
+          processed.push({
             ...item,
             category,
             order: index,
-            // Ensure consistent property names
             id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
+            title: item.title || `${catName} ${index + 1}`,
+            alt: item.alt || item.title || `${catName} photography`,
+            type: item.type || 'image',
+            _catWeight: catWeight
           });
         });
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+    // High-performance sort using pre-calculated weights
+    processed.sort((a, b) => {
+      if (a._catWeight !== b._catWeight) {
+        return a._catWeight - b._catWeight;
       }
-
       return (a.order || 0) - (b.order || 0);
     });
 
-    return allItems;
-  }
-
-  formatCategoryName(slug) {
-    return slug
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    // Return processed items with metadata intact to avoid map-back overhead
+    return processed;
   }
 
   retry() {
