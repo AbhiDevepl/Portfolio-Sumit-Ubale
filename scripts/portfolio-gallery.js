@@ -137,13 +137,15 @@ class GalleryRenderer {
       if (item.poster) media.poster = item.poster;
 
       // Show when metadata loaded
-      media.addEventListener('loadedmetadata', () => {
+      const onMetadata = function() {
         media.style.opacity = '1';
         article.classList.remove('loading');
-      }, { once: true });
+        media.removeEventListener('loadedmetadata', onMetadata);
+      };
+      media.addEventListener('loadedmetadata', onMetadata);
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
 
@@ -153,11 +155,13 @@ class GalleryRenderer {
       media.alt = item.alt || item.title || 'Portfolio image';
       media.decoding = 'async';
 
-      media.addEventListener('load', () => {
+      const onLoad = function() {
         media.style.opacity = '1';
         article.classList.remove('loading');
         article.classList.add('loaded');
-      }, { once: true });
+        media.removeEventListener('load', onLoad);
+      };
+      media.addEventListener('load', onLoad);
 
       if (media.complete) {
         media.style.opacity = '1';
@@ -174,7 +178,7 @@ class GalleryRenderer {
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
@@ -223,17 +227,19 @@ class GalleryRenderer {
   }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map(function(item, i) {
+      return {
+        ...item,
+        type: item.type || 'image',
+        originalIndex: i
+      };
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -314,7 +320,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
 
@@ -364,17 +370,18 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
 
     this.navigationDebounce = true;
-    setTimeout(() => {
-      this.navigationDebounce = false;
+    var self = this;
+    setTimeout(function() {
+      self.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    const state = window.PortfolioGallery && window.PortfolioGallery.state && window.PortfolioGallery.state.getState();
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -389,7 +396,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -401,7 +408,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -483,7 +490,7 @@ class FilterController {
     } else {
       url.searchParams.set('category', category);
     }
-    window.history.pushState({ category }, '', url);
+    window.history.pushState({ category: category }, '', url);
   }
 
   initHorizontalScroll() {
@@ -601,7 +608,7 @@ class PortfolioGallery {
       this.modal.init();
 
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
@@ -622,33 +629,36 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) ? data.portfolio.images : {};
 
     // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        const catName = PortfolioGallery.formatCategoryName(category);
-        const weight = PortfolioGallery.CATEGORY_WEIGHTS.get(category);
-        const catWeight = weight !== undefined ? weight : 999;
+    for (const category in images) {
+      if (Object.prototype.hasOwnProperty.call(images, category)) {
+        const items = images[category];
+        if (Array.isArray(items)) {
+          const catName = PortfolioGallery.formatCategoryName(category);
+          const weight = PortfolioGallery.CATEGORY_WEIGHTS[category];
+          const catWeight = weight !== undefined ? weight : 999;
 
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            _catWeight: catWeight,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${catName} ${index + 1}`,
-            alt: item.alt || item.title || `${catName} photography`,
-            type: item.type || 'image'
+          items.forEach(function(item, index) {
+            allItems.push({
+              ...item,
+              category: category,
+              _catWeight: catWeight,
+              order: index,
+              // Ensure consistent property names
+              id: item.id || (category + "-" + index),
+              title: item.title || (catName + " " + (index + 1)),
+              alt: item.alt || item.title || (catName + " photography"),
+              type: item.type || 'image'
+            });
           });
-        });
+        }
       }
     }
 
     // Optimized Sort: O(1) weight lookup instead of O(N) indexOf
-    allItems.sort((a, b) => {
+    allItems.sort(function(a, b) {
       if (a._catWeight !== b._catWeight) {
         return a._catWeight - b._catWeight;
       }
@@ -663,16 +673,16 @@ class PortfolioGallery {
    */
   static formatCategoryName(slug) {
     if (!slug) return '';
-    if (PortfolioGallery.CATEGORY_NAME_CACHE.get(slug)) {
-      return PortfolioGallery.CATEGORY_NAME_CACHE.get(slug);
+    if (PortfolioGallery.CATEGORY_NAME_CACHE[slug]) {
+      return PortfolioGallery.CATEGORY_NAME_CACHE[slug];
     }
 
     const name = slug
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
       .join(' ');
 
-    PortfolioGallery.CATEGORY_NAME_CACHE.set(slug, name);
+    PortfolioGallery.CATEGORY_NAME_CACHE[slug] = name;
     return name;
   }
 
@@ -683,20 +693,20 @@ class PortfolioGallery {
 }
 
 // Static configuration for performance
-PortfolioGallery.CATEGORY_WEIGHTS = new Map([
-  ['weddings', 0],
-  ['pre-wedding-photos-and-videos', 1],
-  ['engagement', 2],
-  ['haldi', 3],
-  ['maternity', 4],
-  ['portraits', 5],
-  ['cinematics', 6],
-  ['kids', 7],
-  ['events', 8],
-  ['commercial', 9]
-]);
+PortfolioGallery.CATEGORY_WEIGHTS = {
+  'weddings': 0,
+  'pre-wedding-photos-and-videos': 1,
+  'engagement': 2,
+  'haldi': 3,
+  'maternity': 4,
+  'portraits': 5,
+  'cinematics': 6,
+  'kids': 7,
+  'events': 8,
+  'commercial': 9
+};
 
-PortfolioGallery.CATEGORY_NAME_CACHE = new Map();
+PortfolioGallery.CATEGORY_NAME_CACHE = {};
 
 // ========================================
 // INITIALIZE
