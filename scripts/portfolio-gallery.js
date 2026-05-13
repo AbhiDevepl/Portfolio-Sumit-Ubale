@@ -104,8 +104,9 @@ class GalleryRenderer {
       }
     });
 
-    // Clear container and append new items using high-performance replaceChildren
-    this.container.replaceChildren(fragment);
+    // Clear container and append new items
+    this.container.innerHTML = '';
+    this.container.appendChild(fragment);
 
     // Trigger reveal animations
     this.triggerRevealAnimations();
@@ -541,22 +542,6 @@ class FilterController {
 // MAIN GALLERY CONTROLLER
 // ========================================
 class PortfolioGallery {
-  // Static configuration for performance
-  static CATEGORY_WEIGHTS = new Map([
-    ['weddings', 0],
-    ['pre-wedding-photos-and-videos', 1],
-    ['engagement', 2],
-    ['haldi', 3],
-    ['maternity', 4],
-    ['portraits', 5],
-    ['cinematics', 6],
-    ['kids', 7],
-    ['events', 8],
-    ['commercial', 9]
-  ]);
-
-  static CATEGORY_NAME_CACHE = new Map();
-
   constructor() {
     this.state = new GalleryState();
     this.container = null;
@@ -643,7 +628,8 @@ class PortfolioGallery {
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
         const catName = PortfolioGallery.formatCategoryName(category);
-        const catWeight = PortfolioGallery.CATEGORY_WEIGHTS.get(category) ?? 999;
+        const weight = PortfolioGallery.CATEGORY_WEIGHTS.get(category);
+        const catWeight = weight !== undefined ? weight : 999;
 
         items.forEach((item, index) => {
           allItems.push({
@@ -677,7 +663,7 @@ class PortfolioGallery {
    */
   static formatCategoryName(slug) {
     if (!slug) return '';
-    if (PortfolioGallery.CATEGORY_NAME_CACHE.has(slug)) {
+    if (PortfolioGallery.CATEGORY_NAME_CACHE.get(slug)) {
       return PortfolioGallery.CATEGORY_NAME_CACHE.get(slug);
     }
 
@@ -695,6 +681,22 @@ class PortfolioGallery {
     this.setup();
   }
 }
+
+// Static configuration for performance
+PortfolioGallery.CATEGORY_WEIGHTS = new Map([
+  ['weddings', 0],
+  ['pre-wedding-photos-and-videos', 1],
+  ['engagement', 2],
+  ['haldi', 3],
+  ['maternity', 4],
+  ['portraits', 5],
+  ['cinematics', 6],
+  ['kids', 7],
+  ['events', 8],
+  ['commercial', 9]
+]);
+
+PortfolioGallery.CATEGORY_NAME_CACHE = new Map();
 
 // ========================================
 // INITIALIZE
