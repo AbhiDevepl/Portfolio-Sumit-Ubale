@@ -17,16 +17,19 @@ class GalleryState {
     this.activeCategory = 'all';
     this.isLoading = false;
     this.hasError = false;
-    this.listeners = new Set();
+    this.listeners = [];
   }
 
   subscribe(callback) {
-    this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
+    this.listeners.push(callback);
+    return () => {
+      this.listeners = this.listeners.filter(cb => cb !== callback);
+    };
   }
 
   notify() {
-    this.listeners.forEach(cb => cb(this.getState()));
+    const state = this.getState();
+    this.listeners.forEach(cb => cb(state));
   }
 
   getState() {
@@ -81,6 +84,7 @@ class GalleryRenderer {
     this.state = state;
     this.container = container;
     this.animationFrame = null;
+    this.categoryCache = {};
   }
 
   render(items, category) {
@@ -104,8 +108,9 @@ class GalleryRenderer {
       }
     }
 
-    // High-performance DOM replacement
-    this.container.replaceChildren(fragment);
+    // Clear container and append new items
+    this.container.innerHTML = '';
+    this.container.appendChild(fragment);
 
     // Trigger reveal animations
     this.triggerRevealAnimations();
@@ -226,15 +231,15 @@ class GalleryRenderer {
 
   formatCategory(category) {
     if (!category) return '';
-    const cache = GalleryRenderer.categoryCache;
-    if (cache.has(category)) {
-      return cache.get(category);
+    const cache = this.categoryCache;
+    if (cache[category]) {
+      return cache[category];
     }
     const formatted = category
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-    cache.set(category, formatted);
+    cache[category] = formatted;
     return formatted;
   }
 
@@ -325,7 +330,6 @@ class GalleryRenderer {
     `;
   }
 }
-GalleryRenderer.categoryCache = new Map();
 
 // ========================================
 // MODAL VIEWER (Enhanced)
@@ -664,7 +668,7 @@ class PortfolioGallery {
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
         const formattedCategory = this.formatCategoryName(category);
-        const catWeight = weights.has(category) ? weights.get(category) : 99;
+        const catWeight = (category in weights) ? weights[category] : 99;
 
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
@@ -707,18 +711,18 @@ class PortfolioGallery {
   }
 }
 
-PortfolioGallery.CATEGORY_WEIGHTS = new Map([
-  ['weddings', 0],
-  ['pre-wedding-photos-and-videos', 1],
-  ['engagement', 2],
-  ['haldi', 3],
-  ['maternity', 4],
-  ['portraits', 5],
-  ['cinematics', 6],
-  ['kids', 7],
-  ['events', 8],
-  ['commercial', 9]
-]);
+PortfolioGallery.CATEGORY_WEIGHTS = {
+  'weddings': 0,
+  'pre-wedding-photos-and-videos': 1,
+  'engagement': 2,
+  'haldi': 3,
+  'maternity': 4,
+  'portraits': 5,
+  'cinematics': 6,
+  'kids': 7,
+  'events': 8,
+  'commercial': 9
+};
 
 // ========================================
 // INITIALIZE
