@@ -77,8 +77,6 @@ class GalleryState {
 // GALLERY RENDERER
 // ========================================
 class GalleryRenderer {
-  static categoryCache = new Map();
-
   constructor(state, container) {
     this.state = state;
     this.container = container;
@@ -228,14 +226,15 @@ class GalleryRenderer {
 
   formatCategory(category) {
     if (!category) return '';
-    if (GalleryRenderer.categoryCache.has(category)) {
-      return GalleryRenderer.categoryCache.get(category);
+    const cache = GalleryRenderer.categoryCache;
+    if (cache.has(category)) {
+      return cache.get(category);
     }
     const formatted = category
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-    GalleryRenderer.categoryCache.set(category, formatted);
+    cache.set(category, formatted);
     return formatted;
   }
 
@@ -326,6 +325,7 @@ class GalleryRenderer {
     `;
   }
 }
+GalleryRenderer.categoryCache = new Map();
 
 // ========================================
 // MODAL VIEWER (Enhanced)
@@ -653,28 +653,16 @@ class PortfolioGallery {
     return response.json();
   }
 
-  static CATEGORY_WEIGHTS = new Map([
-    ['weddings', 0],
-    ['pre-wedding-photos-and-videos', 1],
-    ['engagement', 2],
-    ['haldi', 3],
-    ['maternity', 4],
-    ['portraits', 5],
-    ['cinematics', 6],
-    ['kids', 7],
-    ['events', 8],
-    ['commercial', 9]
-  ]);
-
   processData(data) {
     const allItems = [];
     const images = data.portfolio?.images || {};
+    const weights = PortfolioGallery.CATEGORY_WEIGHTS;
 
     // Flatten all category images with pre-calculated metadata (Schwartzian Transform approach)
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
         const formattedCategory = this.formatCategoryName(category);
-        const catWeight = PortfolioGallery.CATEGORY_WEIGHTS.get(category) ?? 99;
+        const catWeight = weights.has(category) ? weights.get(category) : 99;
 
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
@@ -716,6 +704,19 @@ class PortfolioGallery {
     this.setup();
   }
 }
+
+PortfolioGallery.CATEGORY_WEIGHTS = new Map([
+  ['weddings', 0],
+  ['pre-wedding-photos-and-videos', 1],
+  ['engagement', 2],
+  ['haldi', 3],
+  ['maternity', 4],
+  ['portraits', 5],
+  ['cinematics', 6],
+  ['kids', 7],
+  ['events', 8],
+  ['commercial', 9]
+]);
 
 // ========================================
 // INITIALIZE
