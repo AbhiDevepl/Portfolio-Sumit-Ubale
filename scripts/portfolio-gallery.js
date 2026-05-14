@@ -104,9 +104,8 @@ class GalleryRenderer {
       }
     });
 
-    // Clear container and append new items
-    this.container.innerHTML = '';
-    this.container.appendChild(fragment);
+    // Clear container and append new items efficiently
+    this.container.replaceChildren(fragment);
 
     // Trigger reveal animations
     this.triggerRevealAnimations();
@@ -220,47 +219,51 @@ class GalleryRenderer {
 
   formatCategory(category) {
     if (!category) return '';
-    return category
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    // Reuse the memoized formatter from the main controller
+    return window.PortfolioGallery?.formatCategoryName?.(category) || category;
   }
 
   openLightbox(index) {
     if (!window.Core?.Lightbox) return;
 
     const state = this.state.getState();
-    const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
+    // Lightbox must receive items with an 'originalIndex' property to track position correctly.
+    // We do this mapping once when the lightbox opens.
+    const items = (state.filteredList.length > 0 ? state.filteredList : state.mediaList)
+      .map((item, i) => ({
+        ...item,
+        originalIndex: i
+      }));
 
-    // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
-
-    window.Core.Lightbox.open(index, lightboxItems);
+    window.Core.Lightbox.open(index, items);
   }
 
   triggerRevealAnimations() {
     const items = this.container.querySelectorAll('.gallery-item');
 
-    if (window.GSAP && window.ScrollTrigger) {
-      // Use GSAP if available
-      window.GSAP.fromTo(items,
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          stagger: 0.05,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: this.container,
-            start: 'top 80%'
+    const gsap = window.gsap || window.GSAP;
+    const scrollTrigger = window.ScrollTrigger;
+
+    if (gsap && scrollTrigger) {
+      // Use ScrollTrigger.batch for high-performance entrance animations
+      // This ensures we only animate items as they enter the viewport,
+      // which is critical for a gallery with 1,200+ items.
+      scrollTrigger.batch(items, {
+        onEnter: (batch) => gsap.fromTo(batch,
+          { opacity: 0, y: 30, scale: 0.98 },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.5,
+            stagger: 0.04,
+            ease: 'power2.out',
+            overwrite: true
           }
-        }
-      );
+        ),
+        start: 'top 90%',
+        once: true // Only animate once for performance
+      });
     } else {
       // Fallback to CSS animations
       items.forEach((item, index) => {
@@ -575,6 +578,13 @@ class PortfolioGallery {
     // Initialize renderer
     this.renderer = new GalleryRenderer(this.state, this.container);
 
+    // Subscribe to state changes to trigger re-renders on filtering
+    this.state.subscribe((state) => {
+      // If we're in the 'all' category, use the full mediaList, otherwise use the filtered subset.
+      const items = state.activeCategory === 'all' ? state.mediaList : state.filteredList;
+      this.renderer.render(items, state.activeCategory);
+    });
+
     // Show loading state
     this.renderer.showLoading();
     this.state.setLoading(true);
@@ -627,47 +637,36 @@ class PortfolioGallery {
   processData(data) {
     const allItems = [];
     const images = data.portfolio?.images || {};
+    const weights = PortfolioGallery.CATEGORY_WEIGHTS;
 
     // Flatten all category images
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
+        const weight = weights.get(category) ?? 99;
+        const catName = this.formatCategoryName(category);
+
         items.forEach((item, index) => {
           allItems.push({
             ...item,
             category,
+            _catWeight: weight,
             order: index,
             // Ensure consistent property names
             id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            title: item.title || `${catName} ${index + 1}`,
+            alt: item.alt || item.title || `${catName} photography`,
             type: item.type || 'image'
           });
         });
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Sort by pre-calculated category weight, then by item order
+    // Schwartzian Transform pattern avoids redundant indexOf calls in the sort loop
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+      if (a._catWeight !== b._catWeight) {
+        return a._catWeight - b._catWeight;
       }
-
       return (a.order || 0) - (b.order || 0);
     });
 
@@ -675,10 +674,18 @@ class PortfolioGallery {
   }
 
   formatCategoryName(slug) {
-    return slug
+    if (!slug) return '';
+    if (PortfolioGallery.MEMOIZED_CATEGORIES.has(slug)) {
+      return PortfolioGallery.MEMOIZED_CATEGORIES.get(slug);
+    }
+
+    const formatted = slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+
+    PortfolioGallery.MEMOIZED_CATEGORIES.set(slug, formatted);
+    return formatted;
   }
 
   retry() {
@@ -690,4 +697,20 @@ class PortfolioGallery {
 // ========================================
 // INITIALIZE
 // ========================================
+
+// Performance optimizations: O(1) lookups and memoization
+PortfolioGallery.CATEGORY_WEIGHTS = new Map([
+  ['weddings', 0],
+  ['pre-wedding-photos-and-videos', 1],
+  ['engagement', 2],
+  ['haldi', 3],
+  ['maternity', 4],
+  ['portraits', 5],
+  ['cinematics', 6],
+  ['kids', 7],
+  ['events', 8],
+  ['commercial', 9]
+]);
+PortfolioGallery.MEMOIZED_CATEGORIES = new Map();
+
 window.PortfolioGallery = new PortfolioGallery();
