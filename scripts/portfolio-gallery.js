@@ -552,6 +552,15 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+
+    // Optimization: Listen for state changes to trigger re-renders
+    // This ensures that any filter changes automatically update the UI
+    this.state.subscribe((state) => {
+      if (this.renderer) {
+        this.renderer.render(state.filteredList, state.activeCategory);
+      }
+    });
+
     this.init();
   }
 
@@ -631,6 +640,10 @@ class PortfolioGallery {
     // Flatten all category images
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
+        // Optimization: Memoize formatted category name to avoid redundant string work
+        const formattedCategory = this.formatCategoryName(category);
+        const catWeight = PortfolioGallery.CATEGORY_WEIGHTS.get(category) ?? 999;
+
         items.forEach((item, index) => {
           allItems.push({
             ...item,
@@ -638,36 +651,21 @@ class PortfolioGallery {
             order: index,
             // Ensure consistent property names
             id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
+            title: item.title || `${formattedCategory} ${index + 1}`,
+            alt: item.alt || item.title || `${formattedCategory} photography`,
+            type: item.type || 'image',
+            // Optimization: Attach weight during map phase for O(1) sort comparison (Schwartzian Transform)
+            _catWeight: catWeight
           });
         });
       }
     }
 
     // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+      if (a._catWeight !== b._catWeight) {
+        return a._catWeight - b._catWeight;
       }
-
       return (a.order || 0) - (b.order || 0);
     });
 
@@ -675,10 +673,21 @@ class PortfolioGallery {
   }
 
   formatCategoryName(slug) {
-    return slug
+    if (!slug) return '';
+    // Optimization: Internal cache for category formatting
+    if (this._categoryCache && this._categoryCache.has(slug)) {
+      return this._categoryCache.get(slug);
+    }
+
+    if (!this._categoryCache) this._categoryCache = new Map();
+
+    const formatted = slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+
+    this._categoryCache.set(slug, formatted);
+    return formatted;
   }
 
   retry() {
@@ -691,3 +700,20 @@ class PortfolioGallery {
 // INITIALIZE
 // ========================================
 window.PortfolioGallery = new PortfolioGallery();
+
+/**
+ * Optimization: Pre-computed category weights for O(1) lookup during processing.
+ * Assigned to class to maintain ES6 compatibility while improving performance.
+ */
+PortfolioGallery.CATEGORY_WEIGHTS = new Map([
+  ['weddings', 0],
+  ['pre-wedding-photos-and-videos', 1],
+  ['engagement', 2],
+  ['haldi', 3],
+  ['maternity', 4],
+  ['portraits', 5],
+  ['cinematics', 6],
+  ['kids', 7],
+  ['events', 8],
+  ['commercial', 9]
+]);
