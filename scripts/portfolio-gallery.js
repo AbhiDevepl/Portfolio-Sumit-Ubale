@@ -553,14 +553,6 @@ class PortfolioGallery {
     this.modal = null;
     this.filterController = null;
 
-    // Optimization: Listen for state changes to trigger re-renders
-    // This ensures that any filter changes automatically update the UI
-    this.state.subscribe((state) => {
-      if (this.renderer) {
-        this.renderer.render(state.filteredList, state.activeCategory);
-      }
-    });
-
     this.init();
   }
 
@@ -587,6 +579,12 @@ class PortfolioGallery {
     // Show loading state
     this.renderer.showLoading();
     this.state.setLoading(true);
+
+    // Optimization: Listen for state changes to trigger re-renders
+    // This ensures that any filter changes automatically update the UI
+    this.state.subscribe((state) => {
+       this.renderer.render(state.filteredList, state.activeCategory);
+    });
 
     try {
       // Fetch data
@@ -642,7 +640,8 @@ class PortfolioGallery {
       if (Array.isArray(items)) {
         // Optimization: Memoize formatted category name to avoid redundant string work
         const formattedCategory = this.formatCategoryName(category);
-        const catWeight = PortfolioGallery.CATEGORY_WEIGHTS.get(category) ?? 999;
+        const weightLookup = PortfolioGallery.CATEGORY_WEIGHTS.get(category);
+        const catWeight = (weightLookup !== undefined && weightLookup !== null) ? weightLookup : 999;
 
         items.forEach((item, index) => {
           allItems.push({
