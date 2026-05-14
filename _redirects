@@ -1,0 +1,11 @@
+# Vercel redirect rules for proper routing
+
+# Force trailing slashes for consistency
+# /about -> /about/
+
+# SPA fallback for any client-side routes (if needed in future)
+# /* /index.html 200
+
+# Redirects for common patterns (optional - uncomment if needed)
+# /home / 301
+# /index.html / 301

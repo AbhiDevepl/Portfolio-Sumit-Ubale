@@ -63,103 +63,23 @@ window.GalleryManager = {
   
   filterGallery(category) {
     this.activeCategory = category;
-    
+
+    // Update button active state
     document.querySelectorAll('.category-btn').forEach(btn => {
       const isActive = btn.dataset.category === category;
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-selected', isActive);
     });
-    
-    const items = Array.from(document.querySelectorAll('.gallery-item'));
-    const toShow = [];
-    const toHide = [];
 
-    items.forEach((item) => {
-      const isMatch = category === 'all' || item.dataset.category === category;
-      item.classList.toggle('is-filtered-in', isMatch);
-      item.classList.toggle('is-filtered-out', !isMatch);
-
-      if (isMatch) {
-        toShow.push(item);
-      } else {
-        toHide.push(item);
-      }
-    });
-
-    if (window.gsap) {
-      // Use batch animations instead of individual tweens to reduce main-thread overhead
-      gsap.killTweensOf(items);
-
-      if (toHide.length > 0) {
-        gsap.to(toHide, {
-          autoAlpha: 0,
-          scale: 0.96,
-          y: 10,
-          duration: 0.24,
-          ease: 'power2.out',
-          overwrite: true,
-          onComplete: () => {
-            toHide.forEach(item => {
-              item.classList.add('is-hidden');
-              item.style.display = 'none';
-              item.style.pointerEvents = 'none';
-            });
-          }
-        });
-      }
-
-      if (toShow.length > 0) {
-        toShow.forEach(item => {
-          item.classList.remove('is-hidden');
-          gsap.set(item, { display: '', pointerEvents: 'auto' });
-        });
-
-        gsap.fromTo(
-          toShow,
-          { autoAlpha: 0, scale: 0.96, y: 14 },
-          {
-            autoAlpha: 1,
-            scale: 1,
-            y: 0,
-            duration: 0.35,
-            stagger: {
-              each: 0.015,
-              from: "start"
-            },
-            ease: 'power2.out',
-            overwrite: true
-          }
-        );
-      }
-    } else {
-      // Fallback if GSAP is not available
-      items.forEach(item => {
-        const isMatch = toShow.includes(item);
-        item.classList.toggle('is-hidden', !isMatch);
-        item.style.display = isMatch ? '' : 'none';
-        item.style.opacity = isMatch ? '1' : '0';
-        item.style.transform = isMatch ? 'scale(1)' : 'scale(0.96)';
-        item.style.pointerEvents = isMatch ? 'auto' : 'none';
-      });
+    // Re-render gallery with filtered items from JSON
+    if (window.contentLoader && window.contentLoader.renderCategory) {
+      window.contentLoader.renderCategory(category);
     }
 
-    this.filteredItems = toShow;
+    // Update URL
+    this.updateURL(category);
 
-    const grid = document.getElementById('gallery-grid');
-    if (grid) {
-      if (category === 'cinematics') {
-        grid.classList.add('layout-centered');
-      } else {
-        grid.classList.remove('layout-centered');
-      }
-    }
-
-    const moreContainer = document.getElementById('portfolio-more');
-    if (moreContainer) {
-      moreContainer.style.display = 'none';
-      moreContainer.style.opacity = '0';
-    }
-    
+    // Refresh ScrollTrigger if available
     if (window.ScrollTrigger) {
       setTimeout(() => ScrollTrigger.refresh(), 200);
     }
