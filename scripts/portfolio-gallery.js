@@ -580,12 +580,6 @@ class PortfolioGallery {
     this.renderer.showLoading();
     this.state.setLoading(true);
 
-    // Optimization: Listen for state changes to trigger re-renders
-    // This ensures that any filter changes automatically update the UI
-    this.state.subscribe((state) => {
-       this.renderer.render(state.filteredList, state.activeCategory);
-    });
-
     try {
       // Fetch data
       const data = await this.fetchData();
@@ -636,7 +630,8 @@ class PortfolioGallery {
     const images = (data.portfolio && data.portfolio.images) ? data.portfolio.images : {};
 
     // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
+    Object.keys(images).forEach((category) => {
+      const items = images[category];
       if (Array.isArray(items)) {
         // Optimization: Memoize formatted category name to avoid redundant string work
         const formattedCategory = this.formatCategoryName(category);
@@ -646,19 +641,19 @@ class PortfolioGallery {
         items.forEach((item, index) => {
           allItems.push({
             ...item,
-            category,
+            category: category,
             order: index,
             // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${formattedCategory} ${index + 1}`,
-            alt: item.alt || item.title || `${formattedCategory} photography`,
+            id: item.id || (category + "-" + index),
+            title: item.title || (formattedCategory + " " + (index + 1)),
+            alt: item.alt || item.title || (formattedCategory + " photography"),
             type: item.type || 'image',
             // Optimization: Attach weight during map phase for O(1) sort comparison (Schwartzian Transform)
             _catWeight: catWeight
           });
         });
       }
-    }
+    });
 
     // Sort by category order, then by item order
     allItems.sort((a, b) => {
