@@ -104,9 +104,9 @@ class GalleryRenderer {
       }
     });
 
-    // Clear container and append new items
-    this.container.innerHTML = '';
-    this.container.appendChild(fragment);
+    // Clear container and append new items efficiently
+    // replaceChildren is faster than innerHTML = '' + appendChild for large fragments
+    this.container.replaceChildren(fragment);
 
     // Trigger reveal animations
     this.triggerRevealAnimations();
@@ -218,12 +218,19 @@ class GalleryRenderer {
     return icon;
   }
 
+  static categoryCache = new Map();
+
   formatCategory(category) {
     if (!category) return '';
-    return category
+    if (GalleryRenderer.categoryCache.has(category)) {
+      return GalleryRenderer.categoryCache.get(category);
+    }
+    const formatted = category
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+    GalleryRenderer.categoryCache.set(category, formatted);
+    return formatted;
   }
 
   openLightbox(index) {
@@ -247,13 +254,17 @@ class GalleryRenderer {
 
     if (window.GSAP && window.ScrollTrigger) {
       // Use GSAP if available
+      // For large lists, we cap the total stagger time to avoid long delays for items further down
       window.GSAP.fromTo(items,
         { opacity: 0, y: 40 },
         {
           opacity: 1,
           y: 0,
           duration: 0.6,
-          stagger: 0.05,
+          stagger: {
+            amount: 1.5, // Total stagger for all visible items capped at 1.5s
+            from: "start"
+          },
           ease: 'power2.out',
           scrollTrigger: {
             trigger: this.container,
@@ -266,7 +277,9 @@ class GalleryRenderer {
       items.forEach((item, index) => {
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
+        // Cap stagger delay to 1s to ensure items deep in the list reveal promptly
+        const delay = Math.min(index * 0.05, 1);
+        item.style.transition = `opacity 0.5s ease ${delay}s, transform 0.5s ease ${delay}s`;
 
         setTimeout(() => {
           item.style.opacity = '1';
@@ -593,6 +606,11 @@ class PortfolioGallery {
       // Initial render
       this.renderer.render(allItems, 'all');
 
+      // Subscribe to state changes for re-rendering when filters change
+      this.state.subscribe((state) => {
+        this.renderer.render(state.filteredList, state.activeCategory);
+      });
+
       // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
       if (chipsContainer) {
@@ -624,61 +642,82 @@ class PortfolioGallery {
     return response.json();
   }
 
-  processData(data) {
-    const allItems = [];
-    const images = data.portfolio?.images || {};
+  // Cache for category weights and formatted names to optimize processing of 1,000+ items
+  static categoryWeights = new Map([
+    ['hero', 0],
+    ['weddings', 1],
+    ['pre-wedding-photos-and-videos', 2],
+    ['perwedding', 2], // Supporting variant slug
+    ['engagement', 3],
+    ['haldi', 4],
+    ['maternity', 5],
+    ['portraits', 6],
+    ['candid', 7],
+    ['cinematics', 8],
+    ['video', 8], // Supporting variant slug
+    ['kids', 9],
+    ['model', 10],
+    ['events', 11],
+    ['commercial', 12]
+  ]);
 
-    // Flatten all category images
+  processData(data) {
+    const images = data.portfolio?.images || {};
+    const mapped = [];
+
+    // O(1) weight lookup for sort optimization
+    const weights = PortfolioGallery.categoryWeights;
+
+    // Use Schwartzian Transform to minimize work during sort
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
+        const weight = weights.get(category) ?? 999;
+        const formatted = this.formatCategoryName(category);
+
         items.forEach((item, index) => {
-          allItems.push({
+          const processedItem = {
             ...item,
             category,
             order: index,
-            // Ensure consistent property names
             id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            title: item.title || `${formatted} ${index + 1}`,
+            alt: item.alt || item.title || `${formatted} photography`,
             type: item.type || 'image'
+          };
+
+          mapped.push({
+            item: processedItem,
+            weight,
+            order: index
           });
         });
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
-      }
-
-      return (a.order || 0) - (b.order || 0);
+    // Sort by pre-calculated weights and index
+    mapped.sort((a, b) => {
+      if (a.weight !== b.weight) return a.weight - b.weight;
+      return a.order - b.order;
     });
 
-    return allItems;
+    return mapped.map(entry => entry.item);
   }
 
+  /**
+   * Memoized category name formatter
+   */
   formatCategoryName(slug) {
-    return slug
+    if (!slug) return '';
+    // Share cache with renderer if possible, or use its own
+    if (GalleryRenderer.categoryCache.has(slug)) {
+      return GalleryRenderer.categoryCache.get(slug);
+    }
+    const formatted = slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+    GalleryRenderer.categoryCache.set(slug, formatted);
+    return formatted;
   }
 
   retry() {
