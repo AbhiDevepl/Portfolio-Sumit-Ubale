@@ -143,7 +143,7 @@ class GalleryRenderer {
       }, { once: true });
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
 
@@ -174,7 +174,7 @@ class GalleryRenderer {
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
@@ -218,8 +218,6 @@ class GalleryRenderer {
     return icon;
   }
 
-  static categoryCache = new Map();
-
   formatCategory(category) {
     if (!category) return '';
     if (GalleryRenderer.categoryCache.has(category)) {
@@ -234,7 +232,7 @@ class GalleryRenderer {
   }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -331,7 +329,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
 
@@ -381,7 +379,7 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
@@ -391,7 +389,7 @@ class ModalViewer {
       this.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    const state = window.PortfolioGallery && window.PortfolioGallery.state && window.PortfolioGallery.state.getState();
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -406,7 +404,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -418,7 +416,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -623,7 +621,7 @@ class PortfolioGallery {
       this.modal.init();
 
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
@@ -642,36 +640,18 @@ class PortfolioGallery {
     return response.json();
   }
 
-  // Cache for category weights and formatted names to optimize processing of 1,000+ items
-  static categoryWeights = new Map([
-    ['hero', 0],
-    ['weddings', 1],
-    ['pre-wedding-photos-and-videos', 2],
-    ['perwedding', 2], // Supporting variant slug
-    ['engagement', 3],
-    ['haldi', 4],
-    ['maternity', 5],
-    ['portraits', 6],
-    ['candid', 7],
-    ['cinematics', 8],
-    ['video', 8], // Supporting variant slug
-    ['kids', 9],
-    ['model', 10],
-    ['events', 11],
-    ['commercial', 12]
-  ]);
-
   processData(data) {
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
     const mapped = [];
 
     // O(1) weight lookup for sort optimization
     const weights = PortfolioGallery.categoryWeights;
 
     // Use Schwartzian Transform to minimize work during sort
-    for (const [category, items] of Object.entries(images)) {
+    Object.keys(images).forEach((category) => {
+      const items = images[category];
       if (Array.isArray(items)) {
-        const weight = weights.get(category) ?? 999;
+        const weight = weights.has(category) ? weights.get(category) : 999;
         const formatted = this.formatCategoryName(category);
 
         items.forEach((item, index) => {
@@ -692,7 +672,7 @@ class PortfolioGallery {
           });
         });
       }
-    }
+    });
 
     // Sort by pre-calculated weights and index
     mapped.sort((a, b) => {
@@ -725,6 +705,32 @@ class PortfolioGallery {
     this.setup();
   }
 }
+
+// ========================================
+// ES6 COMPATIBILITY EXTENSIONS
+// ========================================
+// Assign static-like properties after class definition to ensure
+// compatibility with Cloudflare Workers build process (ES6 support only).
+
+GalleryRenderer.categoryCache = new Map();
+
+PortfolioGallery.categoryWeights = new Map([
+  ['hero', 0],
+  ['weddings', 1],
+  ['pre-wedding-photos-and-videos', 2],
+  ['perwedding', 2],
+  ['engagement', 3],
+  ['haldi', 4],
+  ['maternity', 5],
+  ['portraits', 6],
+  ['candid', 7],
+  ['cinematics', 8],
+  ['video', 8],
+  ['kids', 9],
+  ['model', 10],
+  ['events', 11],
+  ['commercial', 12]
+]);
 
 // ========================================
 // INITIALIZE
