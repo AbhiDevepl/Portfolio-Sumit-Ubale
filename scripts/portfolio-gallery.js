@@ -105,8 +105,9 @@ class GalleryRenderer {
     });
 
     // Clear container and append new items efficiently
-    // replaceChildren is faster than innerHTML = '' + appendChild for large fragments
-    this.container.replaceChildren(fragment);
+    // innerHTML = '' followed by appendChild is highly compatible and efficient with fragments
+    this.container.innerHTML = '';
+    this.container.appendChild(fragment);
 
     // Trigger reveal animations
     this.triggerRevealAnimations();
@@ -115,12 +116,12 @@ class GalleryRenderer {
   createGalleryItem(item, index) {
     const isVideo = item.type === 'video';
     const article = document.createElement('article');
-    article.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'}`;
+    article.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image');
     article.dataset.index = index;
     article.dataset.category = item.category || '';
     article.setAttribute('tabindex', '0');
     article.setAttribute('role', 'listitem');
-    article.setAttribute('aria-label', `${item.title || 'Gallery item'}${isVideo ? ' (video)' : ''}`);
+    article.setAttribute('aria-label', (item.title || 'Gallery item') + (isVideo ? ' (video)' : ''));
 
     // Create media element
     const media = document.createElement(isVideo ? 'video' : 'img');
@@ -182,10 +183,8 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+    overlay.innerHTML = '<h3 class="gallery-item-title">' + (item.title || '') + '</h3>' +
+                        '<p class="gallery-item-category">' + this.formatCategory(item.category) + '</p>';
     article.appendChild(overlay);
 
     // Click handler
@@ -210,11 +209,7 @@ class GalleryRenderer {
     const icon = document.createElement('div');
     icon.className = 'gallery-video-play-icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.innerHTML = `
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    `;
+    icon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
     return icon;
   }
 
@@ -225,7 +220,7 @@ class GalleryRenderer {
     }
     const formatted = category
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
       .join(' ');
     GalleryRenderer.categoryCache.set(category, formatted);
     return formatted;
@@ -238,11 +233,12 @@ class GalleryRenderer {
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map(function(item, i) {
+        const newItem = Object.assign({}, item);
+        newItem.type = item.type || 'image';
+        newItem.originalIndex = i;
+        return newItem;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -277,7 +273,7 @@ class GalleryRenderer {
         item.style.transform = 'translateY(20px)';
         // Cap stagger delay to 1s to ensure items deep in the list reveal promptly
         const delay = Math.min(index * 0.05, 1);
-        item.style.transition = `opacity 0.5s ease ${delay}s, transform 0.5s ease ${delay}s`;
+        item.style.transition = 'opacity 0.5s ease ' + delay + 's, transform 0.5s ease ' + delay + 's';
 
         setTimeout(() => {
           item.style.opacity = '1';
@@ -288,28 +284,11 @@ class GalleryRenderer {
   }
 
   showLoading() {
-    this.container.innerHTML = `
-      <div class="gallery-loading-state">
-        <div class="gallery-loading-spinner"></div>
-        <p>Loading portfolio...</p>
-      </div>
-    `;
+    this.container.innerHTML = '<div class="gallery-loading-state"><div class="gallery-loading-spinner"></div><p>Loading portfolio...</p></div>';
   }
 
   showError(message) {
-    this.container.innerHTML = `
-      <div class="gallery-error-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 8v4m0 4h.01"/>
-        </svg>
-        <h3>Failed to load portfolio</h3>
-        <p>${message}</p>
-        <button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">
-          Try Again
-        </button>
-      </div>
-    `;
+    this.container.innerHTML = '<div class="gallery-error-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg><h3>Failed to load portfolio</h3><p>' + message + '</p><button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">Try Again</button></div>';
   }
 }
 
@@ -544,7 +523,7 @@ class FilterController {
     const category = params.get('category');
 
     if (category) {
-      const chip = this.chipsContainer.querySelector(`[data-category="${category}"]`);
+      const chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
       if (chip) {
         this.setActiveChip(chip);
         this.filterByCategory(category);
@@ -655,19 +634,17 @@ class PortfolioGallery {
         const formatted = this.formatCategoryName(category);
 
         items.forEach((item, index) => {
-          const processedItem = {
-            ...item,
-            category,
-            order: index,
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${formatted} ${index + 1}`,
-            alt: item.alt || item.title || `${formatted} photography`,
-            type: item.type || 'image'
-          };
+          const processedItem = Object.assign({}, item);
+          processedItem.category = category;
+          processedItem.order = index;
+          processedItem.id = item.id || (category + '-' + index);
+          processedItem.title = item.title || (formatted + ' ' + (index + 1));
+          processedItem.alt = item.alt || item.title || (formatted + ' photography');
+          processedItem.type = item.type || 'image';
 
           mapped.push({
             item: processedItem,
-            weight,
+            weight: weight,
             order: index
           });
         });
@@ -680,7 +657,7 @@ class PortfolioGallery {
       return a.order - b.order;
     });
 
-    return mapped.map(entry => entry.item);
+    return mapped.map(function(entry) { return entry.item; });
   }
 
   /**
@@ -694,7 +671,7 @@ class PortfolioGallery {
     }
     const formatted = slug
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
       .join(' ');
     GalleryRenderer.categoryCache.set(slug, formatted);
     return formatted;
@@ -714,23 +691,22 @@ class PortfolioGallery {
 
 GalleryRenderer.categoryCache = new Map();
 
-PortfolioGallery.categoryWeights = new Map([
-  ['hero', 0],
-  ['weddings', 1],
-  ['pre-wedding-photos-and-videos', 2],
-  ['perwedding', 2],
-  ['engagement', 3],
-  ['haldi', 4],
-  ['maternity', 5],
-  ['portraits', 6],
-  ['candid', 7],
-  ['cinematics', 8],
-  ['video', 8],
-  ['kids', 9],
-  ['model', 10],
-  ['events', 11],
-  ['commercial', 12]
-]);
+PortfolioGallery.categoryWeights = new Map();
+PortfolioGallery.categoryWeights.set('hero', 0);
+PortfolioGallery.categoryWeights.set('weddings', 1);
+PortfolioGallery.categoryWeights.set('pre-wedding-photos-and-videos', 2);
+PortfolioGallery.categoryWeights.set('perwedding', 2);
+PortfolioGallery.categoryWeights.set('engagement', 3);
+PortfolioGallery.categoryWeights.set('haldi', 4);
+PortfolioGallery.categoryWeights.set('maternity', 5);
+PortfolioGallery.categoryWeights.set('portraits', 6);
+PortfolioGallery.categoryWeights.set('candid', 7);
+PortfolioGallery.categoryWeights.set('cinematics', 8);
+PortfolioGallery.categoryWeights.set('video', 8);
+PortfolioGallery.categoryWeights.set('kids', 9);
+PortfolioGallery.categoryWeights.set('model', 10);
+PortfolioGallery.categoryWeights.set('events', 11);
+PortfolioGallery.categoryWeights.set('commercial', 12);
 
 // ========================================
 // INITIALIZE
