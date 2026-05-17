@@ -4,7 +4,7 @@
  */
 
 class ContentLoader {
-  static CATEGORY_NAMES = {
+  CATEGORY_NAMES = {
     'weddings': 'Weddings',
     'portraits': 'Portraits',
     'commercial': 'Commercial',
@@ -76,7 +76,7 @@ class ContentLoader {
    * Helper to get category name from slug
    */
   getCategoryName(category) {
-    return ContentLoader.CATEGORY_NAMES[category] || category;
+    return this.CATEGORY_NAMES[category] || category;
   }
 
   /**
@@ -89,7 +89,7 @@ class ContentLoader {
 
     if (category === 'all') {
       // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      return Array.prototype.concat.apply([], Object.values(this.mediaData));
     }
 
     return this.mediaData[category] || [];
@@ -129,11 +129,11 @@ class ContentLoader {
 
       // Click handler for lightbox
       el.addEventListener('click', () => {
-        const visibleItems = window.GalleryManager?.getVisibleData?.() || items;
+        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : items;
         const itemIndex = visibleItems.findIndex(entry => entry.originalIndex === index);
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
-        if (window.Core?.Lightbox) {
+        if (window.Core && window.Core.Lightbox) {
           window.Core.Lightbox.open(targetIndex, visibleItems);
         }
       });
@@ -188,7 +188,11 @@ class ContentLoader {
     this.initLazyLoader();
 
     // Update allImages cache for lightbox (with original index for lightbox navigation)
-    this.allImages = items.map((item, idx) => ({ ...item, originalIndex: idx }));
+    this.allImages = items.map((item, idx) => {
+      const newItem = Object.assign({}, item);
+      newItem.originalIndex = idx;
+      return newItem;
+    });
     if (window.GalleryManager) {
       window.GalleryManager.allImages = this.allImages;
     }
@@ -230,7 +234,7 @@ class ContentLoader {
   populateEvents() {
     const eventsGrid = document.querySelector('.events-grid');
     
-    if (!eventsGrid || !this.data?.recentEvents) {
+    if (!eventsGrid || !(this.data && this.data.recentEvents)) {
       console.warn('Events grid or data not found');
       return;
     }
@@ -300,7 +304,7 @@ class ContentLoader {
   populateAbout() {
     // Populate publications
     const publicationsContainer = document.getElementById('publications');
-    if (publicationsContainer && this.data?.socialProof?.publications) {
+    if (publicationsContainer && this.data && this.data.socialProof && this.data.socialProof.publications) {
       publicationsContainer.innerHTML = '';
       this.data.socialProof.publications.forEach(pub => {
         const pubItem = document.createElement('span');
@@ -312,7 +316,7 @@ class ContentLoader {
 
     // Populate awards
     const awardsContainer = document.getElementById('awards');
-    if (awardsContainer && this.data?.socialProof?.awards) {
+    if (awardsContainer && this.data && this.data.socialProof && this.data.socialProof.awards) {
       awardsContainer.innerHTML = '';
       this.data.socialProof.awards.forEach(award => {
         const awardItem = document.createElement('li');
@@ -323,7 +327,7 @@ class ContentLoader {
 
     // Populate clients
     const clientsContainer = document.getElementById('clients');
-    if (clientsContainer && this.data?.socialProof?.clients) {
+    if (clientsContainer && this.data && this.data.socialProof && this.data.socialProof.clients) {
       clientsContainer.innerHTML = '';
       this.data.socialProof.clients.forEach(client => {
         const clientItem = document.createElement('span');

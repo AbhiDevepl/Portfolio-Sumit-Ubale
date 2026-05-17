@@ -245,11 +245,12 @@ class GalleryRenderer {
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map((item, i) => {
+      const newItem = Object.assign({}, item);
+      newItem.type = item.type || "image";
+      newItem.originalIndex = i;
+      return newItem;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -674,18 +675,17 @@ class PortfolioGallery {
       const catName = this.formatCategoryName(category);
 
       items.forEach((item, index) => {
-        flattened.push({
-          ...item,
-          category: category,
-          _catWeight: catWeight, // Hidden weight for efficient sorting
-          order: index,
-          id: item.id || `${category}-${index}`,
-          title: item.title || `${catName} ${index + 1}`,
-          alt: item.alt || item.title || `${catName} photography`,
-          type: item.type || 'image'
+        const entry = Object.assign({}, item);
+        entry.category = category;
+        entry._catWeight = catWeight;
+        entry.order = index;
+        entry.id = item.id || (category + "-" + index);
+        entry.title = item.title || (catName + " " + (index + 1));
+        entry.alt = item.alt || item.title || (catName + " photography");
+        entry.type = item.type || "image";
+        flattened.push(entry);
         });
-      });
-    });
+        });
 
     // 2. Sort using pre-calculated primitive weights
     // This avoids repeated Map lookups or string manipulations during sort
