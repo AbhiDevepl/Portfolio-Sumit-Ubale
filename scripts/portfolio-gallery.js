@@ -670,23 +670,6 @@ class PortfolioGallery {
     return allItems;
   }
 
-  /**
-   * Format slug to title case with memoization for performance
-   */
-  static formatCategoryName(slug) {
-    if (!slug) return '';
-    if (PortfolioGallery._categoryMemo.has(slug)) {
-      return PortfolioGallery._categoryMemo.get(slug);
-    }
-
-    const result = slug
-      .split('-')
-      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
-      .join(' ');
-
-    PortfolioGallery._categoryMemo.set(slug, result);
-    return result;
-  }
 
   retry() {
     this.state = new GalleryState();
@@ -711,10 +694,28 @@ PortfolioGallery.categoryOrder = [
 ];
 
 PortfolioGallery.categoryWeightMap = new Map(
-  PortfolioGallery.categoryOrder.map((cat, i) => [cat, i])
+  PortfolioGallery.categoryOrder.map(function(cat, i) { return [cat, i]; })
 );
 
 PortfolioGallery._categoryMemo = new Map();
+
+/**
+ * Format slug to title case with memoization for performance
+ */
+PortfolioGallery.formatCategoryName = function(slug) {
+  if (!slug) return '';
+  if (PortfolioGallery._categoryMemo.has(slug)) {
+    return PortfolioGallery._categoryMemo.get(slug);
+  }
+
+  const result = slug
+    .split('-')
+    .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
+    .join(' ');
+
+  PortfolioGallery._categoryMemo.set(slug, result);
+  return result;
+};
 
 // ========================================
 // INITIALIZE
