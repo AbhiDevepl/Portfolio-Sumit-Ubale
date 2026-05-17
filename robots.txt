@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sumit-ubale.netlify.app/sitemap.xml
