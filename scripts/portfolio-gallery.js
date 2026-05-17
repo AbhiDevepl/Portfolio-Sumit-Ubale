@@ -679,9 +679,9 @@ class PortfolioGallery {
           category: category,
           _catWeight: catWeight, // Hidden weight for efficient sorting
           order: index,
-          id: item.id || (category + '-' + index),
-          title: item.title || (catName + ' ' + (index + 1)),
-          alt: item.alt || item.title || (catName + ' photography'),
+          id: item.id || `${category}-${index}`,
+          title: item.title || `${catName} ${index + 1}`,
+          alt: item.alt || item.title || `${catName} photography`,
           type: item.type || 'image'
         });
       });
