@@ -104,9 +104,13 @@ class GalleryRenderer {
       }
     });
 
-    // Clear container and append new items
-    this.container.innerHTML = '';
-    this.container.appendChild(fragment);
+    // Efficiently clear and update DOM
+    if (this.container.replaceChildren) {
+      this.container.replaceChildren(fragment);
+    } else {
+      this.container.innerHTML = '';
+      this.container.appendChild(fragment);
+    }
 
     // Trigger reveal animations
     this.triggerRevealAnimations();
@@ -182,9 +186,10 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
+    const displayCat = item.formattedCategory || PortfolioGallery.formatCategoryName(item.category);
     overlay.innerHTML = `
       <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
+      <p class="gallery-item-category">${displayCat}</p>
     `;
     article.appendChild(overlay);
 
@@ -218,13 +223,6 @@ class GalleryRenderer {
     return icon;
   }
 
-  formatCategory(category) {
-    if (!category) return '';
-    return category
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }
 
   openLightbox(index) {
     if (!window.Core?.Lightbox) return;
@@ -470,7 +468,7 @@ class FilterController {
 
     const filtered = allItems.filter(item =>
       item.category === category ||
-      (item.categories && item.categories.includes(category))
+      (Array.isArray(item.categories) && item.categories.includes(category))
     );
 
     this.state.setFilteredList(filtered);
@@ -604,6 +602,11 @@ class PortfolioGallery {
       this.modal = new ModalViewer(this.state);
       this.modal.init();
 
+      // Subscribe to state changes for re-rendering
+      this.state.subscribe((state) => {
+        this.renderer.render(state.filteredList, state.activeCategory);
+      });
+
       // Initialize Core.Lightbox
       if (window.Core?.Lightbox) {
         window.Core.Lightbox.init();
@@ -625,60 +628,63 @@ class PortfolioGallery {
   }
 
   processData(data) {
+    const images = (data && data.portfolio && data.portfolio.images) ? data.portfolio.images : {};
+    const categoryWeights = PortfolioGallery.categoryWeightMap;
     const allItems = [];
-    const images = data.portfolio?.images || {};
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
+    // Flatten and enrich items with O(1) weight lookups
+    for (const category in images) {
+      if (!Object.prototype.hasOwnProperty.call(images, category)) continue;
+
+      const items = images[category];
+      if (!Array.isArray(items)) continue;
+
+      const catWeight = categoryWeights.has(category) ? categoryWeights.get(category) : 999;
+      const formattedCat = PortfolioGallery.formatCategoryName(category);
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        allItems.push({
+          ...item,
+          category,
+          formattedCategory: formattedCat,
+          order: i,
+          id: item.id || (category + "-" + i),
+          title: item.title || (formattedCat + " " + (i + 1)),
+          alt: item.alt || item.title || (formattedCat + " photography"),
+          type: item.type || 'image',
+          _catWeight: catWeight
         });
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Sort using pre-computed weights (Schwartzian Transform pattern)
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+      if (a._catWeight !== b._catWeight) {
+        return a._catWeight - b._catWeight;
       }
-
       return (a.order || 0) - (b.order || 0);
     });
 
     return allItems;
   }
 
-  formatCategoryName(slug) {
-    return slug
+  /**
+   * Format slug to title case with memoization for performance
+   */
+  static formatCategoryName(slug) {
+    if (!slug) return '';
+    if (PortfolioGallery._categoryMemo.has(slug)) {
+      return PortfolioGallery._categoryMemo.get(slug);
+    }
+
+    const result = slug
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
       .join(' ');
+
+    PortfolioGallery._categoryMemo.set(slug, result);
+    return result;
   }
 
   retry() {
@@ -686,6 +692,28 @@ class PortfolioGallery {
     this.setup();
   }
 }
+
+// ========================================
+// STATIC CONFIGURATION
+// ========================================
+PortfolioGallery.categoryOrder = [
+  'weddings',
+  'pre-wedding-photos-and-videos',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial'
+];
+
+PortfolioGallery.categoryWeightMap = new Map(
+  PortfolioGallery.categoryOrder.map((cat, i) => [cat, i])
+);
+
+PortfolioGallery._categoryMemo = new Map();
 
 // ========================================
 // INITIALIZE
