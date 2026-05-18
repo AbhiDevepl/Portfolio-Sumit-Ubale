@@ -234,7 +234,7 @@ class GalleryRenderer {
   }
 
   formatCategory(category) {
-    return PortfolioGallery.formatCategoryName(category);
+    return formatPortfolioCategoryName(category);
   }
 
   openLightbox(index) {
@@ -655,9 +655,9 @@ class PortfolioGallery {
       const items = images[category];
       if (!Array.isArray(items)) continue;
 
-      const formattedCat = PortfolioGallery.formatCategoryName(category);
-      const catWeight = PortfolioGallery.catWeights.has(category)
-        ? PortfolioGallery.catWeights.get(category)
+      const formattedCat = formatPortfolioCategoryName(category);
+      const catWeight = PORTFOLIO_CAT_WEIGHTS.has(category)
+        ? PORTFOLIO_CAT_WEIGHTS.get(category)
         : 999;
 
       for (let j = 0; j < items.length; j++) {
@@ -684,20 +684,6 @@ class PortfolioGallery {
     return allItems;
   }
 
-  static formatCategoryName(slug) {
-    if (!slug) return '';
-    const cached = PortfolioGallery.formatCache.get(slug);
-    if (cached) return cached;
-
-    const formatted = slug
-      .split('-')
-      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
-      .join(' ');
-
-    PortfolioGallery.formatCache.set(slug, formatted);
-    return formatted;
-  }
-
   retry() {
     this.state = new GalleryState();
     this.setup();
@@ -707,7 +693,7 @@ class PortfolioGallery {
 // ========================================
 // CONFIGURATION & CACHES
 // ========================================
-PortfolioGallery.categoryOrder = [
+const PORTFOLIO_CATEGORY_ORDER = [
   'weddings',
   'pre-wedding-photos-and-videos',
   'engagement',
@@ -720,8 +706,22 @@ PortfolioGallery.categoryOrder = [
   'commercial'
 ];
 
-PortfolioGallery.catWeights = new Map(PortfolioGallery.categoryOrder.map((cat, i) => [cat, i]));
-PortfolioGallery.formatCache = new Map();
+const PORTFOLIO_CAT_WEIGHTS = new Map(PORTFOLIO_CATEGORY_ORDER.map((cat, i) => [cat, i]));
+const PORTFOLIO_FORMAT_CACHE = new Map();
+
+function formatPortfolioCategoryName(slug) {
+  if (!slug) return '';
+  const cached = PORTFOLIO_FORMAT_CACHE.get(slug);
+  if (cached) return cached;
+
+  const formatted = slug
+    .split('-')
+    .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
+    .join(' ');
+
+  PORTFOLIO_FORMAT_CACHE.set(slug, formatted);
+  return formatted;
+}
 
 // ========================================
 // INITIALIZE

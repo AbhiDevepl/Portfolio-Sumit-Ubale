@@ -3,20 +3,20 @@
  * Fetches portfolio data from JSON and dynamically populates the page
  */
 
-class ContentLoader {
-  static CATEGORY_NAMES = {
-    'weddings': 'Weddings',
-    'portraits': 'Portraits',
-    'commercial': 'Commercial',
-    'events': 'Events',
-    'maternity': 'Maternity',
-    'kids': 'Kids',
-    'haldi': 'Haldi',
-    'engagement': 'Engagement',
-    'pre-wedding-photos-and-videos': 'Pre-Wedding',
-    'cinematics': 'Cinematics'
-  };
+const CONTENT_LOADER_CATEGORY_NAMES = {
+  'weddings': 'Weddings',
+  'portraits': 'Portraits',
+  'commercial': 'Commercial',
+  'events': 'Events',
+  'maternity': 'Maternity',
+  'kids': 'Kids',
+  'haldi': 'Haldi',
+  'engagement': 'Engagement',
+  'pre-wedding-photos-and-videos': 'Pre-Wedding',
+  'cinematics': 'Cinematics'
+};
 
+class ContentLoader {
   constructor() {
     this.dataUrl = '/data/portfolio.json';
     this.data = null;
@@ -76,7 +76,7 @@ class ContentLoader {
    * Helper to get category name from slug
    */
   getCategoryName(category) {
-    return ContentLoader.CATEGORY_NAMES[category] || category;
+    return CONTENT_LOADER_CATEGORY_NAMES[category] || category;
   }
 
   /**
@@ -88,8 +88,18 @@ class ContentLoader {
     if (!this.mediaData) return [];
 
     if (category === 'all') {
-      // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      // Flatten all category arrays (ES6 compatible)
+      const allItems = [];
+      const self = this;
+      Object.keys(this.mediaData).forEach(function(key) {
+        const catItems = self.mediaData[key];
+        if (Array.isArray(catItems)) {
+          catItems.forEach(function(item) {
+            allItems.push(item);
+          });
+        }
+      });
+      return allItems;
     }
 
     return this.mediaData[category] || [];
