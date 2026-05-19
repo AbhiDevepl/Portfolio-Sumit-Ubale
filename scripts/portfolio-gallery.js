@@ -44,6 +44,12 @@ function formatPortfolioCategoryName(slug) {
   return name;
 }
 
+/** Helper for Map lookups to handle missing keys gracefully */
+function getPortfolioCategoryWeight(category) {
+  const weight = PORTFOLIO_CAT_WEIGHTS.get(category);
+  return weight !== undefined ? weight : 999;
+}
+
 // ========================================
 // GALLERY STATE MANAGEMENT
 // ========================================
@@ -85,7 +91,7 @@ class GalleryState {
   patchState(updates) {
     let changed = false;
     for (const key in updates) {
-      if (this.hasOwnProperty(key) && this[key] !== updates[key]) {
+      if (Object.prototype.hasOwnProperty.call(this, key) && this[key] !== updates[key]) {
         this[key] = updates[key];
         changed = true;
       }
@@ -319,10 +325,10 @@ class GalleryRenderer {
       const maxStagger = 2.0; // max seconds
       const staggerStep = Math.min(0.05, maxStagger / items.length);
 
-      items.forEach((item, i) => {
+      items.forEach((item, index) => {
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        const delay = i * staggerStep;
+        const delay = index * staggerStep;
         item.style.transition = `opacity 0.5s ease ${delay}s, transform 0.5s ease ${delay}s`;
 
         setTimeout(() => {
@@ -520,8 +526,11 @@ class FilterController {
     const allItems = state.mediaList;
 
     if (category === 'all') {
-      this.state.setFilteredList(allItems);
-      this.state.setActiveCategory('all');
+      this.state.patchState({
+        filteredList: allItems,
+        activeCategory: 'all',
+        currentIndex: 0
+      });
       return;
     }
 
@@ -530,8 +539,11 @@ class FilterController {
       (Array.isArray(item.categories) && item.categories.includes(category))
     );
 
-    this.state.setFilteredList(filtered);
-    this.state.setActiveCategory(category);
+    this.state.patchState({
+      filteredList: filtered,
+      activeCategory: category,
+      currentIndex: 0
+    });
 
     // Update URL for shareability
     this.updateURL(category);
@@ -544,7 +556,7 @@ class FilterController {
     } else {
       url.searchParams.set('category', category);
     }
-    window.history.pushState({ category }, '', url);
+    window.history.pushState({ category: category }, '', url);
   }
 
   initHorizontalScroll() {
@@ -702,15 +714,16 @@ class PortfolioGallery {
       const items = images[category];
       if (!Array.isArray(items)) return;
 
-      const catWeight = PORT_CAT_WEIGHTS_GET(category);
+      const catWeight = getPortfolioCategoryWeight(category);
       const catDisplayName = formatPortfolioCategoryName(category);
 
       items.forEach((item, index) => {
         // Schwartzian Transform: Embed weight for O(1) access during sort
+        // Using spread to preserve all metadata (categories, etc.)
         allItems.push({
+          ...item,
           id: item.id || `${category}-${index}`,
           title: item.title || `${catDisplayName} ${index + 1}`,
-          src: item.src,
           alt: item.alt || item.title || `${catDisplayName} photography`,
           type: item.type || 'image',
           poster: item.poster || '',
@@ -736,12 +749,6 @@ class PortfolioGallery {
     this.state = new GalleryState();
     this.setup();
   }
-}
-
-/** Helper for Map lookups to handle missing keys gracefully */
-function PORT_CAT_WEIGHTS_GET(category) {
-  const weight = PORTFOLIO_CAT_WEIGHTS.get(category);
-  return weight !== undefined ? weight : 999;
 }
 
 // ========================================
