@@ -1,0 +1,3 @@
+## 2026-05-19 - Portfolio Gallery Optimization Learning
+**Learning:** Re-rendering in `PortfolioGallery` was decoupled from state updates. The `FilterController` would update `GalleryState`, but the UI wouldn't refresh because no one was listening. Adding a reactive subscription (and batching updates via `patchState`) was critical for both correctness and performance. Also, category slugs MUST match JSON keys (e.g., `pre-wedding-photos-and-videos` NOT `perwedding`) or Map lookups fail.
+**Action:** Always verify that state updates trigger the expected UI side effects and ensure lookup keys exactly match the data source.
