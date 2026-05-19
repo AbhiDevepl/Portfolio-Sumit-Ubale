@@ -233,11 +233,14 @@ class GalleryRenderer {
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    var lightboxItems = [];
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      lightboxItems.push(Object.assign({}, item, {
+        type: item.type || 'image',
+        originalIndex: i
+      }));
+    }
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -590,6 +593,13 @@ class PortfolioGallery {
       this.state.setMediaList(allItems);
       this.state.setLoading(false);
 
+      // Reactive state subscription: re-render when state changes (e.g., filtering)
+      this.state.subscribe((state) => {
+        // Prevent clearing UI with empty render during loading or error
+        if (state.isLoading || state.hasError) return;
+        this.renderer.render(state.filteredList, state.activeCategory);
+      });
+
       // Initial render
       this.renderer.render(allItems, 'all');
 
@@ -642,8 +652,8 @@ class PortfolioGallery {
         for (let j = 0; j < items.length; j++) {
           const item = items[j];
           // We enrich the item directly. This avoids expensive repeated lookups during sort.
-          const enrichedItem = {
-            ...item,
+          // Using Object.assign for ES6 compatibility instead of object spread
+          const enrichedItem = Object.assign({}, item, {
             category: category,
             _catWeight: weight, // Pre-calculated weight for O(1) sort comparison
             order: j,
@@ -651,7 +661,7 @@ class PortfolioGallery {
             title: item.title || formattedCat + ' ' + (j + 1),
             alt: item.alt || item.title || formattedCat + ' photography',
             type: item.type || 'image'
-          };
+          });
           allItems.push(enrichedItem);
         }
       }
@@ -679,14 +689,18 @@ class PortfolioGallery {
 // HELPERS & CONSTANTS (Optimized for performance)
 // ========================================
 const PORTFOLIO_CATEGORY_ORDER = [
+  'hero',
+  'perwedding',
   'weddings',
-  'pre-wedding-photos-and-videos',
+  'candid',
   'engagement',
   'haldi',
   'maternity',
   'portraits',
   'cinematics',
   'kids',
+  'model',
+  'video',
   'events',
   'commercial'
 ];

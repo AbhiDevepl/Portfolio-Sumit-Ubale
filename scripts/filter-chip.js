@@ -33,7 +33,9 @@ const PortfolioFilter = (function () {
 
   function updateCategories(newCategories) {
     categories.length = 0;
-    categories.push(...newCategories);
+    for (var i = 0; i < newCategories.length; i++) {
+      categories.push(newCategories[i]);
+    }
   }
 
   function setActiveCategory(id) {
