@@ -63,9 +63,17 @@ class GalleryLoader {
     // Aggregate images
     let images = [];
     if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
+      const allImages = this.data.portfolio.images;
+      Object.keys(allImages).forEach(function(catSlug) {
+        const catImages = allImages[catSlug];
+        catImages.forEach(function(img) {
+          images.push(img);
+        });
+      });
     } else {
-      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
+      const key = Object.keys(this.data.portfolio.images).find(function(k) {
+        return k.toLowerCase() === this.category;
+      }.bind(this));
       images = this.data.portfolio.images[key] || [];
     }
     
@@ -100,15 +108,27 @@ class GalleryLoader {
   getGalleryData() {
     // Helper to get raw data for lightbox with injected category
     if (this.category === 'all') {
-      let all = [];
-      Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
-        const enriched = imgs.map(img => ({ ...img, category: catSlug }));
-        all.push(...enriched);
+      const all = [];
+      const allImages = this.data.portfolio.images;
+      Object.keys(allImages).forEach(function(catSlug) {
+        const imgs = allImages[catSlug];
+        const enriched = imgs.map(function(img) {
+          const newImg = Object.assign({}, img);
+          newImg.category = catSlug;
+          return newImg;
+        });
+        enriched.forEach(function(e) {
+          all.push(e);
+        });
       });
       return all;
     }
     const imgs = this.data.portfolio.images[this.category] || [];
-    return imgs.map(img => ({ ...img, category: this.category }));
+    return imgs.map(function(img) {
+      const newImg = Object.assign({}, img);
+      newImg.category = this.category;
+      return newImg;
+    }.bind(this));
   }
 
   initAnimations() {
