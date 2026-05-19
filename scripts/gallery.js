@@ -30,7 +30,7 @@ window.GalleryManager = {
     });
     
     window.addEventListener('popstate', (e) => {
-      this.filterGallery(e.state?.category || 'all');
+      this.filterGallery((e.state && e.state.category) ? e.state.category : 'all');
     });
   },
 
@@ -40,22 +40,23 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    const all = this.allImages || window.contentLoader?.allImages || [];
+    const all = this.allImages || (window.contentLoader && window.contentLoader.allImages) || [];
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => !item.classList.contains('is-hidden'))
       .map(item => {
         const idx = parseInt(item.dataset.index, 10);
         // Use cached data for O(1) metadata retrieval, avoiding expensive DOM queries
-        if (all[idx]) return { ...all[idx], originalIndex: idx };
+        if (all[idx]) return Object.assign({}, all[idx], { originalIndex: idx });
 
         // Fallback if data is not yet loaded (should not happen after init)
         const media = item.querySelector('img, video');
+        const posterMedia = item.querySelector('video');
         return {
-          src: media?.src || media?.dataset?.src || '',
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
+          src: media ? (media.src || (media.dataset && media.dataset.src) || '') : '',
+          title: item.querySelector('.gallery-title') ? item.querySelector('.gallery-title').textContent : '',
+          category: (item.querySelector('.gallery-category') ? item.querySelector('.gallery-category').textContent : '') || item.dataset.category,
           type: item.querySelector('video') ? 'video' : 'image',
-          poster: item.querySelector('video')?.poster || '',
+          poster: posterMedia ? posterMedia.poster : '',
           originalIndex: idx
         };
       });
@@ -88,7 +89,7 @@ window.GalleryManager = {
   updateURL(category) {
     const url = new URL(window.location);
     category === 'all' ? url.searchParams.delete('category') : url.searchParams.set('category', category);
-    window.history.pushState({ category }, '', url);
+    window.history.pushState({ category: category }, '', url);
   },
   
   checkURLState() {

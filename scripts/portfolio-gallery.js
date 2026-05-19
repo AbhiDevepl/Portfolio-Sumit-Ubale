@@ -178,12 +178,12 @@ class GalleryRenderer {
   createGalleryItem(item, index) {
     const isVideo = item.type === 'video';
     const article = document.createElement('article');
-    article.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'}`;
+    article.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image');
     article.dataset.index = index;
     article.dataset.category = item.category || '';
     article.setAttribute('tabindex', '0');
     article.setAttribute('role', 'listitem');
-    article.setAttribute('aria-label', `${item.title || 'Gallery item'}${isVideo ? ' (video)' : ''}`);
+    article.setAttribute('aria-label', (item.title || 'Gallery item') + (isVideo ? ' (video)' : ''));
 
     // Create media element
     const media = document.createElement(isVideo ? 'video' : 'img');
@@ -245,10 +245,8 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${formatPortfolioCategoryName(item.category)}</p>
-    `;
+    overlay.innerHTML = '<h3 class="gallery-item-title">' + (item.title || '') + '</h3>' +
+                        '<p class="gallery-item-category">' + formatPortfolioCategoryName(item.category) + '</p>';
     article.appendChild(overlay);
 
     // Click handler
@@ -273,11 +271,7 @@ class GalleryRenderer {
     const icon = document.createElement('div');
     icon.className = 'gallery-video-play-icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.innerHTML = `
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    `;
+    icon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
     return icon;
   }
 
@@ -311,7 +305,7 @@ class GalleryRenderer {
           y: 0,
           duration: 0.6,
           stagger: {
-            amount: 1.5 // Cap total animation duration to 1.5s regardless of count
+            amount: 1.5
           },
           ease: 'power2.out',
           scrollTrigger: {
@@ -329,7 +323,7 @@ class GalleryRenderer {
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
         const delay = index * staggerStep;
-        item.style.transition = `opacity 0.5s ease ${delay}s, transform 0.5s ease ${delay}s`;
+        item.style.transition = 'opacity 0.5s ease ' + delay + 's, transform 0.5s ease ' + delay + 's';
 
         setTimeout(() => {
           item.style.opacity = '1';
@@ -340,28 +334,15 @@ class GalleryRenderer {
   }
 
   showLoading() {
-    this.container.innerHTML = `
-      <div class="gallery-loading-state">
-        <div class="gallery-loading-spinner"></div>
-        <p>Loading portfolio...</p>
-      </div>
-    `;
+    this.container.innerHTML = '<div class="gallery-loading-state"><div class="gallery-loading-spinner"></div><p>Loading portfolio...</p></div>';
   }
 
   showError(message) {
-    this.container.innerHTML = `
-      <div class="gallery-error-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 8v4m0 4h.01"/>
-        </svg>
-        <h3>Failed to load portfolio</h3>
-        <p>${message}</p>
-        <button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">
-          Try Again
-        </button>
-      </div>
-    `;
+    this.container.innerHTML = '<div class="gallery-error-state">' +
+      '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">' +
+      '<circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>' +
+      '<h3>Failed to load portfolio</h3><p>' + message + '</p>' +
+      '<button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">Try Again</button></div>';
   }
 }
 
@@ -536,7 +517,7 @@ class FilterController {
 
     const filtered = allItems.filter(item =>
       item.category === category ||
-      (Array.isArray(item.categories) && item.categories.includes(category))
+      (Array.isArray(item.categories) && item.categories.indexOf(category) !== -1)
     );
 
     this.state.patchState({
@@ -602,7 +583,7 @@ class FilterController {
     const category = params.get('category');
 
     if (category) {
-      const chip = this.chipsContainer.querySelector(`[data-category="${category}"]`);
+      const chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
       if (chip) {
         this.setActiveChip(chip);
         this.filterByCategory(category);
@@ -719,18 +700,18 @@ class PortfolioGallery {
 
       items.forEach((item, index) => {
         // Schwartzian Transform: Embed weight for O(1) access during sort
-        // Using spread to preserve all metadata (categories, etc.)
-        allItems.push({
-          ...item,
-          id: item.id || `${category}-${index}`,
-          title: item.title || `${catDisplayName} ${index + 1}`,
-          alt: item.alt || item.title || `${catDisplayName} photography`,
-          type: item.type || 'image',
-          poster: item.poster || '',
-          category: category,
-          order: index,
-          _catWeight: catWeight
-        });
+        // Using Object.assign to preserve all metadata (categories, etc.) for compatibility
+        const newItem = Object.assign({}, item);
+        newItem.id = item.id || (category + '-' + index);
+        newItem.title = item.title || (catDisplayName + ' ' + (index + 1));
+        newItem.alt = item.alt || item.title || (catDisplayName + ' photography');
+        newItem.type = item.type || 'image';
+        newItem.poster = item.poster || '';
+        newItem.category = category;
+        newItem.order = index;
+        newItem._catWeight = catWeight;
+
+        allItems.push(newItem);
       });
     });
 
