@@ -9,7 +9,7 @@ if (window.gsap) {
   // Global GSAP configuration
   gsap.config({
     nullTargetWarn: false,
-    trialWarn: false,
+    trialWarn: false
   });
 
   // Set default ease for all GSAP animations

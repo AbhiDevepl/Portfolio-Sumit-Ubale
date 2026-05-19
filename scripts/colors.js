@@ -136,8 +136,11 @@
     }
 
     let css = ':root {\n';
-    for (const [variable, value] of Object.entries(VariableMap)) {
-      css += `  ${variable}: ${value};\n`;
+    var variableKeys = Object.keys(VariableMap);
+    for (var i = 0; i < variableKeys.length; i++) {
+      var variable = variableKeys[i];
+      var value = VariableMap[variable];
+      css += '  ' + variable + ': ' + value + ';\n';
     }
     css += '}';
 

@@ -63,7 +63,13 @@ class GalleryLoader {
     // Aggregate images
     let images = [];
     if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
+      var categoryKeys = Object.keys(this.data.portfolio.images);
+      for (var i = 0; i < categoryKeys.length; i++) {
+        var catImages = this.data.portfolio.images[categoryKeys[i]];
+        if (Array.isArray(catImages)) {
+          images.push.apply(images, catImages);
+        }
+      }
     } else {
       const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
       images = this.data.portfolio.images[key] || [];
@@ -100,15 +106,27 @@ class GalleryLoader {
   getGalleryData() {
     // Helper to get raw data for lightbox with injected category
     if (this.category === 'all') {
-      let all = [];
-      Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
-        const enriched = imgs.map(img => ({ ...img, category: catSlug }));
-        all.push(...enriched);
-      });
+      var all = [];
+      var keys = Object.keys(this.data.portfolio.images);
+      for (var i = 0; i < keys.length; i++) {
+        var catSlug = keys[i];
+        var imgs = this.data.portfolio.images[catSlug];
+        if (Array.isArray(imgs)) {
+          for (var j = 0; j < imgs.length; j++) {
+            var img = imgs[j];
+            // ES6-compatible enrichment (Object.assign instead of spread)
+            all.push(Object.assign({}, img, { category: catSlug }));
+          }
+        }
+      }
       return all;
     }
-    const imgs = this.data.portfolio.images[this.category] || [];
-    return imgs.map(img => ({ ...img, category: this.category }));
+    var imgs = this.data.portfolio.images[this.category] || [];
+    var results = [];
+    for (var k = 0; k < imgs.length; k++) {
+      results.push(Object.assign({}, imgs[k], { category: this.category }));
+    }
+    return results;
   }
 
   initAnimations() {

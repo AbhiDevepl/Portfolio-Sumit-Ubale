@@ -97,16 +97,20 @@ class GalleryRenderer {
   _renderSync(items, category) {
     const fragment = document.createDocumentFragment();
 
-    items.forEach((item, index) => {
-      const element = this.createGalleryItem(item, index);
+    for (let i = 0; i < items.length; i++) {
+      const element = this.createGalleryItem(items[i], i);
       if (element) {
         fragment.appendChild(element);
       }
-    });
+    }
 
-    // Clear container and append new items
-    this.container.innerHTML = '';
-    this.container.appendChild(fragment);
+    // Faster DOM update: replaceChildren() is more efficient than innerHTML = '' + appendChild
+    if (this.container.replaceChildren) {
+      this.container.replaceChildren(fragment);
+    } else {
+      this.container.innerHTML = '';
+      this.container.appendChild(fragment);
+    }
 
     // Trigger reveal animations
     this.triggerRevealAnimations();
@@ -143,7 +147,7 @@ class GalleryRenderer {
       }, { once: true });
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
 
@@ -174,7 +178,7 @@ class GalleryRenderer {
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
@@ -182,9 +186,13 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
+
+    // Optimization: formatPortfolioCategoryName is now a cached global helper
+    const displayCategory = formatPortfolioCategoryName(item.category);
+
     overlay.innerHTML = `
       <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
+      <p class="gallery-item-category">${displayCategory}</p>
     `;
     article.appendChild(overlay);
 
@@ -218,26 +226,21 @@ class GalleryRenderer {
     return icon;
   }
 
-  formatCategory(category) {
-    if (!category) return '';
-    return category
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }
-
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    var lightboxItems = [];
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      lightboxItems.push(Object.assign({}, item, {
+        type: item.type || 'image',
+        originalIndex: i
+      }));
+    }
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -318,7 +321,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
 
@@ -368,7 +371,7 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
@@ -378,7 +381,7 @@ class ModalViewer {
       this.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    const state = (window.PortfolioGallery && window.PortfolioGallery.state) ? window.PortfolioGallery.state.getState() : null;
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -393,7 +396,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -405,7 +408,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -590,6 +593,13 @@ class PortfolioGallery {
       this.state.setMediaList(allItems);
       this.state.setLoading(false);
 
+      // Reactive state subscription: re-render when state changes (e.g., filtering)
+      this.state.subscribe((state) => {
+        // Prevent clearing UI with empty render during loading or error
+        if (state.isLoading || state.hasError) return;
+        this.renderer.render(state.filteredList, state.activeCategory);
+      });
+
       // Initial render
       this.renderer.render(allItems, 'all');
 
@@ -605,7 +615,7 @@ class PortfolioGallery {
       this.modal.init();
 
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
@@ -626,65 +636,93 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
+    const categories = Object.keys(images);
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
+    // Optimized flattening with pre-calculated weights and titles (Schwartzian Transform prep)
+    // Using a for-loop and Object.keys for better performance and CI compatibility over Object.entries
+    for (let i = 0; i < categories.length; i++) {
+      const category = categories[i];
+      const items = images[category];
+
       if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+        const weight = PORTFOLIO_CATEGORY_WEIGHTS.has(category) ? PORTFOLIO_CATEGORY_WEIGHTS.get(category) : 999;
+        const formattedCat = formatPortfolioCategoryName(category);
+
+        for (let j = 0; j < items.length; j++) {
+          const item = items[j];
+          // We enrich the item directly. This avoids expensive repeated lookups during sort.
+          // Using Object.assign for ES6 compatibility instead of object spread
+          const enrichedItem = Object.assign({}, item, {
+            category: category,
+            _catWeight: weight, // Pre-calculated weight for O(1) sort comparison
+            order: j,
+            id: item.id || category + '-' + j,
+            title: item.title || formattedCat + ' ' + (j + 1),
+            alt: item.alt || item.title || formattedCat + ' photography',
             type: item.type || 'image'
           });
-        });
+          allItems.push(enrichedItem);
+        }
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Schwartzian Transform: Sort using the pre-calculated weights
+    // This reduces sort complexity from O(N * log N * M) to O(N * log N) where M is category list length
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+      if (a._catWeight !== b._catWeight) {
+        return a._catWeight - b._catWeight;
       }
-
       return (a.order || 0) - (b.order || 0);
     });
 
     return allItems;
   }
 
-  formatCategoryName(slug) {
-    return slug
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }
-
   retry() {
     this.state = new GalleryState();
     this.setup();
   }
+}
+
+// ========================================
+// HELPERS & CONSTANTS (Optimized for performance)
+// ========================================
+const PORTFOLIO_CATEGORY_ORDER = [
+  'hero',
+  'perwedding',
+  'weddings',
+  'candid',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'model',
+  'video',
+  'events',
+  'commercial'
+];
+
+// Map provides O(1) lookup vs O(M) for indexOf in a loop
+const PORTFOLIO_CATEGORY_WEIGHTS = new Map(PORTFOLIO_CATEGORY_ORDER.map((cat, i) => [cat, i]));
+
+// Cache for formatted names to avoid repeated string manipulation
+const PORTFOLIO_FORMATTED_NAMES_CACHE = new Map();
+
+function formatPortfolioCategoryName(slug) {
+  if (PORTFOLIO_FORMATTED_NAMES_CACHE.has(slug)) {
+    return PORTFOLIO_FORMATTED_NAMES_CACHE.get(slug);
+  }
+
+  const formatted = slug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+  PORTFOLIO_FORMATTED_NAMES_CACHE.set(slug, formatted);
+  return formatted;
 }
 
 // ========================================
