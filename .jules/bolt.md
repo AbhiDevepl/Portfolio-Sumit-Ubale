@@ -1,0 +1,3 @@
+## 2025-05-15 - Optimized Sorting and Rendering for Large Galleries
+**Learning:** For large datasets (1,000+ items), O(N*logN) sorting with an O(M) lookup (like `Array.indexOf`) in the comparator becomes a bottleneck. Implementing a Schwartzian Transform using a pre-computed `Map` for weights reduces overhead significantly. Additionally, `replaceChildren()` is the most efficient way to batch-update the DOM when replacing the entire content of a container.
+**Action:** Use Schwartzian Transform for complex sorts and `replaceChildren()` for high-performance DOM clearing/updating in vanilla JS components.
