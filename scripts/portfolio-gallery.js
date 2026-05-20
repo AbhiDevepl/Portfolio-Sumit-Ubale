@@ -7,6 +7,42 @@
  */
 
 // ========================================
+// CONSTANTS & UTILITIES
+// ========================================
+const PORTFOLIO_CATEGORY_ORDER = [
+  'weddings',
+  'pre-wedding-photos-and-videos',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial'
+];
+
+const CATEGORY_WEIGHTS = new Map(PORTFOLIO_CATEGORY_ORDER.map((cat, i) => [cat, i]));
+const CATEGORY_NAME_CACHE = new Map();
+
+/**
+ * High-performance memoized category name formatter
+ */
+function formatPortfolioCategoryName(slug) {
+  if (!slug) return '';
+  let formatted = CATEGORY_NAME_CACHE.get(slug);
+  if (formatted !== undefined) return formatted;
+
+  formatted = slug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+  CATEGORY_NAME_CACHE.set(slug, formatted);
+  return formatted;
+}
+
+// ========================================
 // GALLERY STATE MANAGEMENT
 // ========================================
 class GalleryState {
@@ -23,6 +59,18 @@ class GalleryState {
   subscribe(callback) {
     this.listeners.add(callback);
     return () => this.listeners.delete(callback);
+  }
+
+  /**
+   * Batches multiple state updates into a single notification
+   */
+  patchState(updates) {
+    Object.keys(updates).forEach(key => {
+      if (this.hasOwnProperty(key)) {
+        this[key] = updates[key];
+      }
+    });
+    this.notify();
   }
 
   notify() {
@@ -94,19 +142,30 @@ class GalleryRenderer {
     });
   }
 
+  /**
+   * Clears and populates the container with gallery items
+   */
   _renderSync(items, category) {
+    // Avoid rendering if list is empty but we're still loading or have an error
+    const state = this.state.getState();
+    if (items.length === 0 && (state.isLoading || state.hasError)) return;
+
     const fragment = document.createDocumentFragment();
 
-    items.forEach((item, index) => {
-      const element = this.createGalleryItem(item, index);
+    for (let i = 0; i < items.length; i++) {
+      const element = this.createGalleryItem(items[i], i);
       if (element) {
         fragment.appendChild(element);
       }
-    });
+    }
 
-    // Clear container and append new items
-    this.container.innerHTML = '';
-    this.container.appendChild(fragment);
+    // High-performance DOM update
+    if (this.container.replaceChildren) {
+      this.container.replaceChildren(fragment);
+    } else {
+      this.container.innerHTML = '';
+      this.container.appendChild(fragment);
+    }
 
     // Trigger reveal animations
     this.triggerRevealAnimations();
@@ -184,7 +243,7 @@ class GalleryRenderer {
     overlay.className = 'gallery-overlay';
     overlay.innerHTML = `
       <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
+      <p class="gallery-item-category">${formatPortfolioCategoryName(item.category)}</p>
     `;
     article.appendChild(overlay);
 
@@ -216,14 +275,6 @@ class GalleryRenderer {
       </svg>
     `;
     return icon;
-  }
-
-  formatCategory(category) {
-    if (!category) return '';
-    return category
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
   }
 
   openLightbox(index) {
@@ -586,12 +637,20 @@ class PortfolioGallery {
       // Process and flatten items
       const allItems = this.processData(data);
 
-      // Update state
-      this.state.setMediaList(allItems);
-      this.state.setLoading(false);
+      // Subscribe to state changes for reactive rendering
+      this.state.subscribe((state) => {
+        this.renderer.render(state.filteredList, state.activeCategory);
+      });
 
-      // Initial render
-      this.renderer.render(allItems, 'all');
+      // Update state (batched) - this will trigger the initial render via subscription
+      this.state.patchState({
+        mediaList: allItems,
+        filteredList: allItems,
+        isLoading: false
+      });
+
+      // Initial render (already triggered by subscribe + patchState)
+      // We keep the setup sequential for controllers
 
       // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
@@ -626,59 +685,44 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const portfolio = data.portfolio || {};
+    const images = portfolio.images || {};
+    const keys = Object.keys(images);
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
+    // Optimized flattening and enrichment (Schwartzian Transform prep)
+    for (let i = 0; i < keys.length; i++) {
+      const category = keys[i];
+      const items = images[category];
+
       if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
+        const catName = formatPortfolioCategoryName(category);
+        const catWeight = CATEGORY_WEIGHTS.get(category);
+        const weight = catWeight !== undefined ? catWeight : 999;
+
+        for (let j = 0; j < items.length; j++) {
+          const item = items[j];
+          // Pre-calculate all metadata to avoid overhead during render/sort
+          item.category = category;
+          item.order = j;
+          item._catWeight = weight;
+          item.id = item.id || (category + '-' + j);
+          item.title = item.title || (catName + ' ' + (j + 1));
+          item.alt = item.alt || item.title || (catName + ' photography');
+          item.type = item.type || 'image';
+          allItems.push(item);
+        }
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // High-performance sort using pre-calculated weights (O(N log N))
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+      if (a._catWeight !== b._catWeight) {
+        return a._catWeight - b._catWeight;
       }
-
-      return (a.order || 0) - (b.order || 0);
+      return a.order - b.order;
     });
 
     return allItems;
-  }
-
-  formatCategoryName(slug) {
-    return slug
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
   }
 
   retry() {
