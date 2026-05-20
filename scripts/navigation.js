@@ -1,10 +1,12 @@
-
+/**
+ * Navigation System
+ */
 
 class Navigation {
   constructor() {
+    this.nav = document.querySelector('.nav');
     this.toggle = document.querySelector('.nav-toggle');
     this.menu = document.querySelector('.mobile-menu');
-    this.footer = document.querySelector('.mobile-menu-footer');
     this.isOpen = false;
     this.init();
   }
@@ -12,64 +14,45 @@ class Navigation {
   init() {
     if (!this.toggle || !this.menu) return;
 
-    this.toggle.onclick = () => this.toggleMenu();
+    const self = this;
+    this.toggle.onclick = function() { self.toggleMenu(); };
 
-    // Event delegation for mobile links
-    this.menu.addEventListener('click', (e) => {
-      if (e.target.closest('.mobile-nav-link') && this.isOpen) {
-        this.toggleMenu();
+    this.menu.addEventListener('click', function(e) {
+      if (e.target.classList.contains('mobile-nav-link')) {
+        self.closeMenu();
       }
     });
 
+    window.addEventListener('scroll', function() {
+      if (window.scrollY > 50) {
+        if (self.nav) self.nav.classList.add('scrolled');
+      } else {
+        if (self.nav) self.nav.classList.remove('scrolled');
+      }
+    }, { passive: true });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && self.isOpen) self.closeMenu();
+    });
   }
 
   toggleMenu() {
-    this.isOpen = !this.isOpen;
-    this.toggle.classList.toggle('active');
-    this.menu.classList.toggle('active');
-    this.isOpen ? this.animateOpen() : this.animateClose();
+    this.isOpen ? this.closeMenu() : this.openMenu();
   }
 
-  animateOpen() {
-    const links = this.menu.querySelectorAll('.mobile-nav-link');
-    if (window.gsap) {
-      gsap.timeline()
-        .to(this.menu, { clipPath: "polygon(0 0, 100% 0, 100% 100%, 0% 100%)", duration: 0.8, ease: "power4.inOut" })
-        .to(links, { y: 0, opacity: 1, duration: 0.6, stagger: 0.08, ease: "power3.out" }, "-=0.3")
-        .to(this.footer, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, "-=0.4");
-    } else {
-      // Fallback: simply show elements
-      this.menu.style.clipPath = "polygon(0 0, 100% 0, 100% 100%, 0% 100%)";
-      links.forEach(link => {
-        link.style.opacity = '1';
-        link.style.transform = 'translateY(0)';
-      });
-      if (this.footer) {
-        this.footer.style.opacity = '1';
-        this.footer.style.transform = 'translateY(0)';
-      }
-    }
+  openMenu() {
+    this.isOpen = true;
+    this.menu.classList.add('active');
+    this.toggle.classList.add('active');
+    document.body.classList.add('no-scroll');
   }
 
-  animateClose() {
-    const links = this.menu.querySelectorAll('.mobile-nav-link');
-    if (window.gsap) {
-      gsap.timeline()
-        .to([links, this.footer], { y: 20, opacity: 0, duration: 0.4, ease: "power3.in" })
-        .to(this.menu, { clipPath: "polygon(0 0, 100% 0, 100% 0, 0 0)", duration: 0.6, ease: "power4.inOut" });
-    } else {
-      // Fallback: simply hide elements
-      this.menu.style.clipPath = "polygon(0 0, 100% 0, 100% 0, 0 0)";
-      links.forEach(link => {
-        link.style.opacity = '0';
-        link.style.transform = 'translateY(20px)';
-      });
-      if (this.footer) {
-        this.footer.style.opacity = '0';
-        this.footer.style.transform = 'translateY(20px)';
-      }
-    }
+  closeMenu() {
+    this.isOpen = false;
+    this.menu.classList.remove('active');
+    this.toggle.classList.remove('active');
+    document.body.classList.remove('no-scroll');
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => { new Navigation(); });
+document.addEventListener('DOMContentLoaded', function() { new Navigation(); });

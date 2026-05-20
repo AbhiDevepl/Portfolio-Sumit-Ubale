@@ -1,9 +1,5 @@
 /**
  * PORTFOLIO GALLERY SYSTEM
- * Premium, mobile-first gallery with advanced state management
- * and Instagram-like media viewer experience
- *
- * Integrates with existing Core.Lightbox, Core.VideoHover, and Core.VideoObserver
  */
 
 // ========================================
@@ -22,12 +18,9 @@ const PORTFOLIO_CATEGORY_ORDER = [
   'commercial'
 ];
 
-const CATEGORY_WEIGHTS = new Map(PORTFOLIO_CATEGORY_ORDER.map((cat, i) => [cat, i]));
+const CATEGORY_WEIGHTS = new Map(PORTFOLIO_CATEGORY_ORDER.map(function(cat, i) { return [cat, i]; }));
 const CATEGORY_NAME_CACHE = new Map();
 
-/**
- * High-performance memoized category name formatter
- */
 function formatPortfolioCategoryName(slug) {
   if (!slug) return '';
   let formatted = CATEGORY_NAME_CACHE.get(slug);
@@ -35,7 +28,7 @@ function formatPortfolioCategoryName(slug) {
 
   formatted = slug
     .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
     .join(' ');
 
   CATEGORY_NAME_CACHE.set(slug, formatted);
@@ -58,23 +51,22 @@ class GalleryState {
 
   subscribe(callback) {
     this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
+    return function() { this.listeners.delete(callback); }.bind(this);
   }
 
-  /**
-   * Batches multiple state updates into a single notification
-   */
   patchState(updates) {
-    Object.keys(updates).forEach(key => {
-      if (this.hasOwnProperty(key)) {
-        this[key] = updates[key];
+    const self = this;
+    Object.keys(updates).forEach(function(key) {
+      if (self.hasOwnProperty(key)) {
+        self[key] = updates[key];
       }
     });
     this.notify();
   }
 
   notify() {
-    this.listeners.forEach(cb => cb(this.getState()));
+    const state = this.getState();
+    this.listeners.forEach(function(cb) { cb(state); });
   }
 
   getState() {
@@ -132,21 +124,17 @@ class GalleryRenderer {
   }
 
   render(items, category) {
-    // Cancel pending animation frame
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
     }
 
-    this.animationFrame = requestAnimationFrame(() => {
-      this._renderSync(items, category);
+    const self = this;
+    this.animationFrame = requestAnimationFrame(function() {
+      self._renderSync(items, category);
     });
   }
 
-  /**
-   * Clears and populates the container with gallery items
-   */
   _renderSync(items, category) {
-    // Avoid rendering if list is empty but we're still loading or have an error
     const state = this.state.getState();
     if (items.length === 0 && (state.isLoading || state.hasError)) return;
 
@@ -159,7 +147,6 @@ class GalleryRenderer {
       }
     }
 
-    // High-performance DOM update
     if (this.container.replaceChildren) {
       this.container.replaceChildren(fragment);
     } else {
@@ -167,21 +154,19 @@ class GalleryRenderer {
       this.container.appendChild(fragment);
     }
 
-    // Trigger reveal animations
     this.triggerRevealAnimations();
   }
 
   createGalleryItem(item, index) {
     const isVideo = item.type === 'video';
     const article = document.createElement('article');
-    article.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'}`;
+    article.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image');
     article.dataset.index = index;
     article.dataset.category = item.category || '';
     article.setAttribute('tabindex', '0');
     article.setAttribute('role', 'listitem');
-    article.setAttribute('aria-label', `${item.title || 'Gallery item'}${isVideo ? ' (video)' : ''}`);
+    article.setAttribute('aria-label', (item.title || 'Gallery item') + (isVideo ? ' (video)' : ''));
 
-    // Create media element
     const media = document.createElement(isVideo ? 'video' : 'img');
     media.className = 'gallery-media';
     media.style.opacity = '0';
@@ -195,13 +180,11 @@ class GalleryRenderer {
       media.playsInline = true;
       if (item.poster) media.poster = item.poster;
 
-      // Show when metadata loaded
-      media.addEventListener('loadedmetadata', () => {
+      media.addEventListener('loadedmetadata', function() {
         media.style.opacity = '1';
         article.classList.remove('loading');
       }, { once: true });
 
-      // Register with VideoObserver for lazy loading
       if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
@@ -212,7 +195,7 @@ class GalleryRenderer {
       media.alt = item.alt || item.title || 'Portfolio image';
       media.decoding = 'async';
 
-      media.addEventListener('load', () => {
+      media.addEventListener('load', function() {
         media.style.opacity = '1';
         article.classList.remove('loading');
         article.classList.add('loaded');
@@ -227,38 +210,30 @@ class GalleryRenderer {
 
     article.appendChild(media);
 
-    // Video play icon overlay
     if (isVideo) {
       const playIcon = this.createPlayIcon();
       article.appendChild(playIcon);
 
-      // Initialize video hover behavior
       if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
 
-    // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${formatPortfolioCategoryName(item.category)}</p>
-    `;
+    overlay.innerHTML = '<h3 class="gallery-item-title">' + (item.title || '') + '</h3><p class="gallery-item-category">' + formatPortfolioCategoryName(item.category) + '</p>';
     article.appendChild(overlay);
 
-    // Click handler
-    article.addEventListener('click', (e) => {
-      // If clicking video directly, let VideoHover handle play/pause
+    const self = this;
+    article.addEventListener('click', function(e) {
       if (e.target.closest('video') && e.target !== media) return;
-      this.openLightbox(index);
+      self.openLightbox(index);
     });
 
-    // Keyboard handler
-    article.addEventListener('keydown', (e) => {
+    article.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        this.openLightbox(index);
+        self.openLightbox(index);
       }
     });
 
@@ -269,11 +244,7 @@ class GalleryRenderer {
     const icon = document.createElement('div');
     icon.className = 'gallery-video-play-icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.innerHTML = `
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    `;
+    icon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
     return icon;
   }
 
@@ -283,8 +254,7 @@ class GalleryRenderer {
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
-    // Ensure items have required properties (ES6 compatible)
-    const lightboxItems = items.map((item, i) => {
+    const lightboxItems = items.map(function(item, i) {
       const enriched = Object.assign({}, item);
       enriched.type = item.type || 'image';
       enriched.originalIndex = i;
@@ -298,7 +268,6 @@ class GalleryRenderer {
     const items = this.container.querySelectorAll('.gallery-item');
 
     if (window.GSAP && window.ScrollTrigger) {
-      // Use GSAP if available
       window.GSAP.fromTo(items,
         { opacity: 0, y: 40 },
         {
@@ -314,13 +283,12 @@ class GalleryRenderer {
         }
       );
     } else {
-      // Fallback to CSS animations
-      items.forEach((item, index) => {
+      items.forEach(function(item, index) {
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
+        item.style.transition = 'opacity 0.5s ease ' + (index * 0.05) + 's, transform 0.5s ease ' + (index * 0.05) + 's';
 
-        setTimeout(() => {
+        setTimeout(function() {
           item.style.opacity = '1';
           item.style.transform = 'translateY(0)';
         }, 50);
@@ -329,28 +297,11 @@ class GalleryRenderer {
   }
 
   showLoading() {
-    this.container.innerHTML = `
-      <div class="gallery-loading-state">
-        <div class="gallery-loading-spinner"></div>
-        <p>Loading portfolio...</p>
-      </div>
-    `;
+    this.container.innerHTML = '<div class="gallery-loading-state"><div class="gallery-loading-spinner"></div><p>Loading portfolio...</p></div>';
   }
 
   showError(message) {
-    this.container.innerHTML = `
-      <div class="gallery-error-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 8v4m0 4h.01"/>
-        </svg>
-        <h3>Failed to load portfolio</h3>
-        <p>${message}</p>
-        <button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">
-          Try Again
-        </button>
-      </div>
-    `;
+    this.container.innerHTML = '<div class="gallery-error-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg><h3>Failed to load portfolio</h3><p>' + message + '</p><button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">Try Again</button></div>';
   }
 }
 
@@ -363,18 +314,15 @@ class ModalViewer {
     this.isOpen = false;
     this.touchStartX = 0;
     this.touchCurrentX = 0;
-    this.touchThreshold = 48; // Minimum swipe distance
+    this.touchThreshold = 48;
     this.navigationDebounce = false;
-    this.debounceDelay = 150; // ms
+    this.debounceDelay = 150;
   }
 
   init() {
-    // Initialize Core.Lightbox if not already done
     if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
-
-    // Enhance with additional gesture support
     this.bindEnhancedGestures();
   }
 
@@ -385,49 +333,44 @@ class ModalViewer {
     const mediaContainer = lightbox.querySelector('.lightbox-media-container');
     if (!mediaContainer) return;
 
-    // Enhanced touch handling
-    mediaContainer.addEventListener('touchstart', (e) => {
+    const self = this;
+    mediaContainer.addEventListener('touchstart', function(e) {
       if (e.touches.length !== 1) return;
-      this.touchStartX = e.touches[0].clientX;
-      this.touchCurrentX = e.touches[0].clientX;
+      self.touchStartX = e.touches[0].clientX;
+      self.touchCurrentX = e.touches[0].clientX;
     }, { passive: true });
 
-    mediaContainer.addEventListener('touchmove', (e) => {
+    mediaContainer.addEventListener('touchmove', function(e) {
       if (e.touches.length !== 1) return;
-      this.touchCurrentX = e.touches[0].clientX;
+      self.touchCurrentX = e.touches[0].clientX;
     }, { passive: true });
 
-    mediaContainer.addEventListener('touchend', () => {
-      const deltaX = this.touchCurrentX - this.touchStartX;
+    mediaContainer.addEventListener('touchend', function() {
+      const deltaX = self.touchCurrentX - self.touchStartX;
+      if (Math.abs(deltaX) < self.touchThreshold) return;
+      if (self.navigationDebounce) return;
 
-      if (Math.abs(deltaX) < this.touchThreshold) return;
+      self.navigationDebounce = true;
+      setTimeout(function() {
+        self.navigationDebounce = false;
+      }, self.debounceDelay);
 
-      // Debounce navigation
-      if (this.navigationDebounce) return;
-
-      this.navigationDebounce = true;
-      setTimeout(() => {
-        this.navigationDebounce = false;
-      }, this.debounceDelay);
-
-      // Swipe left (deltaX < 0) = next, Swipe right (deltaX > 0) = previous
-      if (deltaX < -this.touchThreshold) {
-        this.navigate(1);
-      } else if (deltaX > this.touchThreshold) {
-        this.navigate(-1);
+      if (deltaX < -self.touchThreshold) {
+        self.navigate(1);
+      } else if (deltaX > self.touchThreshold) {
+        self.navigate(-1);
       }
     });
   }
 
   navigate(direction) {
     if (!window.Core || !window.Core.Lightbox) return;
-
-    // Debounce rapid navigation
     if (this.navigationDebounce) return;
 
     this.navigationDebounce = true;
-    setTimeout(() => {
-      this.navigationDebounce = false;
+    const self = this;
+    setTimeout(function() {
+      self.navigationDebounce = false;
     }, this.debounceDelay);
 
     if (!window.PortfolioGallery || !window.PortfolioGallery.state) return;
@@ -436,30 +379,24 @@ class ModalViewer {
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
     const len = items.length;
-
     if (len === 0) return;
 
     const currentIndex = window.Core.Lightbox.state.currentIndex;
     const newIndex = (currentIndex + direction + len) % len;
-
     window.Core.Lightbox.open(newIndex, items);
   }
 
   open(index) {
     if (!window.Core || !window.Core.Lightbox) return;
-
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
-
     if (items.length === 0) return;
-
     window.Core.Lightbox.open(index, items);
     this.isOpen = true;
   }
 
   close() {
     if (!window.Core || !window.Core.Lightbox) return;
-
     window.Core.Lightbox.close();
     this.isOpen = false;
   }
@@ -479,16 +416,16 @@ class FilterController {
     if (!this.chipsContainer) return;
 
     const chips = this.chipsContainer.querySelectorAll('.filter-chip');
+    const self = this;
 
-    chips.forEach(chip => {
-      chip.addEventListener('click', () => {
-        this.setActiveChip(chip);
+    chips.forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        self.setActiveChip(chip);
         const category = chip.dataset.category;
-        this.filterByCategory(category);
+        self.filterByCategory(category);
       });
 
-      // Keyboard support
-      chip.addEventListener('keydown', (e) => {
+      chip.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           chip.click();
@@ -496,13 +433,12 @@ class FilterController {
       });
     });
 
-    // Horizontal scroll with touch
     this.initHorizontalScroll();
   }
 
   setActiveChip(activeChip) {
     const chips = this.chipsContainer.querySelectorAll('.filter-chip');
-    chips.forEach(chip => {
+    chips.forEach(function(chip) {
       chip.classList.remove('active');
       chip.setAttribute('aria-selected', 'false');
     });
@@ -521,15 +457,13 @@ class FilterController {
       return;
     }
 
-    const filtered = allItems.filter(item =>
-      item.category === category ||
-      (item.categories && item.categories.includes(category))
-    );
+    const filtered = allItems.filter(function(item) {
+      return item.category === category ||
+      (item.categories && item.categories.indexOf(category) !== -1);
+    });
 
     this.state.setFilteredList(filtered);
     this.state.setActiveCategory(category);
-
-    // Update URL for shareability
     this.updateURL(category);
   }
 
@@ -540,42 +474,42 @@ class FilterController {
     } else {
       url.searchParams.set('category', category);
     }
-    window.history.pushState({ category }, '', url);
+    window.history.pushState({ category: category }, '', url);
   }
 
   initHorizontalScroll() {
     let isDown = false;
     let startX;
     let scrollLeft;
+    const container = this.chipsContainer;
 
-    this.chipsContainer.addEventListener('mousedown', (e) => {
+    container.addEventListener('mousedown', function(e) {
       isDown = true;
-      startX = e.pageX - this.chipsContainer.offsetLeft;
-      scrollLeft = this.chipsContainer.scrollLeft;
-      this.chipsContainer.style.cursor = 'grabbing';
+      startX = e.pageX - container.offsetLeft;
+      scrollLeft = container.scrollLeft;
+      container.style.cursor = 'grabbing';
     });
 
-    this.chipsContainer.addEventListener('mouseleave', () => {
+    container.addEventListener('mouseleave', function() {
       isDown = false;
-      this.chipsContainer.style.cursor = 'grab';
+      container.style.cursor = 'grab';
     });
 
-    this.chipsContainer.addEventListener('mouseup', () => {
+    container.addEventListener('mouseup', function() {
       isDown = false;
-      this.chipsContainer.style.cursor = 'grab';
+      container.style.cursor = 'grab';
     });
 
-    this.chipsContainer.addEventListener('mousemove', (e) => {
+    container.addEventListener('mousemove', function(e) {
       if (!isDown) return;
       e.preventDefault();
-      const x = e.pageX - this.chipsContainer.offsetLeft;
+      const x = e.pageX - container.offsetLeft;
       const walk = (x - startX) * 2;
-      this.chipsContainer.scrollLeft = scrollLeft - walk;
+      container.scrollLeft = scrollLeft - walk;
     });
 
-    // Touch scroll indicator
-    this.chipsContainer.style.scrollbarWidth = 'none';
-    this.chipsContainer.style.msOverflowStyle = 'none';
+    container.style.scrollbarWidth = 'none';
+    container.style.msOverflowStyle = 'none';
     const style = document.createElement('style');
     style.textContent = '.filter-chips-container::-webkit-scrollbar { display: none; }';
     document.head.appendChild(style);
@@ -586,7 +520,7 @@ class FilterController {
     const category = params.get('category');
 
     if (category) {
-      const chip = this.chipsContainer.querySelector(`[data-category="${category}"]`);
+      const chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
       if (chip) {
         this.setActiveChip(chip);
         this.filterByCategory(category);
@@ -609,63 +543,45 @@ class PortfolioGallery {
   }
 
   async init() {
-    // Wait for DOM
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => this.setup());
+      document.addEventListener('DOMContentLoaded', function() { this.setup(); }.bind(this));
     } else {
       this.setup();
     }
   }
 
   async setup() {
-    // Get container
     this.container = document.getElementById('gallery-grid');
-    if (!this.container) {
-      console.error('Gallery container not found');
-      return;
-    }
+    if (!this.container) return;
 
-    // Initialize renderer
     this.renderer = new GalleryRenderer(this.state, this.container);
-
-    // Show loading state
     this.renderer.showLoading();
     this.state.setLoading(true);
 
     try {
-      // Fetch data
       const data = await this.fetchData();
-
-      // Process and flatten items
       const allItems = this.processData(data);
 
-      // Subscribe to state changes for reactive rendering
-      this.state.subscribe((state) => {
-        this.renderer.render(state.filteredList, state.activeCategory);
+      const self = this;
+      this.state.subscribe(function(state) {
+        self.renderer.render(state.filteredList, state.activeCategory);
       });
 
-      // Update state (batched) - this will trigger the initial render via subscription
       this.state.patchState({
         mediaList: allItems,
         filteredList: allItems,
         isLoading: false
       });
 
-      // Initial render (already triggered by subscribe + patchState)
-      // We keep the setup sequential for controllers
-
-      // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
       if (chipsContainer) {
         this.filterController = new FilterController(this.state, chipsContainer);
         this.filterController.selectFromURL();
       }
 
-      // Initialize modal viewer
       this.modal = new ModalViewer(this.state);
       this.modal.init();
 
-      // Initialize Core.Lightbox
       if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
@@ -679,9 +595,7 @@ class PortfolioGallery {
 
   async fetchData() {
     const response = await fetch('/data/portfolio.json');
-    if (!response.ok) {
-      throw new Error('Failed to fetch portfolio data');
-    }
+    if (!response.ok) throw new Error('Failed to fetch portfolio data');
     return response.json();
   }
 
@@ -691,19 +605,15 @@ class PortfolioGallery {
     const images = portfolio.images || {};
     const keys = Object.keys(images);
 
-    // Optimized flattening and enrichment (Schwartzian Transform prep)
     for (let i = 0; i < keys.length; i++) {
       const category = keys[i];
       const items = images[category];
-
       if (Array.isArray(items)) {
         const catName = formatPortfolioCategoryName(category);
         const catWeight = CATEGORY_WEIGHTS.get(category);
         const weight = catWeight !== undefined ? catWeight : 999;
-
         for (let j = 0; j < items.length; j++) {
           const item = items[j];
-          // Pre-calculate all metadata to avoid overhead during render/sort
           item.category = category;
           item.order = j;
           item._catWeight = weight;
@@ -716,11 +626,8 @@ class PortfolioGallery {
       }
     }
 
-    // High-performance sort using pre-calculated weights (O(N log N))
-    allItems.sort((a, b) => {
-      if (a._catWeight !== b._catWeight) {
-        return a._catWeight - b._catWeight;
-      }
+    allItems.sort(function(a, b) {
+      if (a._catWeight !== b._catWeight) return a._catWeight - b._catWeight;
       return a.order - b.order;
     });
 
@@ -733,7 +640,4 @@ class PortfolioGallery {
   }
 }
 
-// ========================================
-// INITIALIZE
-// ========================================
 window.PortfolioGallery = new PortfolioGallery();

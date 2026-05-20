@@ -31,7 +31,7 @@ class AlbumLoader {
     
     // We only want to show categories that have images
     const categories = this.data.portfolio.categories.filter(cat => {
-        return cat.slug !== 'all' && (this.data.portfolio.images[cat.slug]?.length > 0);
+        return cat.slug !== 'all' && (this.data.portfolio.images[cat.slug].length > 0);
     });
 
     categories.forEach((cat, index) => {
