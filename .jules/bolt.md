@@ -1,0 +1,3 @@
+## 2026-05-20 - Schwartzian Transform & DOM Update Optimization
+**Learning:** In data-heavy vanilla JS galleries (~1,200 items), replacing nested `indexOf` lookups in sort comparators with a pre-calculated weight Map (Schwartzian Transform) and using `replaceChildren` instead of `innerHTML`/`appendChild` yields significant performance gains. Additionally, implementing a `patchState` method for batching state updates prevents redundant re-renders during complex initialization sequences.
+**Action:** Always prefer Map-based lookups over Array searches in performance-critical paths and use `replaceChildren` for high-speed DOM clearing/replacement. Establish reactive subscriptions before patching state to ensure initial renders are captured.

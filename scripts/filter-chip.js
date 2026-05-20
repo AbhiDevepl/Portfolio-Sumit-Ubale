@@ -33,7 +33,7 @@ const PortfolioFilter = (function () {
 
   function updateCategories(newCategories) {
     categories.length = 0;
-    categories.push(...newCategories);
+    newCategories.forEach(function(cat) { categories.push(cat); });
   }
 
   function setActiveCategory(id) {
