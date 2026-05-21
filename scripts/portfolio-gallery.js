@@ -104,9 +104,13 @@ class GalleryRenderer {
       }
     });
 
-    // Clear container and append new items
-    this.container.innerHTML = '';
-    this.container.appendChild(fragment);
+    // Clear container and append new items using high-performance replaceChildren
+    if (this.container.replaceChildren) {
+      this.container.replaceChildren(fragment);
+    } else {
+      this.container.innerHTML = '';
+      this.container.appendChild(fragment);
+    }
 
     // Trigger reveal animations
     this.triggerRevealAnimations();
@@ -627,29 +631,21 @@ class PortfolioGallery {
   processData(data) {
     const allItems = [];
     const images = data.portfolio?.images || {};
+    const memoizedNames = new Map();
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
-      }
-    }
+    const getFormattedName = (slug) => {
+      let name = memoizedNames.get(slug);
+      if (name) return name;
+      name = this.formatCategoryName(slug);
+      memoizedNames.set(slug, name);
+      return name;
+    };
 
     // Sort by category order, then by item order
     const categoryOrder = [
       'weddings',
-      'pre-wedding-photos-and-videos',
+      'perwedding', // Matches data/portfolio.json
+      'pre-wedding-photos-and-videos', // Legacy/original key
       'engagement',
       'haldi',
       'maternity',
@@ -657,17 +653,43 @@ class PortfolioGallery {
       'cinematics',
       'kids',
       'events',
-      'commercial'
+      'commercial',
+      'candid',
+      'model',
+      'video'
     ];
 
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+    // Pre-calculate category weights for O(1) lookup during sort
+    const categoryWeights = new Map();
+    categoryOrder.forEach((cat, index) => categoryWeights.set(cat, index));
 
-      if (catA !== catB) {
-        return catA - catB;
+    // Flatten all category images using Schwartzian Transform concept
+    for (const [category, items] of Object.entries(images)) {
+      if (Array.isArray(items)) {
+        const catWeight = categoryWeights.has(category) ? categoryWeights.get(category) : 999;
+        const catName = getFormattedName(category);
+
+        items.forEach((item, index) => {
+          allItems.push({
+            ...item,
+            category,
+            order: index,
+            _catWeight: catWeight,
+            // Ensure consistent property names
+            id: item.id || `${category}-${index}`,
+            title: item.title || `${catName} ${index + 1}`,
+            alt: item.alt || item.title || `${catName} photography`,
+            type: item.type || 'image'
+          });
+        });
       }
+    }
 
+    // Sort using pre-calculated weights (O(N log N) total, but O(1) weight lookup)
+    allItems.sort((a, b) => {
+      if (a._catWeight !== b._catWeight) {
+        return a._catWeight - b._catWeight;
+      }
       return (a.order || 0) - (b.order || 0);
     });
 
