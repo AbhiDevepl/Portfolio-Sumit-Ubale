@@ -206,7 +206,7 @@ class GalleryRenderer {
         article.classList.remove('loading');
       }, { once: true });
 
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
     } else {
@@ -234,7 +234,7 @@ class GalleryRenderer {
       const playIcon = this.createPlayIcon();
       article.appendChild(playIcon);
 
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
@@ -275,16 +275,17 @@ class GalleryRenderer {
   }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map((item, i) => {
+      const newItem = Object.assign({}, item);
+      newItem.type = item.type || 'image';
+      newItem.originalIndex = i;
+      return newItem;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -314,7 +315,7 @@ class GalleryRenderer {
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
         const delay = Math.min(index * 0.05, 2); // Cap delay
-        item.style.transition = `opacity 0.5s ease ${delay}s, transform 0.5s ease ${delay}s`;
+        item.style.transition = 'opacity 0.5s ease ' + delay + 's, transform 0.5s ease ' + delay + 's';
 
         setTimeout(() => {
           item.style.opacity = '1';
@@ -365,7 +366,7 @@ class ModalViewer {
   }
 
   init() {
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
     this.bindEnhancedGestures();
@@ -403,7 +404,7 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
     if (this.navigationDebounce) return;
 
     this.navigationDebounce = true;
@@ -411,7 +412,8 @@ class ModalViewer {
       this.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    const portfolioGallery = window.PortfolioGallery;
+    const state = portfolioGallery && portfolioGallery.state ? portfolioGallery.state.getState() : null;
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -425,7 +427,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
     if (items.length === 0) return;
@@ -435,7 +437,7 @@ class ModalViewer {
   }
 
   close() {
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.close();
       this.isOpen = false;
     }
@@ -501,7 +503,7 @@ class FilterController {
 
     const filtered = allItems.filter(item =>
       item.category === category ||
-      (Array.isArray(item.categories) && item.categories.includes(category))
+      (Array.isArray(item.categories) && item.categories.indexOf(category) !== -1)
     );
 
     this.state.patchState({
@@ -565,7 +567,7 @@ class FilterController {
     const category = params.get('category');
 
     if (category) {
-      const chip = this.chipsContainer.querySelector(`[data-category="${category}"]`);
+      const chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
       if (chip) {
         this.setActiveChip(chip);
         this.filterByCategory(category);
@@ -630,7 +632,7 @@ class PortfolioGallery {
       this.modal = new ModalViewer(this.state);
       this.modal.init();
 
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
@@ -653,7 +655,8 @@ class PortfolioGallery {
    */
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const portfolio = data.portfolio;
+    const images = (portfolio && portfolio.images) ? portfolio.images : {};
 
     Object.keys(images).forEach((category) => {
       const items = images[category];
@@ -663,17 +666,17 @@ class PortfolioGallery {
         const displayCategory = formatPortfolioCategoryName(category);
 
         items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            _catWeight: catWeight,
-            displayCategory,
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${displayCategory} ${index + 1}`,
-            alt: item.alt || item.title || `${displayCategory} photography`,
-            type: item.type || 'image'
-          });
+          const enriched = Object.assign({}, item);
+          enriched.category = category;
+          enriched.order = index;
+          enriched._catWeight = catWeight;
+          enriched.displayCategory = displayCategory;
+          enriched.id = item.id || (category + '-' + index);
+          enriched.title = item.title || (displayCategory + ' ' + (index + 1));
+          enriched.alt = item.alt || item.title || (displayCategory + ' photography');
+          enriched.type = item.type || 'image';
+
+          allItems.push(enriched);
         });
       }
     });
