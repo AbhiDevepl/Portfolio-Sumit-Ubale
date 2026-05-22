@@ -12,9 +12,8 @@
 
 /**
  * Category order for sorting.
- * Unknown categories sort to the top (index -1).
  */
-const PORTFOLIO_CATEGORY_ORDER = [
+var PORTFOLIO_CATEGORY_ORDER = [
   'weddings',
   'perwedding',
   'pre-wedding-photos-and-videos',
@@ -30,17 +29,16 @@ const PORTFOLIO_CATEGORY_ORDER = [
 
 /**
  * O(1) weight lookup for categories.
- * Using Map for better performance in the sort comparator.
  */
-const CATEGORY_WEIGHTS = new Map();
-PORTFOLIO_CATEGORY_ORDER.forEach((cat, index) => {
+var CATEGORY_WEIGHTS = new Map();
+PORTFOLIO_CATEGORY_ORDER.forEach(function(cat, index) {
   CATEGORY_WEIGHTS.set(cat, index);
 });
 
 /**
  * Memoization cache for formatted category names.
  */
-const FORMATTED_CATEGORY_CACHE = new Map();
+var FORMATTED_CATEGORY_CACHE = new Map();
 
 /**
  * Helper to format category names with memoization.
@@ -50,10 +48,11 @@ function formatPortfolioCategoryName(slug) {
   if (FORMATTED_CATEGORY_CACHE.has(slug)) {
     return FORMATTED_CATEGORY_CACHE.get(slug);
   }
-  const formatted = slug
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+  var words = slug.split('-');
+  var formattedWords = words.map(function(word) {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  });
+  var formatted = formattedWords.join(' ');
   FORMATTED_CATEGORY_CACHE.set(slug, formatted);
   return formatted;
 }
@@ -74,20 +73,28 @@ class GalleryState {
 
   subscribe(callback) {
     this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
+    var self = this;
+    return function() {
+      self.listeners.delete(callback);
+    };
   }
 
   /**
    * Batch multiple state updates into a single notification.
    */
   patchState(updates) {
-    Object.assign(this, updates);
+    var self = this;
+    Object.keys(updates).forEach(function(key) {
+      self[key] = updates[key];
+    });
     this.notify();
   }
 
   notify() {
-    const state = this.getState();
-    this.listeners.forEach(cb => cb(state));
+    var state = this.getState();
+    this.listeners.forEach(function(cb) {
+      cb(state);
+    });
   }
 
   getState() {
@@ -148,47 +155,43 @@ class GalleryRenderer {
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
     }
-
-    this.animationFrame = requestAnimationFrame(() => {
-      this._renderSync(items, category);
+    var self = this;
+    this.animationFrame = requestAnimationFrame(function() {
+      self._renderSync(items, category);
     });
   }
 
   /**
-   * Optimized DOM update using DocumentFragment and replaceChildren.
+   * Optimized DOM update using DocumentFragment.
    */
   _renderSync(items, category) {
-    const fragment = document.createDocumentFragment();
+    var fragment = document.createDocumentFragment();
+    var self = this;
 
-    items.forEach((item, index) => {
-      const element = this.createGalleryItem(item, index);
+    items.forEach(function(item, index) {
+      var element = self.createGalleryItem(item, index);
       if (element) {
         fragment.appendChild(element);
       }
     });
 
-    // High-performance DOM clearing and replacement
-    if (this.container.replaceChildren) {
-      this.container.replaceChildren(fragment);
-    } else {
-      this.container.innerHTML = '';
-      this.container.appendChild(fragment);
-    }
+    this.container.innerHTML = '';
+    this.container.appendChild(fragment);
 
     this.triggerRevealAnimations();
   }
 
   createGalleryItem(item, index) {
-    const isVideo = item.type === 'video';
-    const article = document.createElement('article');
-    article.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'} loading`;
+    var isVideo = item.type === 'video';
+    var article = document.createElement('article');
+    article.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image') + ' loading';
     article.dataset.index = index;
     article.dataset.category = item.category || '';
     article.setAttribute('tabindex', '0');
     article.setAttribute('role', 'listitem');
-    article.setAttribute('aria-label', `${item.title || 'Gallery item'}${isVideo ? ' (video)' : ''}`);
+    article.setAttribute('aria-label', (item.title || 'Gallery item') + (isVideo ? ' (video)' : ''));
 
-    const media = document.createElement(isVideo ? 'video' : 'img');
+    var media = document.createElement(isVideo ? 'video' : 'img');
     media.className = 'gallery-media';
     media.style.opacity = '0';
     media.style.transition = 'opacity 0.6s ease-out';
@@ -201,7 +204,7 @@ class GalleryRenderer {
       media.playsInline = true;
       if (item.poster) media.poster = item.poster;
 
-      media.addEventListener('loadedmetadata', () => {
+      media.addEventListener('loadedmetadata', function() {
         media.style.opacity = '1';
         article.classList.remove('loading');
       }, { once: true });
@@ -215,7 +218,7 @@ class GalleryRenderer {
       media.alt = item.alt || item.title || 'Portfolio image';
       media.decoding = 'async';
 
-      media.addEventListener('load', () => {
+      media.addEventListener('load', function() {
         media.style.opacity = '1';
         article.classList.remove('loading');
         article.classList.add('loaded');
@@ -231,7 +234,7 @@ class GalleryRenderer {
     article.appendChild(media);
 
     if (isVideo) {
-      const playIcon = this.createPlayIcon();
+      var playIcon = this.createPlayIcon();
       article.appendChild(playIcon);
 
       if (window.Core && window.Core.VideoHover) {
@@ -239,23 +242,22 @@ class GalleryRenderer {
       }
     }
 
-    const overlay = document.createElement('div');
+    var overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${item.displayCategory || formatPortfolioCategoryName(item.category)}</p>
-    `;
+    overlay.innerHTML = '<h3 class="gallery-item-title">' + (item.title || '') + '</h3>' +
+                        '<p class="gallery-item-category">' + (item.displayCategory || formatPortfolioCategoryName(item.category)) + '</p>';
     article.appendChild(overlay);
 
-    article.addEventListener('click', (e) => {
+    var self = this;
+    article.addEventListener('click', function(e) {
       if (e.target.closest('video') && e.target !== media) return;
-      this.openLightbox(index);
+      self.openLightbox(index);
     });
 
-    article.addEventListener('keydown', (e) => {
+    article.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        this.openLightbox(index);
+        self.openLightbox(index);
       }
     });
 
@@ -263,25 +265,21 @@ class GalleryRenderer {
   }
 
   createPlayIcon() {
-    const icon = document.createElement('div');
+    var icon = document.createElement('div');
     icon.className = 'gallery-video-play-icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.innerHTML = `
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    `;
+    icon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
     return icon;
   }
 
   openLightbox(index) {
     if (!window.Core || !window.Core.Lightbox) return;
 
-    const state = this.state.getState();
-    const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
+    var state = this.state.getState();
+    var items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
-    const lightboxItems = items.map((item, i) => {
-      const newItem = Object.assign({}, item);
+    var lightboxItems = items.map(function(item, i) {
+      var newItem = Object.assign({}, item);
       newItem.type = item.type || 'image';
       newItem.originalIndex = i;
       return newItem;
@@ -291,7 +289,7 @@ class GalleryRenderer {
   }
 
   triggerRevealAnimations() {
-    const items = this.container.querySelectorAll('.gallery-item');
+    var items = this.container.querySelectorAll('.gallery-item');
 
     if (window.GSAP && window.ScrollTrigger) {
       window.GSAP.fromTo(items,
@@ -301,7 +299,7 @@ class GalleryRenderer {
           y: 0,
           duration: 0.6,
           stagger: {
-            amount: 1.5 // Cap total stagger duration for large lists
+            amount: 1.5
           },
           ease: 'power2.out',
           scrollTrigger: {
@@ -311,13 +309,13 @@ class GalleryRenderer {
         }
       );
     } else {
-      items.forEach((item, index) => {
+      items.forEach(function(item, index) {
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        const delay = Math.min(index * 0.05, 2); // Cap delay
+        var delay = Math.min(index * 0.05, 2);
         item.style.transition = 'opacity 0.5s ease ' + delay + 's, transform 0.5s ease ' + delay + 's';
 
-        setTimeout(() => {
+        setTimeout(function() {
           item.style.opacity = '1';
           item.style.transform = 'translateY(0)';
         }, 50);
@@ -326,28 +324,11 @@ class GalleryRenderer {
   }
 
   showLoading() {
-    this.container.innerHTML = `
-      <div class="gallery-loading-state">
-        <div class="gallery-loading-spinner"></div>
-        <p>Loading portfolio...</p>
-      </div>
-    `;
+    this.container.innerHTML = '<div class="gallery-loading-state"><div class="gallery-loading-spinner"></div><p>Loading portfolio...</p></div>';
   }
 
   showError(message) {
-    this.container.innerHTML = `
-      <div class="gallery-error-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 8v4m0 4h.01"/>
-        </svg>
-        <h3>Failed to load portfolio</h3>
-        <p>${message}</p>
-        <button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">
-          Try Again
-        </button>
-      </div>
-    `;
+    this.container.innerHTML = '<div class="gallery-error-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg><h3>Failed to load portfolio</h3><p>' + message + '</p><button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">Try Again</button></div>';
   }
 }
 
@@ -360,9 +341,9 @@ class ModalViewer {
     this.isOpen = false;
     this.touchStartX = 0;
     this.touchCurrentX = 0;
-    this.touchThreshold = 48; // Minimum swipe distance
+    this.touchThreshold = 48;
     this.navigationDebounce = false;
-    this.debounceDelay = 150; // ms
+    this.debounceDelay = 150;
   }
 
   init() {
@@ -373,32 +354,33 @@ class ModalViewer {
   }
 
   bindEnhancedGestures() {
-    const lightbox = document.getElementById('lightbox');
+    var lightbox = document.getElementById('lightbox');
     if (!lightbox) return;
 
-    const mediaContainer = lightbox.querySelector('.lightbox-media-container');
+    var mediaContainer = lightbox.querySelector('.lightbox-media-container');
     if (!mediaContainer) return;
 
-    mediaContainer.addEventListener('touchstart', (e) => {
+    var self = this;
+    mediaContainer.addEventListener('touchstart', function(e) {
       if (e.touches.length !== 1) return;
-      this.touchStartX = e.touches[0].clientX;
-      this.touchCurrentX = e.touches[0].clientX;
+      self.touchStartX = e.touches[0].clientX;
+      self.touchCurrentX = e.touches[0].clientX;
     }, { passive: true });
 
-    mediaContainer.addEventListener('touchmove', (e) => {
+    mediaContainer.addEventListener('touchmove', function(e) {
       if (e.touches.length !== 1) return;
-      this.touchCurrentX = e.touches[0].clientX;
+      self.touchCurrentX = e.touches[0].clientX;
     }, { passive: true });
 
-    mediaContainer.addEventListener('touchend', () => {
-      const deltaX = this.touchCurrentX - this.touchStartX;
-      if (Math.abs(deltaX) < this.touchThreshold) return;
-      if (this.navigationDebounce) return;
+    mediaContainer.addEventListener('touchend', function() {
+      var deltaX = self.touchCurrentX - self.touchStartX;
+      if (Math.abs(deltaX) < self.touchThreshold) return;
+      if (self.navigationDebounce) return;
 
-      if (deltaX < -this.touchThreshold) {
-        this.navigate(1);
-      } else if (deltaX > this.touchThreshold) {
-        this.navigate(-1);
+      if (deltaX < -self.touchThreshold) {
+        self.navigate(1);
+      } else if (deltaX > self.touchThreshold) {
+        self.navigate(-1);
       }
     });
   }
@@ -407,29 +389,30 @@ class ModalViewer {
     if (!window.Core || !window.Core.Lightbox) return;
     if (this.navigationDebounce) return;
 
+    var self = this;
     this.navigationDebounce = true;
-    setTimeout(() => {
-      this.navigationDebounce = false;
+    setTimeout(function() {
+      self.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const portfolioGallery = window.PortfolioGallery;
-    const state = portfolioGallery && portfolioGallery.state ? portfolioGallery.state.getState() : null;
+    var portfolioGallery = window.PortfolioGallery;
+    var state = portfolioGallery && portfolioGallery.state ? portfolioGallery.state.getState() : null;
     if (!state) return;
 
-    const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
-    const len = items.length;
+    var items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
+    var len = items.length;
     if (len === 0) return;
 
-    const currentIndex = window.Core.Lightbox.state.currentIndex;
-    const newIndex = (currentIndex + direction + len) % len;
+    var currentIndex = window.Core.Lightbox.state.currentIndex;
+    var newIndex = (currentIndex + direction + len) % len;
 
     window.Core.Lightbox.open(newIndex, items);
   }
 
   open(index) {
     if (!window.Core || !window.Core.Lightbox) return;
-    const state = this.state.getState();
-    const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
+    var state = this.state.getState();
+    var items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
     if (items.length === 0) return;
 
     window.Core.Lightbox.open(index, items);
@@ -457,16 +440,17 @@ class FilterController {
   init() {
     if (!this.chipsContainer) return;
 
-    const chips = this.chipsContainer.querySelectorAll('.filter-chip');
+    var chips = this.chipsContainer.querySelectorAll('.filter-chip');
+    var self = this;
 
-    chips.forEach(chip => {
-      chip.addEventListener('click', () => {
-        this.setActiveChip(chip);
-        const category = chip.dataset.category;
-        this.filterByCategory(category);
+    chips.forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        self.setActiveChip(chip);
+        var category = chip.dataset.category;
+        self.filterByCategory(category);
       });
 
-      chip.addEventListener('keydown', (e) => {
+      chip.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           chip.click();
@@ -478,8 +462,8 @@ class FilterController {
   }
 
   setActiveChip(activeChip) {
-    const chips = this.chipsContainer.querySelectorAll('.filter-chip');
-    chips.forEach(chip => {
+    var chips = this.chipsContainer.querySelectorAll('.filter-chip');
+    chips.forEach(function(chip) {
       chip.classList.remove('active');
       chip.setAttribute('aria-selected', 'false');
     });
@@ -489,8 +473,8 @@ class FilterController {
   }
 
   filterByCategory(category) {
-    const state = this.state.getState();
-    const allItems = state.mediaList;
+    var state = this.state.getState();
+    var allItems = state.mediaList;
 
     if (category === 'all') {
       this.state.patchState({
@@ -501,10 +485,10 @@ class FilterController {
       return;
     }
 
-    const filtered = allItems.filter(item =>
-      item.category === category ||
-      (Array.isArray(item.categories) && item.categories.indexOf(category) !== -1)
-    );
+    var filtered = allItems.filter(function(item) {
+      return item.category === category ||
+      (Array.isArray(item.categories) && item.categories.indexOf(category) !== -1);
+    });
 
     this.state.patchState({
       filteredList: filtered,
@@ -516,7 +500,7 @@ class FilterController {
   }
 
   updateURL(category) {
-    const url = new URL(window.location);
+    var url = new URL(window.location);
     if (category === 'all') {
       url.searchParams.delete('category');
     } else {
@@ -526,48 +510,49 @@ class FilterController {
   }
 
   initHorizontalScroll() {
-    let isDown = false;
-    let startX;
-    let scrollLeft;
+    var isDown = false;
+    var startX;
+    var scrollLeft;
+    var self = this;
 
-    this.chipsContainer.addEventListener('mousedown', (e) => {
+    this.chipsContainer.addEventListener('mousedown', function(e) {
       isDown = true;
-      startX = e.pageX - this.chipsContainer.offsetLeft;
-      scrollLeft = this.chipsContainer.scrollLeft;
-      this.chipsContainer.style.cursor = 'grabbing';
+      startX = e.pageX - self.chipsContainer.offsetLeft;
+      scrollLeft = self.chipsContainer.scrollLeft;
+      self.chipsContainer.style.cursor = 'grabbing';
     });
 
-    this.chipsContainer.addEventListener('mouseleave', () => {
+    this.chipsContainer.addEventListener('mouseleave', function() {
       isDown = false;
-      this.chipsContainer.style.cursor = 'grab';
+      self.chipsContainer.style.cursor = 'grab';
     });
 
-    this.chipsContainer.addEventListener('mouseup', () => {
+    this.chipsContainer.addEventListener('mouseup', function() {
       isDown = false;
-      this.chipsContainer.style.cursor = 'grab';
+      self.chipsContainer.style.cursor = 'grab';
     });
 
-    this.chipsContainer.addEventListener('mousemove', (e) => {
+    this.chipsContainer.addEventListener('mousemove', function(e) {
       if (!isDown) return;
       e.preventDefault();
-      const x = e.pageX - this.chipsContainer.offsetLeft;
-      const walk = (x - startX) * 2;
-      this.chipsContainer.scrollLeft = scrollLeft - walk;
+      var x = e.pageX - self.chipsContainer.offsetLeft;
+      var walk = (x - startX) * 2;
+      self.chipsContainer.scrollLeft = scrollLeft - walk;
     });
 
     this.chipsContainer.style.scrollbarWidth = 'none';
     this.chipsContainer.style.msOverflowStyle = 'none';
-    const style = document.createElement('style');
+    var style = document.createElement('style');
     style.textContent = '.filter-chips-container::-webkit-scrollbar { display: none; }';
     document.head.appendChild(style);
   }
 
   selectFromURL() {
-    const params = new URLSearchParams(window.location.search);
-    const category = params.get('category');
+    var params = new URLSearchParams(window.location.search);
+    var category = params.get('category');
 
     if (category) {
-      const chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
+      var chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
       if (chip) {
         this.setActiveChip(chip);
         this.filterByCategory(category);
@@ -591,8 +576,11 @@ class PortfolioGallery {
   }
 
   init() {
+    var self = this;
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => this.setup());
+      document.addEventListener('DOMContentLoaded', function() {
+        self.setup();
+      });
     } else {
       this.setup();
     }
@@ -605,17 +593,17 @@ class PortfolioGallery {
     this.renderer = new GalleryRenderer(this.state, this.container);
     this.renderer.showLoading();
 
-    // Ensure we only have one subscription active
     if (this.unsub) this.unsub();
-    this.unsub = this.state.subscribe((state) => {
+    var self = this;
+    this.unsub = this.state.subscribe(function(state) {
       if (state.isLoading || state.hasError) return;
-      this.renderer.render(state.filteredList, state.activeCategory);
+      self.renderer.render(state.filteredList, state.activeCategory);
     });
 
     try {
       this.state.setLoading(true);
-      const data = await this.fetchData();
-      const allItems = this.processData(data);
+      var data = await this.fetchData();
+      var allItems = this.processData(data);
 
       this.state.patchState({
         mediaList: allItems,
@@ -623,7 +611,7 @@ class PortfolioGallery {
         isLoading: false
       });
 
-      const chipsContainer = document.querySelector('.filter-chips-container');
+      var chipsContainer = document.querySelector('.filter-chips-container');
       if (chipsContainer) {
         this.filterController = new FilterController(this.state, chipsContainer);
         this.filterController.selectFromURL();
@@ -644,44 +632,42 @@ class PortfolioGallery {
   }
 
   async fetchData() {
-    const response = await fetch('/data/portfolio.json');
+    var response = await fetch('/data/portfolio.json');
     if (!response.ok) throw new Error('Fetch failed');
     return response.json();
   }
 
-  /**
-   * Optimized data processing using a Schwartzian Transform.
-   * Pre-calculates category weights and memoized display names.
-   */
   processData(data) {
-    const allItems = [];
-    const portfolio = data.portfolio;
-    const images = (portfolio && portfolio.images) ? portfolio.images : {};
+    var allItems = [];
+    var portfolio = data.portfolio;
+    var images = (portfolio && portfolio.images) ? portfolio.images : {};
+    var categories = Object.keys(images);
 
-    Object.keys(images).forEach((category) => {
-      const items = images[category];
+    for (var i = 0; i < categories.length; i++) {
+      var category = categories[i];
+      var items = images[category];
       if (Array.isArray(items)) {
-        // Unknown categories sort to -1 (top) to match legacy indexOf behavior
-        const catWeight = CATEGORY_WEIGHTS.has(category) ? CATEGORY_WEIGHTS.get(category) : -1;
-        const displayCategory = formatPortfolioCategoryName(category);
+        var catWeight = CATEGORY_WEIGHTS.has(category) ? CATEGORY_WEIGHTS.get(category) : -1;
+        var displayCategory = formatPortfolioCategoryName(category);
 
-        items.forEach((item, index) => {
-          const enriched = Object.assign({}, item);
+        for (var j = 0; j < items.length; j++) {
+          var item = items[j];
+          var enriched = Object.assign({}, item);
           enriched.category = category;
-          enriched.order = index;
+          enriched.order = j;
           enriched._catWeight = catWeight;
           enriched.displayCategory = displayCategory;
-          enriched.id = item.id || (category + '-' + index);
-          enriched.title = item.title || (displayCategory + ' ' + (index + 1));
+          enriched.id = item.id || (category + '-' + j);
+          enriched.title = item.title || (displayCategory + ' ' + (j + 1));
           enriched.alt = item.alt || item.title || (displayCategory + ' photography');
           enriched.type = item.type || 'image';
 
           allItems.push(enriched);
-        });
+        }
       }
-    });
+    }
 
-    allItems.sort((a, b) => {
+    allItems.sort(function(a, b) {
       if (a._catWeight !== b._catWeight) {
         return a._catWeight - b._catWeight;
       }
