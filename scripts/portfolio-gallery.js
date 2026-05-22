@@ -7,6 +7,58 @@
  */
 
 // ========================================
+// PERFORMANCE CONSTANTS & CACHES
+// ========================================
+
+/**
+ * Category order for sorting.
+ * Unknown categories sort to the top (index -1).
+ */
+const PORTFOLIO_CATEGORY_ORDER = [
+  'weddings',
+  'perwedding',
+  'pre-wedding-photos-and-videos',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial'
+];
+
+/**
+ * O(1) weight lookup for categories.
+ * Using Map for better performance in the sort comparator.
+ */
+const CATEGORY_WEIGHTS = new Map();
+PORTFOLIO_CATEGORY_ORDER.forEach((cat, index) => {
+  CATEGORY_WEIGHTS.set(cat, index);
+});
+
+/**
+ * Memoization cache for formatted category names.
+ */
+const FORMATTED_CATEGORY_CACHE = new Map();
+
+/**
+ * Helper to format category names with memoization.
+ */
+function formatPortfolioCategoryName(slug) {
+  if (!slug) return '';
+  if (FORMATTED_CATEGORY_CACHE.has(slug)) {
+    return FORMATTED_CATEGORY_CACHE.get(slug);
+  }
+  const formatted = slug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+  FORMATTED_CATEGORY_CACHE.set(slug, formatted);
+  return formatted;
+}
+
+// ========================================
 // GALLERY STATE MANAGEMENT
 // ========================================
 class GalleryState {
@@ -25,8 +77,17 @@ class GalleryState {
     return () => this.listeners.delete(callback);
   }
 
+  /**
+   * Batch multiple state updates into a single notification.
+   */
+  patchState(updates) {
+    Object.assign(this, updates);
+    this.notify();
+  }
+
   notify() {
-    this.listeners.forEach(cb => cb(this.getState()));
+    const state = this.getState();
+    this.listeners.forEach(cb => cb(state));
   }
 
   getState() {
@@ -84,7 +145,6 @@ class GalleryRenderer {
   }
 
   render(items, category) {
-    // Cancel pending animation frame
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
     }
@@ -94,6 +154,9 @@ class GalleryRenderer {
     });
   }
 
+  /**
+   * Optimized DOM update using DocumentFragment and replaceChildren.
+   */
   _renderSync(items, category) {
     const fragment = document.createDocumentFragment();
 
@@ -104,25 +167,27 @@ class GalleryRenderer {
       }
     });
 
-    // Clear container and append new items
-    this.container.innerHTML = '';
-    this.container.appendChild(fragment);
+    // High-performance DOM clearing and replacement
+    if (this.container.replaceChildren) {
+      this.container.replaceChildren(fragment);
+    } else {
+      this.container.innerHTML = '';
+      this.container.appendChild(fragment);
+    }
 
-    // Trigger reveal animations
     this.triggerRevealAnimations();
   }
 
   createGalleryItem(item, index) {
     const isVideo = item.type === 'video';
     const article = document.createElement('article');
-    article.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'}`;
+    article.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'} loading`;
     article.dataset.index = index;
     article.dataset.category = item.category || '';
     article.setAttribute('tabindex', '0');
     article.setAttribute('role', 'listitem');
     article.setAttribute('aria-label', `${item.title || 'Gallery item'}${isVideo ? ' (video)' : ''}`);
 
-    // Create media element
     const media = document.createElement(isVideo ? 'video' : 'img');
     media.className = 'gallery-media';
     media.style.opacity = '0';
@@ -136,17 +201,14 @@ class GalleryRenderer {
       media.playsInline = true;
       if (item.poster) media.poster = item.poster;
 
-      // Show when metadata loaded
       media.addEventListener('loadedmetadata', () => {
         media.style.opacity = '1';
         article.classList.remove('loading');
       }, { once: true });
 
-      // Register with VideoObserver for lazy loading
       if (window.Core?.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
-
     } else {
       media.src = item.src;
       media.loading = 'lazy';
@@ -168,34 +230,28 @@ class GalleryRenderer {
 
     article.appendChild(media);
 
-    // Video play icon overlay
     if (isVideo) {
       const playIcon = this.createPlayIcon();
       article.appendChild(playIcon);
 
-      // Initialize video hover behavior
       if (window.Core?.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
 
-    // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
     overlay.innerHTML = `
       <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
+      <p class="gallery-item-category">${item.displayCategory || formatPortfolioCategoryName(item.category)}</p>
     `;
     article.appendChild(overlay);
 
-    // Click handler
     article.addEventListener('click', (e) => {
-      // If clicking video directly, let VideoHover handle play/pause
       if (e.target.closest('video') && e.target !== media) return;
       this.openLightbox(index);
     });
 
-    // Keyboard handler
     article.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -218,21 +274,12 @@ class GalleryRenderer {
     return icon;
   }
 
-  formatCategory(category) {
-    if (!category) return '';
-    return category
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }
-
   openLightbox(index) {
     if (!window.Core?.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
-    // Ensure items have required properties
     const lightboxItems = items.map((item, i) => ({
       ...item,
       type: item.type || 'image',
@@ -246,14 +293,15 @@ class GalleryRenderer {
     const items = this.container.querySelectorAll('.gallery-item');
 
     if (window.GSAP && window.ScrollTrigger) {
-      // Use GSAP if available
       window.GSAP.fromTo(items,
         { opacity: 0, y: 40 },
         {
           opacity: 1,
           y: 0,
           duration: 0.6,
-          stagger: 0.05,
+          stagger: {
+            amount: 1.5 // Cap total stagger duration for large lists
+          },
           ease: 'power2.out',
           scrollTrigger: {
             trigger: this.container,
@@ -262,11 +310,11 @@ class GalleryRenderer {
         }
       );
     } else {
-      // Fallback to CSS animations
       items.forEach((item, index) => {
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
+        const delay = Math.min(index * 0.05, 2); // Cap delay
+        item.style.transition = `opacity 0.5s ease ${delay}s, transform 0.5s ease ${delay}s`;
 
         setTimeout(() => {
           item.style.opacity = '1';
@@ -317,12 +365,9 @@ class ModalViewer {
   }
 
   init() {
-    // Initialize Core.Lightbox if not already done
     if (window.Core?.Lightbox) {
       window.Core.Lightbox.init();
     }
-
-    // Enhance with additional gesture support
     this.bindEnhancedGestures();
   }
 
@@ -333,7 +378,6 @@ class ModalViewer {
     const mediaContainer = lightbox.querySelector('.lightbox-media-container');
     if (!mediaContainer) return;
 
-    // Enhanced touch handling
     mediaContainer.addEventListener('touchstart', (e) => {
       if (e.touches.length !== 1) return;
       this.touchStartX = e.touches[0].clientX;
@@ -347,18 +391,9 @@ class ModalViewer {
 
     mediaContainer.addEventListener('touchend', () => {
       const deltaX = this.touchCurrentX - this.touchStartX;
-
       if (Math.abs(deltaX) < this.touchThreshold) return;
-
-      // Debounce navigation
       if (this.navigationDebounce) return;
 
-      this.navigationDebounce = true;
-      setTimeout(() => {
-        this.navigationDebounce = false;
-      }, this.debounceDelay);
-
-      // Swipe left (deltaX < 0) = next, Swipe right (deltaX > 0) = previous
       if (deltaX < -this.touchThreshold) {
         this.navigate(1);
       } else if (deltaX > this.touchThreshold) {
@@ -369,8 +404,6 @@ class ModalViewer {
 
   navigate(direction) {
     if (!window.Core?.Lightbox) return;
-
-    // Debounce rapid navigation
     if (this.navigationDebounce) return;
 
     this.navigationDebounce = true;
@@ -383,7 +416,6 @@ class ModalViewer {
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
     const len = items.length;
-
     if (len === 0) return;
 
     const currentIndex = window.Core.Lightbox.state.currentIndex;
@@ -394,10 +426,8 @@ class ModalViewer {
 
   open(index) {
     if (!window.Core?.Lightbox) return;
-
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
-
     if (items.length === 0) return;
 
     window.Core.Lightbox.open(index, items);
@@ -405,10 +435,10 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
-
-    window.Core.Lightbox.close();
-    this.isOpen = false;
+    if (window.Core?.Lightbox) {
+      window.Core.Lightbox.close();
+      this.isOpen = false;
+    }
   }
 }
 
@@ -434,7 +464,6 @@ class FilterController {
         this.filterByCategory(category);
       });
 
-      // Keyboard support
       chip.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -443,7 +472,6 @@ class FilterController {
       });
     });
 
-    // Horizontal scroll with touch
     this.initHorizontalScroll();
   }
 
@@ -463,20 +491,25 @@ class FilterController {
     const allItems = state.mediaList;
 
     if (category === 'all') {
-      this.state.setFilteredList(allItems);
-      this.state.setActiveCategory('all');
+      this.state.patchState({
+        filteredList: allItems,
+        activeCategory: 'all',
+        currentIndex: 0
+      });
       return;
     }
 
     const filtered = allItems.filter(item =>
       item.category === category ||
-      (item.categories && item.categories.includes(category))
+      (Array.isArray(item.categories) && item.categories.includes(category))
     );
 
-    this.state.setFilteredList(filtered);
-    this.state.setActiveCategory(category);
+    this.state.patchState({
+      filteredList: filtered,
+      activeCategory: category,
+      currentIndex: 0
+    });
 
-    // Update URL for shareability
     this.updateURL(category);
   }
 
@@ -487,7 +520,7 @@ class FilterController {
     } else {
       url.searchParams.set('category', category);
     }
-    window.history.pushState({ category }, '', url);
+    window.history.pushState({ category: category }, '', url);
   }
 
   initHorizontalScroll() {
@@ -520,7 +553,6 @@ class FilterController {
       this.chipsContainer.scrollLeft = scrollLeft - walk;
     });
 
-    // Touch scroll indicator
     this.chipsContainer.style.scrollbarWidth = 'none';
     this.chipsContainer.style.msOverflowStyle = 'none';
     const style = document.createElement('style');
@@ -552,11 +584,11 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+    this.unsub = null;
     this.init();
   }
 
-  async init() {
-    // Wait for DOM
+  init() {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.setup());
     } else {
@@ -565,124 +597,98 @@ class PortfolioGallery {
   }
 
   async setup() {
-    // Get container
     this.container = document.getElementById('gallery-grid');
-    if (!this.container) {
-      console.error('Gallery container not found');
-      return;
-    }
+    if (!this.container) return;
 
-    // Initialize renderer
     this.renderer = new GalleryRenderer(this.state, this.container);
-
-    // Show loading state
     this.renderer.showLoading();
-    this.state.setLoading(true);
+
+    // Ensure we only have one subscription active
+    if (this.unsub) this.unsub();
+    this.unsub = this.state.subscribe((state) => {
+      if (state.isLoading || state.hasError) return;
+      this.renderer.render(state.filteredList, state.activeCategory);
+    });
 
     try {
-      // Fetch data
+      this.state.setLoading(true);
       const data = await this.fetchData();
-
-      // Process and flatten items
       const allItems = this.processData(data);
 
-      // Update state
-      this.state.setMediaList(allItems);
-      this.state.setLoading(false);
+      this.state.patchState({
+        mediaList: allItems,
+        filteredList: allItems,
+        isLoading: false
+      });
 
-      // Initial render
-      this.renderer.render(allItems, 'all');
-
-      // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
       if (chipsContainer) {
         this.filterController = new FilterController(this.state, chipsContainer);
         this.filterController.selectFromURL();
       }
 
-      // Initialize modal viewer
       this.modal = new ModalViewer(this.state);
       this.modal.init();
 
-      // Initialize Core.Lightbox
       if (window.Core?.Lightbox) {
         window.Core.Lightbox.init();
       }
 
     } catch (error) {
       console.error('Failed to load portfolio:', error);
-      this.state.setError(true);
-      this.renderer.showError('Unable to load portfolio. Please check your connection and try again.');
+      this.state.patchState({ hasError: true, isLoading: false });
+      this.renderer.showError('Unable to load portfolio. Please try again.');
     }
   }
 
   async fetchData() {
     const response = await fetch('/data/portfolio.json');
-    if (!response.ok) {
-      throw new Error('Failed to fetch portfolio data');
-    }
+    if (!response.ok) throw new Error('Fetch failed');
     return response.json();
   }
 
+  /**
+   * Optimized data processing using a Schwartzian Transform.
+   * Pre-calculates category weights and memoized display names.
+   */
   processData(data) {
     const allItems = [];
     const images = data.portfolio?.images || {};
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
+    Object.keys(images).forEach((category) => {
+      const items = images[category];
       if (Array.isArray(items)) {
+        // Unknown categories sort to -1 (top) to match legacy indexOf behavior
+        const catWeight = CATEGORY_WEIGHTS.has(category) ? CATEGORY_WEIGHTS.get(category) : -1;
+        const displayCategory = formatPortfolioCategoryName(category);
+
         items.forEach((item, index) => {
           allItems.push({
             ...item,
             category,
             order: index,
-            // Ensure consistent property names
+            _catWeight: catWeight,
+            displayCategory,
             id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            title: item.title || `${displayCategory} ${index + 1}`,
+            alt: item.alt || item.title || `${displayCategory} photography`,
             type: item.type || 'image'
           });
         });
       }
-    }
-
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
+    });
 
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+      if (a._catWeight !== b._catWeight) {
+        return a._catWeight - b._catWeight;
       }
-
       return (a.order || 0) - (b.order || 0);
     });
 
     return allItems;
   }
 
-  formatCategoryName(slug) {
-    return slug
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }
-
   retry() {
-    this.state = new GalleryState();
     this.setup();
   }
 }
