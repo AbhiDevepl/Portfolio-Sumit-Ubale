@@ -4,19 +4,6 @@
  */
 
 class ContentLoader {
-  static CATEGORY_NAMES = {
-    'weddings': 'Weddings',
-    'portraits': 'Portraits',
-    'commercial': 'Commercial',
-    'events': 'Events',
-    'maternity': 'Maternity',
-    'kids': 'Kids',
-    'haldi': 'Haldi',
-    'engagement': 'Engagement',
-    'pre-wedding-photos-and-videos': 'Pre-Wedding',
-    'cinematics': 'Cinematics'
-  };
-
   constructor() {
     this.dataUrl = '/data/portfolio.json';
     this.data = null;
@@ -134,7 +121,19 @@ class ContentLoader {
    * Helper to get category name from slug
    */
   getCategoryName(category) {
-    return ContentLoader.CATEGORY_NAMES[category] || category;
+    const names = {
+      'weddings': 'Weddings',
+      'portraits': 'Portraits',
+      'commercial': 'Commercial',
+      'events': 'Events',
+      'maternity': 'Maternity',
+      'kids': 'Kids',
+      'haldi': 'Haldi',
+      'engagement': 'Engagement',
+      'pre-wedding-photos-and-videos': 'Pre-Wedding',
+      'cinematics': 'Cinematics'
+    };
+    return names[category] || category;
   }
 
   /**
@@ -146,8 +145,13 @@ class ContentLoader {
     if (!this.mediaData) return [];
 
     if (category === 'all') {
-      // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      // Flatten all category arrays using concat to ensure ES6 compatibility
+      let all = [];
+      const values = Object.keys(this.mediaData).map(key => this.mediaData[key]);
+      for (let i = 0; i < values.length; i++) {
+        all = all.concat(values[i]);
+      }
+      return all;
     }
 
     return this.mediaData[category] || [];
