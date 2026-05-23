@@ -1,0 +1,3 @@
+## 2026-05-23 - Consolidating Redundant Gallery Initialization
+**Learning:** Found that the homepage had two overlapping gallery initialization scripts—one inline in `index.html` and one in `scripts/content-loader.js`. This caused double 300KB JSON fetches and forced the rendering of 1,000+ DOM nodes on every homepage load, severely impacting TTI and responsiveness.
+**Action:** Consolidated all gallery loading into `ContentLoader`. Implemented incremental rendering (Load More) and data caching. Ensured data integrity by merging `portfolio.json` and `new_portfolio.json`. Moved inline styles to `components.css` for better caching.

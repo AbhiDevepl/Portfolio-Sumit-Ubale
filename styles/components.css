@@ -1153,3 +1153,46 @@
     display: none; /* Hide tooltip on mobile to avoid clutter */
   }
 }
+
+/* ========================================
+   Homepage Portfolio (Inline Grid)
+   ======================================== */
+
+#portfolio-inline-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0;
+  align-items: start;
+  justify-content: center;
+  justify-items: center;
+}
+
+#portfolio-inline-grid.cinematics-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+#portfolio-inline-grid.cinematics-mode .gallery-item {
+  width: min(100%, 860px);
+  aspect-ratio: 16 / 9;
+}
+
+.gallery-item.fade-in-up {
+  animation: portfolioFadeInUp 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+@keyframes portfolioFadeInUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 767px) {
+  #portfolio-inline-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
