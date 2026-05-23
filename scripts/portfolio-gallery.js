@@ -233,8 +233,7 @@ class GalleryRenderer {
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
+    const lightboxItems = items.map((item, i) => Object.assign({}, item, {
       type: item.type || 'image',
       originalIndex: i
     }));
@@ -632,8 +631,7 @@ class PortfolioGallery {
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
         items.forEach((item, index) => {
-          allItems.push({
-            ...item,
+          allItems.push(Object.assign({}, item, {
             category,
             order: index,
             // Ensure consistent property names
@@ -641,7 +639,7 @@ class PortfolioGallery {
             title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
             alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
             type: item.type || 'image'
-          });
+          }));
         });
       }
     }
