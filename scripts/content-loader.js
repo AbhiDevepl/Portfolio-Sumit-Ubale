@@ -39,7 +39,7 @@ class ContentLoader {
       const response = await fetch(this.dataUrl);
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error('HTTP error! status: ' + response.status);
       }
 
       this.data = await response.json();
@@ -47,7 +47,7 @@ class ContentLoader {
       this.mediaData = this.data.portfolio.images;
       return this.data;
     } catch (error) {
-      throw new Error(`Failed to load portfolio data: ${error.message}`);
+      throw new Error('Failed to load portfolio data: ' + error.message);
     }
   }
 
@@ -88,7 +88,17 @@ class ContentLoader {
 
     if (category === 'all') {
       // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      var all = [];
+      var keys = Object.keys(this.mediaData);
+      for (var k = 0; k < keys.length; k++) {
+        var arr = this.mediaData[keys[k]];
+        if (Array.isArray(arr)) {
+          for (var i = 0; i < arr.length; i++) {
+            all.push(arr[i]);
+          }
+        }
+      }
+      return all;
     }
 
     return this.mediaData[category] || [];
@@ -100,10 +110,10 @@ class ContentLoader {
    */
   renderCategory(category) {
     // Support both gallery-grid (portfolio.html/gallery.html) and portfolio-inline-grid (index.html)
-    let galleryGrid = document.getElementById('gallery-grid') || document.getElementById('portfolio-inline-grid');
+    var galleryGrid = document.getElementById('gallery-grid') || document.getElementById('portfolio-inline-grid');
     if (!galleryGrid) return;
 
-    const items = this.getFilteredItems(category);
+    var items = this.getFilteredItems(category);
 
     // Clear existing
     galleryGrid.innerHTML = '';
@@ -114,11 +124,11 @@ class ContentLoader {
     }
 
     // Create gallery items with proper structure
-    const fragment = document.createDocumentFragment();
+    var fragment = document.createDocumentFragment();
 
     items.forEach((item, index) => {
-      const isVideo = item.type === 'video';
-      const el = document.createElement('article');
+      var isVideo = item.type === 'video';
+      var el = document.createElement('article');
       el.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image') + ' reveal-item loading';
       el.dataset.index = index;
       el.dataset.category = category === 'all' ? (item.category || 'uncategorized') : category;
@@ -128,9 +138,9 @@ class ContentLoader {
 
       // Click handler for lightbox
       el.addEventListener('click', () => {
-        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : items;
-        const itemIndex = visibleItems.findIndex(entry => entry.originalIndex === index);
-        const targetIndex = itemIndex >= 0 ? itemIndex : index;
+        var visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : items;
+        var itemIndex = visibleItems.findIndex(entry => entry.originalIndex === index);
+        var targetIndex = itemIndex >= 0 ? itemIndex : index;
 
         if (window.Core && window.Core.Lightbox) {
           window.Core.Lightbox.open(targetIndex, visibleItems);
@@ -146,7 +156,7 @@ class ContentLoader {
       });
 
       if (isVideo) {
-        const video = document.createElement('video');
+        var video = document.createElement('video');
         video.src = item.src;
         video.controls = true;
         video.playsInline = true;
@@ -154,7 +164,7 @@ class ContentLoader {
         if (item.aspectRatio) video.style.aspectRatio = item.aspectRatio;
         el.appendChild(video);
       } else {
-        const img = document.createElement('img');
+        var img = document.createElement('img');
         img.dataset.src = item.src; // Lazy load
         img.alt = item.alt || item.title || '';
         img.className = 'gallery-image';
@@ -163,14 +173,14 @@ class ContentLoader {
       }
 
       // Add overlay
-      const overlay = document.createElement('div');
+      var overlay = document.createElement('div');
       overlay.className = 'gallery-overlay';
 
-      const title = document.createElement('h3');
+      var title = document.createElement('h3');
       title.className = 'gallery-title';
       title.textContent = item.title || 'Untitled';
 
-      const catLabel = document.createElement('p');
+      var catLabel = document.createElement('p');
       catLabel.className = 'gallery-category';
       catLabel.textContent = this.getCategoryName(item.category || category);
 
@@ -199,14 +209,14 @@ class ContentLoader {
    * Re-run IntersectionObserver on lazy images
    */
   initLazyLoader() {
-    const lazyImages = document.querySelectorAll('#gallery-grid img[data-src]');
+    var lazyImages = document.querySelectorAll('#gallery-grid img[data-src]');
 
     // Create or reuse observer
     if (!window.lazyImageObserver) {
       window.lazyImageObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            const img = entry.target;
+            var img = entry.target;
             img.src = img.dataset.src;
             img.removeAttribute('data-src');
             window.lazyImageObserver.unobserve(img);
@@ -229,7 +239,7 @@ class ContentLoader {
    * Populate events section
    */
   populateEvents() {
-    const eventsGrid = document.querySelector('.events-grid');
+    var eventsGrid = document.querySelector('.events-grid');
     
     if (!eventsGrid || !(this.data && this.data.recentEvents)) {
       console.warn('Events grid or data not found');
@@ -241,43 +251,27 @@ class ContentLoader {
 
     // Create event items (reusing gallery item structure for consistency)
     this.data.recentEvents.forEach((event, index) => {
-      // Use createGalleryItem styling/structure but appended to events grid
-      // We manually recreate it here to ensure specific event classes if needed
-      // or we can reuse createGalleryItem if we want identical behavior.
-      // User asked for "like Portfolio", so let's stick to the Project Card style 
-      // or the Gallery Item style. The HTML had .event-item structure.
-      // Let's use the .event-item structure but make it dynamic.
-      
-      const item = document.createElement('div');
+      var item = document.createElement('div');
       item.className = 'event-item';
       
-      const img = document.createElement('img');
+      var img = document.createElement('img');
       img.src = event.src;
       img.alt = event.alt || event.title;
       img.className = 'event-image';
       img.loading = 'lazy';
       
-      // Maintain aspect ratio via CSS or style if variable
-      // The CSS has :nth-child rules for aspect ratios, but data has valid aspect ratios.
-      // We can override via style if needed, or let CSS handle it.
-      // Let's adhere to the data if provided.
       if (event.aspectRatio) {
         img.style.aspectRatio = event.aspectRatio;
       }
       
-      // Optional: Add overlay content like portfolio if desired?
-      // The original HTML structure for events was just image.
-      // "make same as a Recent Events like Portfolio" implies showing title/category.
-      // Let's add an overlay similar to gallery items.
-      
-      const overlay = document.createElement('div');
+      var overlay = document.createElement('div');
       overlay.className = 'gallery-overlay'; // Reuse gallery overlay class
       
-      const title = document.createElement('h3');
+      var title = document.createElement('h3');
       title.className = 'gallery-title';
       title.textContent = event.title;
       
-      const category = document.createElement('p');
+      var category = document.createElement('p');
       category.className = 'gallery-category';
       category.textContent = event.category;
       
@@ -286,10 +280,6 @@ class ContentLoader {
       
       item.appendChild(img);
       item.appendChild(overlay);
-      
-      // Add click listener for lightbox if we want events to open there too
-      // We need to add it to the GalleryManager access if we do that.
-      // For now, let's just make it visual.
       
       eventsGrid.appendChild(item);
     });
@@ -300,11 +290,11 @@ class ContentLoader {
    */
   populateAbout() {
     // Populate publications
-    const publicationsContainer = document.getElementById('publications');
+    var publicationsContainer = document.getElementById('publications');
     if (publicationsContainer && this.data && this.data.socialProof && this.data.socialProof.publications) {
       publicationsContainer.innerHTML = '';
       this.data.socialProof.publications.forEach(pub => {
-        const pubItem = document.createElement('span');
+        var pubItem = document.createElement('span');
         pubItem.className = 'publication-item';
         pubItem.textContent = pub;
         publicationsContainer.appendChild(pubItem);
@@ -312,22 +302,22 @@ class ContentLoader {
     }
 
     // Populate awards
-    const awardsContainer = document.getElementById('awards');
+    var awardsContainer = document.getElementById('awards');
     if (awardsContainer && this.data && this.data.socialProof && this.data.socialProof.awards) {
       awardsContainer.innerHTML = '';
       this.data.socialProof.awards.forEach(award => {
-        const awardItem = document.createElement('li');
+        var awardItem = document.createElement('li');
         awardItem.textContent = award;
         awardsContainer.appendChild(awardItem);
       });
     }
 
     // Populate clients
-    const clientsContainer = document.getElementById('clients');
+    var clientsContainer = document.getElementById('clients');
     if (clientsContainer && this.data && this.data.socialProof && this.data.socialProof.clients) {
       clientsContainer.innerHTML = '';
       this.data.socialProof.clients.forEach(client => {
-        const clientItem = document.createElement('span');
+        var clientItem = document.createElement('span');
         clientItem.className = 'client-item';
         clientItem.textContent = client;
         clientsContainer.appendChild(clientItem);
@@ -343,15 +333,12 @@ class ContentLoader {
     console.error('❌ Content loading error:', error);
 
     // Show user-friendly error message
-    const errorMessage = document.createElement('div');
+    var errorMessage = document.createElement('div');
     errorMessage.className = 'content-error';
-    errorMessage.innerHTML = `
-      <p>Unable to load portfolio content. Please try refreshing the page.</p>
-      <p class="error-details">${error.message}</p>
-    `;
+    errorMessage.innerHTML = '<p>Unable to load portfolio content. Please try refreshing the page.</p><p class="error-details">' + error.message + '</p>';
 
     // Try to insert error in gallery
-    const galleryGrid = document.getElementById('gallery-grid');
+    var galleryGrid = document.getElementById('gallery-grid');
     if (galleryGrid) {
       galleryGrid.innerHTML = '';
       galleryGrid.appendChild(errorMessage);
