@@ -104,9 +104,13 @@ class GalleryRenderer {
       }
     });
 
-    // Clear container and append new items
-    this.container.innerHTML = '';
-    this.container.appendChild(fragment);
+    // Clear container and append new items using high-performance replaceChildren
+    if (this.container.replaceChildren) {
+      this.container.replaceChildren(fragment);
+    } else {
+      this.container.innerHTML = '';
+      this.container.appendChild(fragment);
+    }
 
     // Trigger reveal animations
     this.triggerRevealAnimations();
@@ -179,13 +183,20 @@ class GalleryRenderer {
       }
     }
 
-    // Overlay with title/category
+    // Overlay with title/category - Optimized: Using DOM API instead of innerHTML
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const h3 = document.createElement('h3');
+    h3.className = 'gallery-item-title';
+    h3.textContent = item.title || '';
+
+    const p = document.createElement('p');
+    p.className = 'gallery-item-category';
+    p.textContent = this.formatCategory(item.category);
+
+    overlay.appendChild(h3);
+    overlay.appendChild(p);
     article.appendChild(overlay);
 
     // Click handler
@@ -210,11 +221,18 @@ class GalleryRenderer {
     const icon = document.createElement('div');
     icon.className = 'gallery-video-play-icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.innerHTML = `
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    `;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '28');
+    svg.setAttribute('height', '28');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'white');
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M8 5v14l11-7z');
+
+    svg.appendChild(path);
+    icon.appendChild(svg);
     return icon;
   }
 
@@ -227,17 +245,18 @@ class GalleryRenderer {
   }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
-    // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    // Ensure items have required properties - Optimized: Using Object.assign
+    const lightboxItems = items.map((item, i) => {
+      return Object.assign({}, item, {
+        type: item.type || 'image',
+        originalIndex: i
+      });
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -246,14 +265,16 @@ class GalleryRenderer {
     const items = this.container.querySelectorAll('.gallery-item');
 
     if (window.GSAP && window.ScrollTrigger) {
-      // Use GSAP if available
+      // Use GSAP if available - Optimized: Cap total stagger duration to 1.5s for large galleries
       window.GSAP.fromTo(items,
         { opacity: 0, y: 40 },
         {
           opacity: 1,
           y: 0,
           duration: 0.6,
-          stagger: 0.05,
+          stagger: {
+            amount: 1.5
+          },
           ease: 'power2.out',
           scrollTrigger: {
             trigger: this.container,
@@ -262,11 +283,12 @@ class GalleryRenderer {
         }
       );
     } else {
-      // Fallback to CSS animations
+      // Fallback to CSS animations - Optimized: Cap transition delay to 2s
       items.forEach((item, index) => {
+        const delay = Math.min(index * 0.05, 2);
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
+        item.style.transition = `opacity 0.5s ease ${delay}s, transform 0.5s ease ${delay}s`;
 
         setTimeout(() => {
           item.style.opacity = '1';
@@ -626,25 +648,7 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
-
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
-      }
-    }
+    const images = (data.portfolio && data.portfolio.images) || {};
 
     // Sort by category order, then by item order
     const categoryOrder = [
@@ -660,9 +664,32 @@ class PortfolioGallery {
       'commercial'
     ];
 
+    // Optimized: Use a Map for O(1) priority lookups instead of indexOf
+    const categoryPriority = new Map();
+    categoryOrder.forEach((cat, index) => categoryPriority.set(cat, index));
+
+    // Flatten all category images
+    for (const [category, items] of Object.entries(images)) {
+      if (Array.isArray(items)) {
+        const catName = this.formatCategoryName(category);
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          // Optimized: Use Object.assign for better performance and compatibility
+          allItems.push(Object.assign({}, item, {
+            category: category,
+            order: i,
+            id: item.id || (category + '-' + i),
+            title: item.title || (catName + ' ' + (i + 1)),
+            alt: item.alt || item.title || (catName + ' photography'),
+            type: item.type || 'image'
+          }));
+        }
+      }
+    }
+
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+      const catA = categoryPriority.has(a.category) ? categoryPriority.get(a.category) : 999;
+      const catB = categoryPriority.has(b.category) ? categoryPriority.get(b.category) : 999;
 
       if (catA !== catB) {
         return catA - catB;
