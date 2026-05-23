@@ -78,7 +78,7 @@ class ContentLoader {
       this.mediaData = Object.assign({}, oldData.portfolio.images);
 
       if (newData) {
-        const categoriesObj = newData.portfolio?.images || newData;
+        const categoriesObj = (newData.portfolio && newData.portfolio.images) ? newData.portfolio.images : (newData.portfolio && newData.portfolio.images ? newData.portfolio.images : newData);
         Object.keys(categoriesObj).forEach(cat => {
           if (Array.isArray(categoriesObj[cat])) {
             if (!this.mediaData[cat]) this.mediaData[cat] = [];
@@ -278,7 +278,7 @@ class ContentLoader {
       // If clicking video directly, let VideoHover handle it or toggle play
       if (isVideo && e.target.tagName === 'VIDEO') return;
 
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.open(index, items);
       }
     });
@@ -298,7 +298,7 @@ class ContentLoader {
       el.appendChild(video);
 
       // Initialize with VideoObserver if available
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(video);
       }
     } else {
@@ -316,7 +316,7 @@ class ContentLoader {
     // Ensure clicking overlay opens lightbox even for videos
     overlay.onclick = (e) => {
       e.stopPropagation();
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.open(index, items);
       }
     };
@@ -344,7 +344,7 @@ class ContentLoader {
 
     const fragment = document.createDocumentFragment();
     // For full gallery, we enrich items with originalIndex for lightbox
-    const enrichedItems = items.map((item, idx) => ({ ...item, originalIndex: idx }));
+    const enrichedItems = items.map((item, idx) => Object.assign({}, item, { originalIndex: idx }));
 
     enrichedItems.forEach((item) => {
       const el = this.createGalleryItemElement(item, item.originalIndex, enrichedItems);
@@ -399,7 +399,7 @@ class ContentLoader {
   populateEvents() {
     const eventsGrid = document.querySelector('.events-grid');
     
-    if (!eventsGrid || !this.data?.recentEvents) {
+    if (!eventsGrid || !this.data || !this.data.recentEvents) {
       console.warn('Events grid or data not found');
       return;
     }
@@ -469,7 +469,7 @@ class ContentLoader {
   populateAbout() {
     // Populate publications
     const publicationsContainer = document.getElementById('publications');
-    if (publicationsContainer && this.data?.socialProof?.publications) {
+    if (publicationsContainer && this.data && this.data.socialProof && this.data.socialProof.publications) {
       publicationsContainer.innerHTML = '';
       this.data.socialProof.publications.forEach(pub => {
         const pubItem = document.createElement('span');
@@ -481,7 +481,7 @@ class ContentLoader {
 
     // Populate awards
     const awardsContainer = document.getElementById('awards');
-    if (awardsContainer && this.data?.socialProof?.awards) {
+    if (awardsContainer && this.data && this.data.socialProof && this.data.socialProof.awards) {
       awardsContainer.innerHTML = '';
       this.data.socialProof.awards.forEach(award => {
         const awardItem = document.createElement('li');
@@ -492,7 +492,7 @@ class ContentLoader {
 
     // Populate clients
     const clientsContainer = document.getElementById('clients');
-    if (clientsContainer && this.data?.socialProof?.clients) {
+    if (clientsContainer && this.data && this.data.socialProof && this.data.socialProof.clients) {
       clientsContainer.innerHTML = '';
       this.data.socialProof.clients.forEach(client => {
         const clientItem = document.createElement('span');
