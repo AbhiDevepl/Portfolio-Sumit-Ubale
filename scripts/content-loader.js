@@ -4,19 +4,6 @@
  */
 
 class ContentLoader {
-  static CATEGORY_NAMES = {
-    'weddings': 'Weddings',
-    'portraits': 'Portraits',
-    'commercial': 'Commercial',
-    'events': 'Events',
-    'maternity': 'Maternity',
-    'kids': 'Kids',
-    'haldi': 'Haldi',
-    'engagement': 'Engagement',
-    'pre-wedding-photos-and-videos': 'Pre-Wedding',
-    'cinematics': 'Cinematics'
-  };
-
   constructor() {
     this.dataUrl = '/data/portfolio.json';
     this.data = null;
@@ -76,7 +63,19 @@ class ContentLoader {
    * Helper to get category name from slug
    */
   getCategoryName(category) {
-    return ContentLoader.CATEGORY_NAMES[category] || category;
+    const CATEGORY_NAMES = {
+      'weddings': 'Weddings',
+      'portraits': 'Portraits',
+      'commercial': 'Commercial',
+      'events': 'Events',
+      'maternity': 'Maternity',
+      'kids': 'Kids',
+      'haldi': 'Haldi',
+      'engagement': 'Engagement',
+      'pre-wedding-photos-and-videos': 'Pre-Wedding',
+      'cinematics': 'Cinematics'
+    };
+    return CATEGORY_NAMES[category] || category;
   }
 
   /**
@@ -120,12 +119,12 @@ class ContentLoader {
     items.forEach((item, index) => {
       const isVideo = item.type === 'video';
       const el = document.createElement('article');
-      el.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'} reveal-item loading`;
+      el.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image') + ' reveal-item loading';
       el.dataset.index = index;
       el.dataset.category = category === 'all' ? (item.category || 'uncategorized') : category;
       el.setAttribute('tabindex', '0');
       el.setAttribute('role', 'button');
-      el.setAttribute('aria-label', `${item.title || 'Open preview'}${item.category ? ', ' + item.category : ''}`);
+      el.setAttribute('aria-label', (item.title || 'Open preview') + (item.category ? ', ' + item.category : ''));
 
       // Click handler for lightbox
       el.addEventListener('click', () => {
