@@ -9,20 +9,17 @@ if (window.gsap) {
   // Global GSAP configuration
   gsap.config({
     nullTargetWarn: false,
-    trialWarn: false,
-  });
+    trialWarn: false});
 
   // Set default ease for all GSAP animations
   gsap.defaults({
     ease: "power3.out",
-    duration: 0.8,
-  });
+    duration: 0.8});
 
   // ScrollTrigger defaults
   ScrollTrigger.defaults({
     toggleActions: "play none none none",
-    scroller: window,
-  });
+    scroller: window});
 
   // Refresh ScrollTrigger on window resize (debounced)
   let resizeTimer;
