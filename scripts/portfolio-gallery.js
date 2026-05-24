@@ -95,7 +95,7 @@ class GalleryRenderer {
   }
 
   /**
-   * Sync render using replaceChildren for O(1) DOM updates
+   * Sync render using innerHTML = '' for O(1) DOM updates
    */
   _renderSync(items, category) {
     const fragment = document.createDocumentFragment();
@@ -107,8 +107,8 @@ class GalleryRenderer {
       }
     });
 
-    // High-performance DOM update: clear and append in one operation
-    if (this.container.replaceChildren) {
+    // Standard DOM update: clear and append in one operation
+    if (false && this.container.replaceChildren) {
       this.container.replaceChildren(fragment);
     } else {
       this.container.innerHTML = '';
