@@ -1,0 +1,3 @@
+## 2025-05-24 - Performance vs Readability Balance
+**Learning:** Programmatic DOM creation for complex SVG icons significantly hurts code readability and maintainability without providing measurable performance benefits over `innerHTML` for small, static snippets. High-impact optimizations should focus on the DOM tree structure (`replaceChildren`) and data processing algorithms (Schwartzian Transform).
+**Action:** Use `innerHTML` for complex static SVGs and template strings for basic string concatenation unless working in an extremely hot loop where every microsecond is critical and verified by profiling.
