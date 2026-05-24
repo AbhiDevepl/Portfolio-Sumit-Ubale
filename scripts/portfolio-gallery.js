@@ -71,6 +71,11 @@ class GalleryState {
     this.hasError = error;
     this.notify();
   }
+
+  patchState(updates) {
+    Object.assign(this, updates);
+    this.notify();
+  }
 }
 
 // ========================================
@@ -105,8 +110,12 @@ class GalleryRenderer {
     });
 
     // Clear container and append new items
-    this.container.innerHTML = '';
-    this.container.appendChild(fragment);
+    if (this.container.replaceChildren) {
+      this.container.replaceChildren(fragment);
+    } else {
+      this.container.innerHTML = '';
+      this.container.appendChild(fragment);
+    }
 
     // Trigger reveal animations
     this.triggerRevealAnimations();
@@ -182,10 +191,17 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const h3 = document.createElement('h3');
+    h3.className = 'gallery-item-title';
+    h3.textContent = item.title || '';
+
+    const p = document.createElement('p');
+    p.className = 'gallery-item-category';
+    p.textContent = this.formatCategory(item.category);
+
+    overlay.appendChild(h3);
+    overlay.appendChild(p);
     article.appendChild(overlay);
 
     // Click handler
@@ -233,11 +249,12 @@ class GalleryRenderer {
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map((item, i) => {
+      const enriched = Object.assign({}, item);
+      enriched.type = enriched.type || 'image';
+      enriched.originalIndex = i;
+      return enriched;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -253,7 +270,9 @@ class GalleryRenderer {
           opacity: 1,
           y: 0,
           duration: 0.6,
-          stagger: 0.05,
+          stagger: {
+            amount: 1.5 // Cap total stagger duration
+          },
           ease: 'power2.out',
           scrollTrigger: {
             trigger: this.container,
@@ -264,9 +283,10 @@ class GalleryRenderer {
     } else {
       // Fallback to CSS animations
       items.forEach((item, index) => {
+        const delay = Math.min(index * 0.05, 2); // Cap delay at 2s
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
+        item.style.transition = `opacity 0.5s ease ${delay}s, transform 0.5s ease ${delay}s`;
 
         setTimeout(() => {
           item.style.opacity = '1';
@@ -463,8 +483,11 @@ class FilterController {
     const allItems = state.mediaList;
 
     if (category === 'all') {
-      this.state.setFilteredList(allItems);
-      this.state.setActiveCategory('all');
+      this.state.patchState({
+        filteredList: allItems,
+        currentIndex: 0,
+        activeCategory: 'all'
+      });
       return;
     }
 
@@ -473,8 +496,11 @@ class FilterController {
       (item.categories && item.categories.includes(category))
     );
 
-    this.state.setFilteredList(filtered);
-    this.state.setActiveCategory(category);
+    this.state.patchState({
+      filteredList: filtered,
+      currentIndex: 0,
+      activeCategory: category
+    });
 
     // Update URL for shareability
     this.updateURL(category);
@@ -575,6 +601,13 @@ class PortfolioGallery {
     // Initialize renderer
     this.renderer = new GalleryRenderer(this.state, this.container);
 
+    // Subscribe to state changes to trigger re-renders
+    this.state.subscribe((state) => {
+      // Don't render if loading or if we have an error
+      if (state.isLoading || state.hasError) return;
+      this.renderer.render(state.filteredList, state.activeCategory);
+    });
+
     // Show loading state
     this.renderer.showLoading();
     this.state.setLoading(true);
@@ -587,11 +620,11 @@ class PortfolioGallery {
       const allItems = this.processData(data);
 
       // Update state
-      this.state.setMediaList(allItems);
-      this.state.setLoading(false);
-
-      // Initial render
-      this.renderer.render(allItems, 'all');
+      this.state.patchState({
+        mediaList: allItems,
+        filteredList: allItems,
+        isLoading: false
+      });
 
       // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
@@ -631,17 +664,17 @@ class PortfolioGallery {
     // Flatten all category images
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
+        const categoryName = this.formatCategoryName(category);
         items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
+          const enriched = Object.assign({}, item);
+          enriched.category = category;
+          enriched.order = index;
+          // Ensure consistent property names
+          if (!enriched.id) enriched.id = category + '-' + index;
+          if (!enriched.title) enriched.title = categoryName + ' ' + (index + 1);
+          if (!enriched.alt) enriched.alt = enriched.title || categoryName + ' photography';
+          if (!enriched.type) enriched.type = 'image';
+          allItems.push(enriched);
         });
       }
     }
@@ -660,9 +693,13 @@ class PortfolioGallery {
       'commercial'
     ];
 
+    // O(1) Map for category order lookup
+    const categoryOrderMap = new Map();
+    categoryOrder.forEach((cat, index) => categoryOrderMap.set(cat, index));
+
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+      const catA = categoryOrderMap.has(a.category) ? categoryOrderMap.get(a.category) : 999;
+      const catB = categoryOrderMap.has(b.category) ? categoryOrderMap.get(b.category) : 999;
 
       if (catA !== catB) {
         return catA - catB;
