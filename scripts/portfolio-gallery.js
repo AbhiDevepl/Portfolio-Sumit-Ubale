@@ -17,16 +17,25 @@ class GalleryState {
     this.activeCategory = 'all';
     this.isLoading = false;
     this.hasError = false;
-    this.listeners = new Set();
+    this.listeners = [];
   }
 
   subscribe(callback) {
-    this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
+    this.listeners.push(callback);
+    const self = this;
+    return function() {
+      const index = self.listeners.indexOf(callback);
+      if (index > -1) {
+        self.listeners.splice(index, 1);
+      }
+    };
   }
 
   notify() {
-    this.listeners.forEach(cb => cb(this.getState()));
+    const state = this.getState();
+    for (let i = 0; i < this.listeners.length; i++) {
+      this.listeners[i](state);
+    }
   }
 
   getState() {
@@ -142,10 +151,12 @@ class GalleryRenderer {
       if (item.poster) media.poster = item.poster;
 
       // Show when metadata loaded
-      media.addEventListener('loadedmetadata', () => {
+      const onMetadata = function() {
         media.style.opacity = '1';
         article.classList.remove('loading');
-      }, { once: true });
+        media.removeEventListener('loadedmetadata', onMetadata);
+      };
+      media.addEventListener('loadedmetadata', onMetadata);
 
       // Register with VideoObserver for lazy loading
       if (window.Core && window.Core.VideoObserver) {
@@ -158,11 +169,13 @@ class GalleryRenderer {
       media.alt = item.alt || item.title || 'Portfolio image';
       media.decoding = 'async';
 
-      media.addEventListener('load', () => {
+      const onLoad = function() {
         media.style.opacity = '1';
         article.classList.remove('loading');
         article.classList.add('loaded');
-      }, { once: true });
+        media.removeEventListener('load', onLoad);
+      };
+      media.addEventListener('load', onLoad);
 
       if (media.complete) {
         media.style.opacity = '1';
@@ -549,7 +562,10 @@ class FilterController {
     this.chipsContainer.style.msOverflowStyle = 'none';
     const style = document.createElement('style');
     style.textContent = '.filter-chips-container::-webkit-scrollbar { display: none; }';
-    document.head.appendChild(style);
+    const head = document.head || document.getElementsByTagName('head')[0];
+    if (head) {
+      head.appendChild(style);
+    }
   }
 
   selectFromURL() {
@@ -672,9 +688,9 @@ class PortfolioGallery {
       'commercial'
     ];
 
-    const weights = new Map();
+    const weights = {};
     for (let i = 0; i < categoryOrder.length; i++) {
-      weights.set(categoryOrder[i], i);
+      weights[categoryOrder[i]] = i;
     }
 
     // Flatten all category images
@@ -684,7 +700,7 @@ class PortfolioGallery {
       const items = images[category];
 
       if (Array.isArray(items)) {
-        const catWeight = weights.has(category) ? weights.get(category) : -1;
+        const catWeight = weights.hasOwnProperty(category) ? weights[category] : -1;
 
         for (let j = 0; j < items.length; j++) {
           const item = items[j];
