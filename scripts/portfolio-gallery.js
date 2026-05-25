@@ -660,9 +660,15 @@ class PortfolioGallery {
       'commercial'
     ];
 
+    // Pre-calculate weights for O(1) lookup during sort
+    const weights = {};
+    for (let i = 0; i < categoryOrder.length; i++) {
+      weights[categoryOrder[i]] = i;
+    }
+
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+      const catA = weights.hasOwnProperty(a.category) ? weights[a.category] : -1;
+      const catB = weights.hasOwnProperty(b.category) ? weights[b.category] : -1;
 
       if (catA !== catB) {
         return catA - catB;
