@@ -71,6 +71,11 @@ class GalleryState {
     this.hasError = error;
     this.notify();
   }
+
+  patchState(updates) {
+    Object.assign(this, updates);
+    this.notify();
+  }
 }
 
 // ========================================
@@ -143,7 +148,7 @@ class GalleryRenderer {
       }, { once: true });
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
 
@@ -174,7 +179,7 @@ class GalleryRenderer {
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
@@ -182,10 +187,17 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const title = document.createElement('h3');
+    title.className = 'gallery-item-title';
+    title.textContent = item.title || '';
+
+    const categoryEl = document.createElement('p');
+    categoryEl.className = 'gallery-item-category';
+    categoryEl.textContent = this.formatCategory(item.category);
+
+    overlay.appendChild(title);
+    overlay.appendChild(categoryEl);
     article.appendChild(overlay);
 
     // Click handler
@@ -227,17 +239,18 @@ class GalleryRenderer {
   }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map((item, i) => {
+      return Object.assign({}, item, {
+        type: item.type || 'image',
+        originalIndex: i
+      });
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -253,7 +266,9 @@ class GalleryRenderer {
           opacity: 1,
           y: 0,
           duration: 0.6,
-          stagger: 0.05,
+          stagger: {
+            amount: 1.5 // Cap total stagger duration for large galleries
+          },
           ease: 'power2.out',
           scrollTrigger: {
             trigger: this.container,
@@ -263,16 +278,19 @@ class GalleryRenderer {
       );
     } else {
       // Fallback to CSS animations
-      items.forEach((item, index) => {
+      const len = items.length;
+      for (let i = 0; i < len; i++) {
+        const item = items[i];
+        const delay = Math.min(i * 0.05, 2.0); // Cap CSS delay at 2s
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
+        item.style.transition = 'opacity 0.5s ease ' + delay + 's, transform 0.5s ease ' + delay + 's';
 
         setTimeout(() => {
           item.style.opacity = '1';
           item.style.transform = 'translateY(0)';
         }, 50);
-      });
+      }
     }
   }
 
@@ -318,7 +336,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
 
@@ -368,7 +386,7 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
@@ -378,7 +396,7 @@ class ModalViewer {
       this.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    const state = (window.PortfolioGallery && window.PortfolioGallery.state) ? window.PortfolioGallery.state.getState() : null;
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -393,7 +411,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -405,7 +423,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -463,8 +481,11 @@ class FilterController {
     const allItems = state.mediaList;
 
     if (category === 'all') {
-      this.state.setFilteredList(allItems);
-      this.state.setActiveCategory('all');
+      this.state.patchState({
+        filteredList: allItems,
+        currentIndex: 0,
+        activeCategory: 'all'
+      });
       return;
     }
 
@@ -473,8 +494,11 @@ class FilterController {
       (item.categories && item.categories.includes(category))
     );
 
-    this.state.setFilteredList(filtered);
-    this.state.setActiveCategory(category);
+    this.state.patchState({
+      filteredList: filtered,
+      currentIndex: 0,
+      activeCategory: category
+    });
 
     // Update URL for shareability
     this.updateURL(category);
@@ -575,6 +599,12 @@ class PortfolioGallery {
     // Initialize renderer
     this.renderer = new GalleryRenderer(this.state, this.container);
 
+    // Reactive render subscription
+    this.state.subscribe((state) => {
+      if (state.isLoading || state.hasError) return;
+      this.renderer.render(state.filteredList, state.activeCategory);
+    });
+
     // Show loading state
     this.renderer.showLoading();
     this.state.setLoading(true);
@@ -586,12 +616,12 @@ class PortfolioGallery {
       // Process and flatten items
       const allItems = this.processData(data);
 
-      // Update state
-      this.state.setMediaList(allItems);
-      this.state.setLoading(false);
-
-      // Initial render
-      this.renderer.render(allItems, 'all');
+      // Update state (batched)
+      this.state.patchState({
+        mediaList: allItems,
+        filteredList: allItems,
+        isLoading: false
+      });
 
       // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
@@ -605,7 +635,7 @@ class PortfolioGallery {
       this.modal.init();
 
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
@@ -626,27 +656,9 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data && data.portfolio && data.portfolio.images) ? data.portfolio.images : {};
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
-      }
-    }
-
-    // Sort by category order, then by item order
+    // Pre-calculate category weights for O(1) lookup during sorting
     const categoryOrder = [
       'weddings',
       'pre-wedding-photos-and-videos',
@@ -660,14 +672,43 @@ class PortfolioGallery {
       'commercial'
     ];
 
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+    const weights = new Map();
+    for (let i = 0; i < categoryOrder.length; i++) {
+      weights.set(categoryOrder[i], i);
+    }
 
-      if (catA !== catB) {
-        return catA - catB;
+    // Flatten all category images
+    const categories = Object.keys(images);
+    for (let i = 0; i < categories.length; i++) {
+      const category = categories[i];
+      const items = images[category];
+
+      if (Array.isArray(items)) {
+        const catWeight = weights.has(category) ? weights.get(category) : -1;
+
+        for (let j = 0; j < items.length; j++) {
+          const item = items[j];
+          // Schwartzian Transform: pre-attach category weights to avoid repeated Map lookups during sort
+          const enrichedItem = Object.assign({}, item, {
+            category: category,
+            order: j,
+            _catWeight: catWeight,
+            // Ensure consistent property names
+            id: item.id || (category + '-' + j),
+            title: item.title || (this.formatCategoryName(category) + ' ' + (j + 1)),
+            alt: item.alt || item.title || (this.formatCategoryName(category) + ' photography'),
+            type: item.type || 'image'
+          });
+          allItems.push(enrichedItem);
+        }
       }
+    }
 
+    // Sort by category order, then by item order
+    allItems.sort((a, b) => {
+      if (a._catWeight !== b._catWeight) {
+        return a._catWeight - b._catWeight;
+      }
       return (a.order || 0) - (b.order || 0);
     });
 
