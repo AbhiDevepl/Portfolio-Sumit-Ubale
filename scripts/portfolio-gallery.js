@@ -71,6 +71,15 @@ class GalleryState {
     this.hasError = error;
     this.notify();
   }
+
+  /**
+   * Batch update multiple state properties
+   * @param {Object} updates - Properties to update
+   */
+  patchState(updates) {
+    Object.assign(this, updates);
+    this.notify();
+  }
 }
 
 // ========================================
@@ -143,7 +152,7 @@ class GalleryRenderer {
       }, { once: true });
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
 
@@ -174,7 +183,7 @@ class GalleryRenderer {
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
@@ -227,17 +236,18 @@ class GalleryRenderer {
   }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map((item, i) => {
+      const copy = Object.assign({}, item);
+      copy.type = item.type || 'image';
+      copy.originalIndex = i;
+      return copy;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -318,7 +328,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
 
@@ -368,7 +378,7 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
@@ -378,7 +388,8 @@ class ModalViewer {
       this.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    const gallery = window.PortfolioGallery;
+    const state = gallery && gallery.state && gallery.state.getState();
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -393,7 +404,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -405,7 +416,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -575,6 +586,13 @@ class PortfolioGallery {
     // Initialize renderer
     this.renderer = new GalleryRenderer(this.state, this.container);
 
+    // Subscribe to state changes for rendering
+    this.state.subscribe((state) => {
+      if (!state.isLoading && !state.hasError) {
+        this.renderer.render(state.filteredList, state.activeCategory);
+      }
+    });
+
     // Show loading state
     this.renderer.showLoading();
     this.state.setLoading(true);
@@ -586,12 +604,12 @@ class PortfolioGallery {
       // Process and flatten items
       const allItems = this.processData(data);
 
-      // Update state
-      this.state.setMediaList(allItems);
-      this.state.setLoading(false);
-
-      // Initial render
-      this.renderer.render(allItems, 'all');
+      // Initial render handled by state subscription in setup()
+      this.state.patchState({
+        mediaList: allItems,
+        filteredList: allItems,
+        isLoading: false
+      });
 
       // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
@@ -605,7 +623,7 @@ class PortfolioGallery {
       this.modal.init();
 
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
@@ -626,27 +644,8 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
-      }
-    }
-
-    // Sort by category order, then by item order
     const categoryOrder = [
       'weddings',
       'pre-wedding-photos-and-videos',
@@ -660,15 +659,42 @@ class PortfolioGallery {
       'commercial'
     ];
 
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+    // Create O(1) weight lookup for sorting
+    const weights = {};
+    for (var i = 0; i < categoryOrder.length; i++) {
+      weights[categoryOrder[i]] = i;
+    }
 
-      if (catA !== catB) {
-        return catA - catB;
+    // Flatten and enrich items in a single pass (Schwartzian Transform)
+    for (const category in images) {
+      if (Object.prototype.hasOwnProperty.call(images, category)) {
+        const items = images[category];
+        if (Array.isArray(items)) {
+          const weight = weights[category] !== undefined ? weights[category] : -1;
+          for (var j = 0; j < items.length; j++) {
+            const item = items[j];
+            const enriched = Object.assign({}, item);
+
+            enriched.category = category;
+            enriched.order = j;
+            enriched.id = item.id || (category + '-' + j);
+            enriched.title = item.title || (this.formatCategoryName(category) + ' ' + (j + 1));
+            enriched.alt = item.alt || enriched.title || (this.formatCategoryName(category) + ' photography');
+            enriched.type = item.type || 'image';
+            enriched._weight = weight; // Pre-calculated weight
+
+            allItems.push(enriched);
+          }
+        }
       }
+    }
 
-      return (a.order || 0) - (b.order || 0);
+    // Efficient sort using pre-calculated weights
+    allItems.sort((a, b) => {
+      if (a._weight !== b._weight) {
+        return a._weight - b._weight;
+      }
+      return a.order - b.order;
     });
 
     return allItems;
