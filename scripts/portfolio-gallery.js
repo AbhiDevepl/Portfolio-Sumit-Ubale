@@ -626,27 +626,8 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
-      }
-    }
-
-    // Sort by category order, then by item order
     const categoryOrder = [
       'weddings',
       'pre-wedding-photos-and-videos',
@@ -660,16 +641,49 @@ class PortfolioGallery {
       'commercial'
     ];
 
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
-      }
-
-      return (a.order || 0) - (b.order || 0);
+    // Pre-calculate weights for O(1) lookup during processing
+    const weights = {};
+    categoryOrder.forEach((cat, index) => {
+      weights[cat] = index;
     });
+
+    // Cache for formatted category names
+    const categoryNameCache = {};
+
+    // Process all categories in a single pass
+    const categories = Object.keys(images);
+    categories.forEach(category => {
+      const items = images[category];
+      if (Array.isArray(items)) {
+        // Get or cache formatted category name
+        if (!categoryNameCache[category]) {
+          categoryNameCache[category] = this.formatCategoryName(category);
+        }
+        const formattedName = categoryNameCache[category];
+        const catWeight = weights[category] !== undefined ? weights[category] : 1000;
+
+        items.forEach((item, index) => {
+          const itemOrder = item.order !== undefined ? item.order : index;
+
+          // Use Object.assign for immutability and compatibility
+          const enrichedItem = Object.assign({
+            category: category,
+            order: itemOrder,
+            id: item.id || (category + "-" + index),
+            title: item.title || (formattedName + " " + (index + 1)),
+            alt: item.alt || item.title || (formattedName + " photography"),
+            type: item.type || 'image',
+            // Pre-calculate sort key for O(1) comparison during sort
+            _sortKey: (catWeight * 100000) + itemOrder
+          }, item);
+
+          allItems.push(enrichedItem);
+        });
+      }
+    });
+
+    // Optimized O(N log N) sort using pre-calculated sort keys
+    allItems.sort((a, b) => a._sortKey - b._sortKey);
 
     return allItems;
   }
