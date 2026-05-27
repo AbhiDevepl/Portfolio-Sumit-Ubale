@@ -20,70 +20,72 @@ class ContentLoader {
   /**
    * Initialize content loading
    */
-  async init() {
-    try {
-      await this.loadData();
-      
+  init() {
+    var _this = this;
+    return this.loadData().then(function() {
       // Initialize Gallery Interactions (after content is loaded)
       if (window.GalleryManager) {
         window.GalleryManager.init();
       } else {
-        this.initInlineFilters();
+        _this.initInlineFilters();
       }
       
       // Initial render (All category)
-      this.renderCategory('all');
-      this.initLoadMore();
+      _this.renderCategory('all');
+      _this.initLoadMore();
 
-      this.populateEvents();
-      this.populateAbout();
-    } catch (error) {
-      this.handleError(error);
-    }
+      _this.populateEvents();
+      _this.populateAbout();
+    }).catch(function(error) {
+      _this.handleError(error);
+    });
   }
 
   /**
    * Fetch JSON data from multiple sources and integrate
    */
-  async loadData() {
+  loadData() {
+    var _this = this;
     try {
-      const [res1, res2] = await Promise.all([
-        fetch(this.dataUrl).then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch(this.newDataUrl).then(r => r.ok ? r.json() : null).catch(() => null)
-      ]);
+      return Promise.all([
+        fetch(this.dataUrl).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+        fetch(this.newDataUrl).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
+      ]).then(function(results) {
+        var res1 = results[0];
+        var res2 = results[1];
+        _this.data = res1 || { portfolio: { images: {} } };
 
-      this.data = res1 || { portfolio: { images: {} } };
+        // Clear and integrate with O(1) deduplication
+        _this.allImages = [];
+        var seenSrcs = {};
 
-      // Clear and integrate with O(1) deduplication
-      this.allImages = [];
-      const seenSrcs = {};
+        var integrate = function(data) {
+          if (!data) return;
+          var images = (data.portfolio && data.portfolio.images) ? data.portfolio.images : data;
 
-      const integrate = (data) => {
-        if (!data) return;
-        const images = (data.portfolio && data.portfolio.images) ? data.portfolio.images : data;
+          Object.keys(images).forEach(function(category) {
+            if (Array.isArray(images[category])) {
+              images[category].forEach(function(item) {
+                if (!seenSrcs[item.src]) {
+                  seenSrcs[item.src] = true;
+                  var newItem = Object.assign({}, item);
+                  newItem.category = category;
+                  newItem.type = item.type === 'video' ? 'video' : 'image';
+                  _this.allImages.push(newItem);
+                }
+              });
+            }
+          });
+        };
 
-        Object.keys(images).forEach(category => {
-          if (Array.isArray(images[category])) {
-            images[category].forEach(item => {
-              if (!seenSrcs[item.src]) {
-                seenSrcs[item.src] = true;
-                const newItem = Object.assign({}, item);
-                newItem.category = category;
-                newItem.type = item.type === 'video' ? 'video' : 'image';
-                this.allImages.push(newItem);
-              }
-            });
-          }
-        });
-      };
+        integrate(res1);
+        integrate(res2);
 
-      integrate(res1);
-      integrate(res2);
+        // Globally randomize the array so EVERY category shows randomly on page load
+        _this.shuffleArray(_this.allImages);
 
-      // Globally randomize the array so EVERY category shows randomly on page load
-      this.shuffleArray(this.allImages);
-
-      return this.data;
+        return _this.data;
+      });
     } catch (error) {
       throw new Error('Failed to load portfolio data: ' + error.message);
     }
@@ -223,8 +225,8 @@ class ContentLoader {
         vid.preload = 'metadata';
 
         // Hover/Touch play behavior
-        el.addEventListener('mouseenter', () => { vid.play().catch(() => {}); });
-        el.addEventListener('mouseleave', () => { vid.pause(); });
+        el.addEventListener('mouseenter', function() { vid.play().catch(function() {}); });
+        el.addEventListener('mouseleave', function() { vid.pause(); });
 
         el.appendChild(vid);
       }
