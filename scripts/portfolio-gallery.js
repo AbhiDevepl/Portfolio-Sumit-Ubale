@@ -17,12 +17,17 @@ class GalleryState {
     this.activeCategory = 'all';
     this.isLoading = false;
     this.hasError = false;
-    this.listeners = new Set();
+    this.listeners = [];
   }
 
   subscribe(callback) {
-    this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
+    this.listeners.push(callback);
+    return () => {
+      const index = this.listeners.indexOf(callback);
+      if (index > -1) {
+        this.listeners.splice(index, 1);
+      }
+    };
   }
 
   patchState(updates) {
@@ -74,7 +79,8 @@ class GalleryState {
   }
 
   setError(error) {
-    this.patchState({ hasError: error });
+    this.hasError = error;
+    this.notify();
   }
 }
 
