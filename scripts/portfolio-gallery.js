@@ -25,8 +25,14 @@ class GalleryState {
     return () => this.listeners.delete(callback);
   }
 
+  patchState(updates) {
+    Object.assign(this, updates);
+    this.notify();
+  }
+
   notify() {
-    this.listeners.forEach(cb => cb(this.getState()));
+    const state = this.getState();
+    this.listeners.forEach(cb => cb(state));
   }
 
   getState() {
@@ -41,35 +47,34 @@ class GalleryState {
   }
 
   setMediaList(items) {
-    this.mediaList = items;
-    this.filteredList = items;
-    this.notify();
+    this.patchState({
+      mediaList: items,
+      filteredList: items
+    });
   }
 
   setFilteredList(items) {
-    this.filteredList = items;
-    this.currentIndex = 0;
-    this.notify();
+    this.patchState({
+      filteredList: items,
+      currentIndex: 0
+    });
   }
 
   setActiveCategory(category) {
-    this.activeCategory = category;
-    this.notify();
+    this.patchState({ activeCategory: category });
   }
 
   setCurrentIndex(index) {
-    this.currentIndex = Math.max(0, Math.min(index, this.filteredList.length - 1));
-    this.notify();
+    const nextIndex = Math.max(0, Math.min(index, this.filteredList.length - 1));
+    this.patchState({ currentIndex: nextIndex });
   }
 
   setLoading(loading) {
-    this.isLoading = loading;
-    this.notify();
+    this.patchState({ isLoading: loading });
   }
 
   setError(error) {
-    this.hasError = error;
-    this.notify();
+    this.patchState({ hasError: error });
   }
 }
 
@@ -84,7 +89,6 @@ class GalleryRenderer {
   }
 
   render(items, category) {
-    // Cancel pending animation frame
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
     }
@@ -136,17 +140,14 @@ class GalleryRenderer {
       media.playsInline = true;
       if (item.poster) media.poster = item.poster;
 
-      // Show when metadata loaded
       media.addEventListener('loadedmetadata', () => {
         media.style.opacity = '1';
         article.classList.remove('loading');
       }, { once: true });
 
-      // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
-
     } else {
       media.src = item.src;
       media.loading = 'lazy';
@@ -168,18 +169,15 @@ class GalleryRenderer {
 
     article.appendChild(media);
 
-    // Video play icon overlay
     if (isVideo) {
       const playIcon = this.createPlayIcon();
       article.appendChild(playIcon);
 
-      // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
 
-    // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
     overlay.innerHTML = `
@@ -188,14 +186,11 @@ class GalleryRenderer {
     `;
     article.appendChild(overlay);
 
-    // Click handler
     article.addEventListener('click', (e) => {
-      // If clicking video directly, let VideoHover handle play/pause
       if (e.target.closest('video') && e.target !== media) return;
       this.openLightbox(index);
     });
 
-    // Keyboard handler
     article.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -210,11 +205,7 @@ class GalleryRenderer {
     const icon = document.createElement('div');
     icon.className = 'gallery-video-play-icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.innerHTML = `
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    `;
+    icon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
     return icon;
   }
 
@@ -227,17 +218,17 @@ class GalleryRenderer {
   }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
-    // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map((item, i) => {
+      return Object.assign({}, item, {
+        type: item.type || 'image',
+        originalIndex: i
+      });
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -246,7 +237,6 @@ class GalleryRenderer {
     const items = this.container.querySelectorAll('.gallery-item');
 
     if (window.GSAP && window.ScrollTrigger) {
-      // Use GSAP if available
       window.GSAP.fromTo(items,
         { opacity: 0, y: 40 },
         {
@@ -262,11 +252,10 @@ class GalleryRenderer {
         }
       );
     } else {
-      // Fallback to CSS animations
-      items.forEach((item, index) => {
+      items.forEach((item, i) => {
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
+        item.style.transition = `opacity 0.5s ease ${i * 0.05}s, transform 0.5s ease ${i * 0.05}s`;
 
         setTimeout(() => {
           item.style.opacity = '1';
@@ -311,18 +300,15 @@ class ModalViewer {
     this.isOpen = false;
     this.touchStartX = 0;
     this.touchCurrentX = 0;
-    this.touchThreshold = 48; // Minimum swipe distance
+    this.touchThreshold = 48;
     this.navigationDebounce = false;
-    this.debounceDelay = 150; // ms
+    this.debounceDelay = 150;
   }
 
   init() {
-    // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
-
-    // Enhance with additional gesture support
     this.bindEnhancedGestures();
   }
 
@@ -333,7 +319,6 @@ class ModalViewer {
     const mediaContainer = lightbox.querySelector('.lightbox-media-container');
     if (!mediaContainer) return;
 
-    // Enhanced touch handling
     mediaContainer.addEventListener('touchstart', (e) => {
       if (e.touches.length !== 1) return;
       this.touchStartX = e.touches[0].clientX;
@@ -349,16 +334,11 @@ class ModalViewer {
       const deltaX = this.touchCurrentX - this.touchStartX;
 
       if (Math.abs(deltaX) < this.touchThreshold) return;
-
-      // Debounce navigation
       if (this.navigationDebounce) return;
 
       this.navigationDebounce = true;
-      setTimeout(() => {
-        this.navigationDebounce = false;
-      }, this.debounceDelay);
+      setTimeout(() => { this.navigationDebounce = false; }, this.debounceDelay);
 
-      // Swipe left (deltaX < 0) = next, Swipe right (deltaX > 0) = previous
       if (deltaX < -this.touchThreshold) {
         this.navigate(1);
       } else if (deltaX > this.touchThreshold) {
@@ -368,17 +348,14 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
-
-    // Debounce rapid navigation
+    if (!window.Core || !window.Core.Lightbox) return;
     if (this.navigationDebounce) return;
 
     this.navigationDebounce = true;
-    setTimeout(() => {
-      this.navigationDebounce = false;
-    }, this.debounceDelay);
+    setTimeout(() => { this.navigationDebounce = false; }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    if (!window.PortfolioGallery || !window.PortfolioGallery.state) return;
+    const state = window.PortfolioGallery.state.getState();
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -393,7 +370,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -405,8 +382,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
-
+    if (!window.Core || !window.Core.Lightbox) return;
     window.Core.Lightbox.close();
     this.isOpen = false;
   }
@@ -434,7 +410,6 @@ class FilterController {
         this.filterByCategory(category);
       });
 
-      // Keyboard support
       chip.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -443,7 +418,6 @@ class FilterController {
       });
     });
 
-    // Horizontal scroll with touch
     this.initHorizontalScroll();
   }
 
@@ -468,15 +442,12 @@ class FilterController {
       return;
     }
 
-    const filtered = allItems.filter(item =>
-      item.category === category ||
-      (item.categories && item.categories.includes(category))
-    );
+    const filtered = allItems.filter(item => {
+      return item.category === category || (item.categories && item.categories.indexOf(category) !== -1);
+    });
 
     this.state.setFilteredList(filtered);
     this.state.setActiveCategory(category);
-
-    // Update URL for shareability
     this.updateURL(category);
   }
 
@@ -487,7 +458,7 @@ class FilterController {
     } else {
       url.searchParams.set('category', category);
     }
-    window.history.pushState({ category }, '', url);
+    window.history.pushState({ category: category }, '', url);
   }
 
   initHorizontalScroll() {
@@ -520,12 +491,11 @@ class FilterController {
       this.chipsContainer.scrollLeft = scrollLeft - walk;
     });
 
-    // Touch scroll indicator
     this.chipsContainer.style.scrollbarWidth = 'none';
     this.chipsContainer.style.msOverflowStyle = 'none';
     const style = document.createElement('style');
     style.textContent = '.filter-chips-container::-webkit-scrollbar { display: none; }';
-    document.head.appendChild(style);
+    (document.head || document.getElementsByTagName('head')[0]).appendChild(style);
   }
 
   selectFromURL() {
@@ -555,8 +525,7 @@ class PortfolioGallery {
     this.init();
   }
 
-  async init() {
-    // Wait for DOM
+  init() {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.setup());
     } else {
@@ -565,88 +534,55 @@ class PortfolioGallery {
   }
 
   async setup() {
-    // Get container
     this.container = document.getElementById('gallery-grid');
-    if (!this.container) {
-      console.error('Gallery container not found');
-      return;
-    }
+    if (!this.container) return;
 
-    // Initialize renderer
     this.renderer = new GalleryRenderer(this.state, this.container);
-
-    // Show loading state
     this.renderer.showLoading();
     this.state.setLoading(true);
 
     try {
-      // Fetch data
       const data = await this.fetchData();
-
-      // Process and flatten items
       const allItems = this.processData(data);
 
-      // Update state
       this.state.setMediaList(allItems);
       this.state.setLoading(false);
 
-      // Initial render
       this.renderer.render(allItems, 'all');
 
-      // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
       if (chipsContainer) {
         this.filterController = new FilterController(this.state, chipsContainer);
         this.filterController.selectFromURL();
       }
 
-      // Initialize modal viewer
       this.modal = new ModalViewer(this.state);
       this.modal.init();
 
-      // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
     } catch (error) {
       console.error('Failed to load portfolio:', error);
       this.state.setError(true);
-      this.renderer.showError('Unable to load portfolio. Please check your connection and try again.');
+      this.renderer.showError('Unable to load portfolio. Please try again later.');
     }
   }
 
   async fetchData() {
     const response = await fetch('/data/portfolio.json');
-    if (!response.ok) {
-      throw new Error('Failed to fetch portfolio data');
-    }
+    if (!response.ok) throw new Error('Failed to fetch portfolio data');
     return response.json();
   }
 
+  /**
+   * Process and flatten portfolio data with optimized sorting
+   * Uses Schwartzian Transform for O(N log N) performance
+   */
   processData(data) {
-    const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) ? data.portfolio.images : {};
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
-      }
-    }
-
-    // Sort by category order, then by item order
     const categoryOrder = [
       'weddings',
       'pre-wedding-photos-and-videos',
@@ -660,18 +596,35 @@ class PortfolioGallery {
       'commercial'
     ];
 
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+    const weights = {};
+    categoryOrder.forEach((cat, i) => { weights[cat] = i; });
 
-      if (catA !== catB) {
-        return catA - catB;
+    const transformed = [];
+    Object.keys(images).forEach(category => {
+      const items = images[category];
+      if (Array.isArray(items)) {
+        const weight = weights[category] !== undefined ? weights[category] : categoryOrder.length;
+        items.forEach((item, j) => {
+          const enriched = Object.assign({}, item, {
+            category: category,
+            order: j,
+            id: item.id || `${category}-${j}`,
+            title: item.title || `${this.formatCategoryName(category)} ${j + 1}`,
+            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            type: item.type || 'image'
+          });
+
+          transformed.push({
+            item: enriched,
+            sortKey: (weight * 1000000) + j
+          });
+        });
       }
-
-      return (a.order || 0) - (b.order || 0);
     });
 
-    return allItems;
+    return transformed
+      .sort((a, b) => a.sortKey - b.sortKey)
+      .map(t => t.item);
   }
 
   formatCategoryName(slug) {
@@ -687,7 +640,4 @@ class PortfolioGallery {
   }
 }
 
-// ========================================
-// INITIALIZE
-// ========================================
 window.PortfolioGallery = new PortfolioGallery();
