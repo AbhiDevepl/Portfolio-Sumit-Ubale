@@ -1,0 +1,3 @@
+## 2025-05-15 - Redundant Inline JSON Fetch
+**Learning:** Found a critical performance bottleneck where `data/portfolio.json` (~300KB) was fetched twice on the homepage: once via a dedicated loader script and once via a massive inline script. Additionally, the inline script rendered all 1,000+ items at once, causing significant TTI delays and layout thrashing.
+**Action:** Consolidate data fetching and rendering logic into a single modular script (`content-loader.js`). Implement incremental rendering (batching) to improve Time to Interactive. Always audit `index.html` for legacy inline scripts when optimizing homepage performance.
