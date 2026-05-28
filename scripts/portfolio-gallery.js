@@ -552,6 +552,7 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+    this._categoryNameCache = {};
     this.init();
   }
 
@@ -626,25 +627,8 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
-
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
-      }
-    }
+    var portfolio = data.portfolio;
+    var images = (portfolio && portfolio.images) || {};
 
     // Sort by category order, then by item order
     const categoryOrder = [
@@ -660,25 +644,60 @@ class PortfolioGallery {
       'commercial'
     ];
 
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+    // Create O(1) weight lookup for categories
+    const weights = {};
+    for (var i = 0; i < categoryOrder.length; i++) {
+      weights[categoryOrder[i]] = i;
+    }
 
-      if (catA !== catB) {
-        return catA - catB;
+    // Flatten and enrich with pre-calculated sort key (Schwartzian Transform approach)
+    for (var category in images) {
+      if (Object.prototype.hasOwnProperty.call(images, category)) {
+        var items = images[category];
+        if (Array.isArray(items)) {
+          var catWeight = weights[category] !== undefined ? weights[category] : 999;
+          var formattedCat = this.formatCategoryName(category);
+
+          for (var j = 0; j < items.length; j++) {
+            var item = items[j];
+            var enriched = Object.assign({}, item);
+
+            enriched.category = category;
+            enriched.order = j;
+            enriched.id = item.id || (category + '-' + j);
+            enriched.title = item.title || (formattedCat + ' ' + (j + 1));
+            enriched.alt = item.alt || item.title || (formattedCat + ' photography');
+            enriched.type = item.type || 'image';
+
+            // Pre-calculate sort key: (categoryWeight * 10000) + index
+            enriched._sortKey = (catWeight * 10000) + j;
+
+            allItems.push(enriched);
+          }
+        }
       }
+    }
 
-      return (a.order || 0) - (b.order || 0);
+    // High-performance sort using pre-calculated key
+    allItems.sort(function(a, b) {
+      return a._sortKey - b._sortKey;
     });
 
     return allItems;
   }
 
   formatCategoryName(slug) {
-    return slug
+    if (this._categoryNameCache[slug]) {
+      return this._categoryNameCache[slug];
+    }
+
+    const formatted = slug
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
       .join(' ');
+
+    this._categoryNameCache[slug] = formatted;
+    return formatted;
   }
 
   retry() {
