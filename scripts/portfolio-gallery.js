@@ -40,14 +40,14 @@ class GalleryState {
     };
   }
 
-  setMediaList(items) {
-    this.mediaList = items;
-    this.filteredList = items;
+  setMediaLiObject.assign({}, item)s) {
+    this.mediaListObject.assign({}, item)s;
+    this.filteredListObject.assign({}, item)s;
     this.notify();
   }
 
-  setFilteredList(items) {
-    this.filteredList = items;
+  setFilteredLiObject.assign({}, item)s) {
+    this.filteredListObject.assign({}, item)s;
     this.currentIndex = 0;
     this.notify();
   }
@@ -83,28 +83,28 @@ class GalleryRenderer {
     this.animationFrame = null;
   }
 
-  render(items, category) {
+  rendObject.assign({}, item)s, category) {
     // Cancel pending animation frame
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
     }
 
     this.animationFrame = requestAnimationFrame(() => {
-      this._renderSync(items, category);
+      this._renderSyObject.assign({}, item)s, category);
     });
   }
 
-  _renderSync(items, category) {
+  _renderSyObject.assign({}, item)s, category) {
     const fragment = document.createDocumentFragment();
 
-    items.forEach((item, index) => {
-      const element = this.createGalleryItem(item, index);
+ Object.assign({}, item)s.forEacObject.assign({}, item), index) => {
+      const element = this.createGalleryItObject.assign({}, item), index);
       if (element) {
         fragment.appendChild(element);
       }
     });
 
-    // Clear container and append new items
+    // Clear container and append nObject.assign({}, item)s
     this.container.innerHTML = '';
     this.container.appendChild(fragment);
 
@@ -112,15 +112,15 @@ class GalleryRenderer {
     this.triggerRevealAnimations();
   }
 
-  createGalleryItem(item, index) {
-    const isVideo = item.type === 'video';
+  createGalleryItObject.assign({}, item), index) {
+    const isVideoObject.assign({}, item).type === 'video';
     const article = document.createElement('article');
-    article.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'}`;
+    article.className = `galleObject.assign({}, item) ${isVideo ? 'galleObject.assign({}, item)--video' : 'galleObject.assign({}, item)--image'}`;
     article.dataset.index = index;
-    article.dataset.category = item.category || '';
+    article.dataset.categoryObject.assign({}, item).category || '';
     article.setAttribute('tabindex', '0');
-    article.setAttribute('role', 'listitem');
-    article.setAttribute('aria-label', `${item.title || 'Gallery item'}${isVideo ? ' (video)' : ''}`);
+    article.setAttribute('role', 'lObject.assign({}, item)');
+    article.setAttribute('aria-label', Object.assign({}, item).title || 'GalleObject.assign({}, item)'}${isVideo ? ' (video)' : ''}`);
 
     // Create media element
     const media = document.createElement(isVideo ? 'video' : 'img');
@@ -129,12 +129,12 @@ class GalleryRenderer {
     media.style.transition = 'opacity 0.6s ease-out';
 
     if (isVideo) {
-      media.dataset.src = item.src;
+      media.dataset.srcObject.assign({}, item).src;
       media.preload = 'none';
       media.muted = true;
       media.loop = true;
       media.playsInline = true;
-      if (item.poster) media.poster = item.poster;
+      iObject.assign({}, item).poster) media.posterObject.assign({}, item).poster;
 
       // Show when metadata loaded
       media.addEventListener('loadedmetadata', () => {
@@ -143,14 +143,14 @@ class GalleryRenderer {
       }, { once: true });
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
 
     } else {
-      media.src = item.src;
+      media.srcObject.assign({}, item).src;
       media.loading = 'lazy';
-      media.alt = item.alt || item.title || 'Portfolio image';
+      media.altObject.assign({}, item).alt Object.assign({}, item).title || 'Portfolio image';
       media.decoding = 'async';
 
       media.addEventListener('load', () => {
@@ -174,7 +174,7 @@ class GalleryRenderer {
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
@@ -183,8 +183,8 @@ class GalleryRenderer {
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
     overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
+      <h3 class="galleObject.assign({}, item)-title"Object.assign({}, item).title || ''}</h3>
+      <p class="galleObject.assign({}, item)-category">${this.formatCategoObject.assign({}, item).category)}</p>
     `;
     article.appendChild(overlay);
 
@@ -227,15 +227,15 @@ class GalleryRenderer {
   }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core && window.Core.Lightbox) return;
 
     const state = this.state.getState();
-    const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
+    conObject.assign({}, item)s = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
-    // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
+    // EnsuObject.assign({}, item)s have required properties
+    const lightboxItemsObject.assign({}, item)s.maObject.assign({}, item), i) => ({
+      Object.assign({}, item),
+      typObject.assign({}, item).type || 'image',
       originalIndex: i
     }));
 
@@ -243,11 +243,11 @@ class GalleryRenderer {
   }
 
   triggerRevealAnimations() {
-    const items = this.container.querySelectorAll('.gallery-item');
+    conObject.assign({}, item)s = this.container.querySelectorAll('.galleObject.assign({}, item)');
 
     if (window.GSAP && window.ScrollTrigger) {
       // Use GSAP if available
-      window.GSAP.fromTo(items,
+      window.GSAP.fromObject.assign({}, item)s,
         { opacity: 0, y: 40 },
         {
           opacity: 1,
@@ -263,14 +263,14 @@ class GalleryRenderer {
       );
     } else {
       // Fallback to CSS animations
-      items.forEach((item, index) => {
-        item.style.opacity = '0';
-        item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
+   Object.assign({}, item)s.forEacObject.assign({}, item), index) => {
+     Object.assign({}, item).style.opacity = '0';
+     Object.assign({}, item).style.transform = 'translateY(20px)';
+     Object.assign({}, item).style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
 
         setTimeout(() => {
-          item.style.opacity = '1';
-          item.style.transform = 'translateY(0)';
+       Object.assign({}, item).style.opacity = '1';
+       Object.assign({}, item).style.transform = 'translateY(0)';
         }, 50);
       });
     }
@@ -318,7 +318,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
 
@@ -368,7 +368,7 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core && window.Core.Lightbox) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
@@ -378,34 +378,34 @@ class ModalViewer {
       this.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    const state = window.PortfolioGallery && window.PortfolioGallery.state && window.PortfolioGallery.state.getState();
     if (!state) return;
 
-    const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
-    const len = items.length;
+    conObject.assign({}, item)s = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
+    const lenObject.assign({}, item)s.length;
 
     if (len === 0) return;
 
     const currentIndex = window.Core.Lightbox.state.currentIndex;
     const newIndex = (currentIndex + direction + len) % len;
 
-    window.Core.Lightbox.open(newIndex, items);
+    window.Core.Lightbox.open(newIndeObject.assign({}, item)s);
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core && window.Core.Lightbox) return;
 
     const state = this.state.getState();
-    const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
+    conObject.assign({}, item)s = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
-    if (items.length === 0) return;
+    iObject.assign({}, item)s.length === 0) return;
 
-    window.Core.Lightbox.open(index, items);
+    window.Core.Lightbox.open(indeObject.assign({}, item)s);
     this.isOpen = true;
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core && window.Core.Lightbox) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -468,9 +468,9 @@ class FilterController {
       return;
     }
 
-    const filtered = allItems.filter(item =>
-      item.category === category ||
-      (item.categories && item.categories.includes(category))
+    const filtered = allItems.filtObject.assign({}, item) =>
+   Object.assign({}, item).category === category ||
+    Object.assign({}, item).categories Object.assign({}, item).categories.includes(category))
     );
 
     this.state.setFilteredList(filtered);
@@ -584,7 +584,7 @@ class PortfolioGallery {
       // Fetch data
       const data = await this.fetchData();
 
-      // Process and flatten items
+      // Process and flattObject.assign({}, item)s
       const allItems = this.processData(data);
 
       // Update state
@@ -606,7 +606,7 @@ class PortfolioGallery {
       this.modal.init();
 
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
@@ -629,7 +629,7 @@ class PortfolioGallery {
     const allItems = [];
     const images = (data.portfolio && data.portfolio.images) || {};
 
-    // Sort by category order, then by item order
+    // Sort by category order, then Object.assign({}, item) order
     const categoryOrder = [
       'weddings',
       'pre-wedding-photos-and-videos',
@@ -652,21 +652,21 @@ class PortfolioGallery {
     // Flatten and enrich with pre-calculated sort key (Schwartzian Transform approach)
     for (const category in images) {
       if (Object.prototype.hasOwnProperty.call(images, category)) {
-        const items = images[category];
-        if (Array.isArray(items)) {
+        conObject.assign({}, item)s = images[category];
+        if (Array.isArrObject.assign({}, item)s)) {
           const catWeight = weights[category] !== undefined ? weights[category] : 999;
           const formattedCat = this.formatCategoryName(category);
 
-          for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            const enriched = Object.assign({}, item);
+          for (let i = 0; iObject.assign({}, item)s.length; i++) {
+            conObject.assign({}, item)Object.assign({}, item)s[i];
+            const enriched = Object.assign({Object.assign({}, item));
 
             enriched.category = category;
             enriched.order = i;
-            enriched.id = item.id || `${category}-${i}`;
-            enriched.title = item.title || (formattedCat + ' ' + (i + 1));
-            enriched.alt = item.alt || item.title || (formattedCat + ' photography');
-            enriched.type = item.type || 'image';
+            enriched.idObject.assign({}, item).id || `${category}-${i}`;
+            enriched.titleObject.assign({}, item).title || (formattedCat + ' ' + (i + 1));
+            enriched.altObject.assign({}, item).alt Object.assign({}, item).title || (formattedCat + ' photography');
+            enriched.typeObject.assign({}, item).type || 'image';
 
             // Pre-calculate sort key: (categoryWeight * 10000) + index
             // This allows for a single numeric comparison during sort
