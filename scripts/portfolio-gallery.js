@@ -552,6 +552,7 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+    this._categoryNameCache = {};
     this.init();
   }
 
@@ -628,25 +629,7 @@ class PortfolioGallery {
     const allItems = [];
     const images = data.portfolio?.images || {};
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
-      }
-    }
-
-    // Sort by category order, then by item order
+    // Pre-calculate weights for O(1) lookup during sort
     const categoryOrder = [
       'weddings',
       'pre-wedding-photos-and-videos',
@@ -660,25 +643,54 @@ class PortfolioGallery {
       'commercial'
     ];
 
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+    const weights = {};
+    categoryOrder.forEach((cat, i) => weights[cat] = i);
 
-      if (catA !== catB) {
-        return catA - catB;
+    // Flatten all category images using a single pass for optimization
+    for (const [category, items] of Object.entries(images)) {
+      if (!Array.isArray(items)) continue;
+
+      const weight = weights[category] !== undefined ? weights[category] : -1;
+      const categoryName = this.formatCategoryName(category);
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        allItems.push({
+          ...item,
+          category,
+          _weight: weight,
+          order: i, // Keep backward compatibility
+          // Ensure consistent property names
+          id: item.id || `${category}-${i}`,
+          title: item.title || `${categoryName} ${i + 1}`,
+          alt: item.alt || item.title || `${categoryName} photography`,
+          type: item.type || 'image'
+        });
       }
+    }
 
-      return (a.order || 0) - (b.order || 0);
+    // Sort using pre-calculated weights for O(N log N) total complexity
+    // (Previously O(N * M log N) where M is the number of categories)
+    allItems.sort((a, b) => {
+      if (a._weight !== b._weight) {
+        return a._weight - b._weight;
+      }
+      return a.order - b.order;
     });
 
     return allItems;
   }
 
   formatCategoryName(slug) {
-    return slug
+    if (this._categoryNameCache[slug]) return this._categoryNameCache[slug];
+
+    const name = slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+
+    this._categoryNameCache[slug] = name;
+    return name;
   }
 
   retry() {
