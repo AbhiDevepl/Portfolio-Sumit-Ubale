@@ -4,19 +4,6 @@
  */
 
 class ContentLoader {
-  static CATEGORY_NAMES = {
-    'weddings': 'Weddings',
-    'portraits': 'Portraits',
-    'commercial': 'Commercial',
-    'events': 'Events',
-    'maternity': 'Maternity',
-    'kids': 'Kids',
-    'haldi': 'Haldi',
-    'engagement': 'Engagement',
-    'pre-wedding-photos-and-videos': 'Pre-Wedding',
-    'cinematics': 'Cinematics'
-  };
-
   constructor() {
     this.dataUrl = '/data/portfolio.json';
     this.data = null;
@@ -88,8 +75,10 @@ class ContentLoader {
     if (!this.mediaData) return [];
 
     if (category === 'all') {
-      // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      // Flatten all category arrays (replacing .flat() for Cloudflare compatibility)
+      return Object.values(this.mediaData).reduce(function(acc, val) {
+        return acc.concat(val);
+      }, []);
     }
 
     return this.mediaData[category] || [];
@@ -357,6 +346,20 @@ class ContentLoader {
     }
   }
 }
+
+// Move static CATEGORY_NAMES outside class body for compatibility
+ContentLoader.CATEGORY_NAMES = {
+  'weddings': 'Weddings',
+  'portraits': 'Portraits',
+  'commercial': 'Commercial',
+  'events': 'Events',
+  'maternity': 'Maternity',
+  'kids': 'Kids',
+  'haldi': 'Haldi',
+  'engagement': 'Engagement',
+  'pre-wedding-photos-and-videos': 'Pre-Wedding',
+  'cinematics': 'Cinematics'
+};
 
 // Initialize content loader when DOM is ready
 if (document.readyState === 'loading') {
