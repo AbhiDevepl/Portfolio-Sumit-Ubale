@@ -625,28 +625,7 @@ class PortfolioGallery {
   }
 
   processData(data) {
-    const allItems = [];
     const images = data.portfolio?.images || {};
-
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
-      }
-    }
-
-    // Sort by category order, then by item order
     const categoryOrder = [
       'weddings',
       'pre-wedding-photos-and-videos',
@@ -660,14 +639,49 @@ class PortfolioGallery {
       'commercial'
     ];
 
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+    // Pre-calculate weights for O(1) lookup during sort
+    const weights = {};
+    for (let i = 0; i < categoryOrder.length; i++) {
+      weights[categoryOrder[i]] = i;
+    }
 
-      if (catA !== catB) {
-        return catA - catB;
+    const allItems = [];
+    const categoryNamesCache = {};
+
+    // Use Object.entries for consistent iteration order matching original
+    const entries = Object.entries(images);
+    for (let i = 0; i < entries.length; i++) {
+      const [category, items] = entries[i];
+      if (Array.isArray(items)) {
+        // Cache formatted names to avoid repeated string operations
+        if (categoryNamesCache[category] === undefined) {
+          categoryNamesCache[category] = this.formatCategoryName(category);
+        }
+        const catName = categoryNamesCache[category];
+        // Unknown categories default to -1 to match original indexOf behavior
+        const weight = weights[category] !== undefined ? weights[category] : -1;
+
+        for (let j = 0; j < items.length; j++) {
+          const item = items[j];
+          allItems.push({
+            ...item,
+            category,
+            _weight: weight,
+            order: j,
+            id: item.id || `${category}-${j}`,
+            title: item.title || `${catName} ${j + 1}`,
+            alt: item.alt || item.title || `${catName} photography`,
+            type: item.type || 'image'
+          });
+        }
       }
+    }
 
+    // O(N log N) sort using pre-calculated weights
+    allItems.sort((a, b) => {
+      if (a._weight !== b._weight) {
+        return a._weight - b._weight;
+      }
       return (a.order || 0) - (b.order || 0);
     });
 
