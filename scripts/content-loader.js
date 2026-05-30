@@ -128,7 +128,13 @@ class ContentLoader {
       // Click handler for lightbox
       el.addEventListener('click', () => {
         const visibleItems = window.GalleryManager?.getVisibleData?.() || items;
-        const itemIndex = visibleItems.findIndex(entry => entry.originalIndex === index);
+        let itemIndex = -1;
+        for (let i = 0; i < visibleItems.length; i++) {
+          if (visibleItems[i].originalIndex === index) {
+            itemIndex = i;
+            break;
+          }
+        }
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
         if (window.Core?.Lightbox) {
