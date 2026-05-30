@@ -76,7 +76,18 @@ class ContentLoader {
 
     if (category === 'all') {
       // Flatten all category arrays manually for Cloudflare Workers CI compatibility
-      return Object.values(this.mediaData).reduce((acc, val) => acc.concat(val), []);
+      const flattened = [];
+      for (const cat in this.mediaData) {
+        if (Object.prototype.hasOwnProperty.call(this.mediaData, cat)) {
+          const items = this.mediaData[cat];
+          if (Array.isArray(items)) {
+            for (let i = 0; i < items.length; i++) {
+              flattened.push(items[i]);
+            }
+          }
+        }
+      }
+      return flattened;
     }
 
     return this.mediaData[category] || [];

@@ -648,31 +648,32 @@ class PortfolioGallery {
     const allItems = [];
     const categoryNamesCache = {};
 
-    // Use Object.entries for consistent iteration order matching original
-    const entries = Object.entries(images);
-    for (let i = 0; i < entries.length; i++) {
-      const [category, items] = entries[i];
-      if (Array.isArray(items)) {
-        // Cache formatted names to avoid repeated string operations
-        if (categoryNamesCache[category] === undefined) {
-          categoryNamesCache[category] = this.formatCategoryName(category);
-        }
-        const catName = categoryNamesCache[category];
-        // Unknown categories default to -1 to match original indexOf behavior
-        const weight = weights[category] !== undefined ? weights[category] : -1;
+    // Use for...in for compatibility and performance
+    for (const category in images) {
+      if (Object.prototype.hasOwnProperty.call(images, category)) {
+        const items = images[category];
+        if (Array.isArray(items)) {
+          // Cache formatted names to avoid repeated string operations
+          if (categoryNamesCache[category] === undefined) {
+            categoryNamesCache[category] = this.formatCategoryName(category);
+          }
+          const catName = categoryNamesCache[category];
+          // Unknown categories default to -1 to match original indexOf behavior
+          const weight = weights[category] !== undefined ? weights[category] : -1;
 
-        for (let j = 0; j < items.length; j++) {
-          const item = items[j];
-          allItems.push({
-            ...item,
-            category,
-            _weight: weight,
-            order: j,
-            id: item.id || `${category}-${j}`,
-            title: item.title || `${catName} ${j + 1}`,
-            alt: item.alt || item.title || `${catName} photography`,
-            type: item.type || 'image'
-          });
+          for (let j = 0; j < items.length; j++) {
+            const item = items[j];
+            allItems.push({
+              ...item,
+              category,
+              _weight: weight,
+              order: j,
+              id: item.id || `${category}-${j}`,
+              title: item.title || `${catName} ${j + 1}`,
+              alt: item.alt || item.title || `${catName} photography`,
+              type: item.type || 'image'
+            });
+          }
         }
       }
     }
