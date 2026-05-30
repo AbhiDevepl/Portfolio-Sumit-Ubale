@@ -4,19 +4,6 @@
  */
 
 class ContentLoader {
-  static CATEGORY_NAMES = {
-    'weddings': 'Weddings',
-    'portraits': 'Portraits',
-    'commercial': 'Commercial',
-    'events': 'Events',
-    'maternity': 'Maternity',
-    'kids': 'Kids',
-    'haldi': 'Haldi',
-    'engagement': 'Engagement',
-    'pre-wedding-photos-and-videos': 'Pre-Wedding',
-    'cinematics': 'Cinematics'
-  };
-
   constructor() {
     this.dataUrl = '/data/portfolio.json';
     this.data = null;
@@ -77,7 +64,7 @@ class ContentLoader {
    */
   getCategoryName(category) {
     return ContentLoader.CATEGORY_NAMES[category] || category;
-  },
+  }
 
   /**
    * Get images for a category
@@ -88,12 +75,23 @@ class ContentLoader {
     if (!this.mediaData) return [];
 
     if (category === 'all') {
-      // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      // Flatten all category arrays manually for Cloudflare Workers CI compatibility
+      const flattened = [];
+      for (const cat in this.mediaData) {
+        if (Object.prototype.hasOwnProperty.call(this.mediaData, cat)) {
+          const items = this.mediaData[cat];
+          if (Array.isArray(items)) {
+            for (let i = 0; i < items.length; i++) {
+              flattened.push(items[i]);
+            }
+          }
+        }
+      }
+      return flattened;
     }
 
     return this.mediaData[category] || [];
-  },
+  }
 
   /**
    * Render gallery items for a category
@@ -130,7 +128,13 @@ class ContentLoader {
       // Click handler for lightbox
       el.addEventListener('click', () => {
         const visibleItems = window.GalleryManager?.getVisibleData?.() || items;
-        const itemIndex = visibleItems.findIndex(entry => entry.originalIndex === index);
+        let itemIndex = -1;
+        for (let i = 0; i < visibleItems.length; i++) {
+          if (visibleItems[i].originalIndex === index) {
+            itemIndex = i;
+            break;
+          }
+        }
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
         if (window.Core?.Lightbox) {
@@ -192,7 +196,7 @@ class ContentLoader {
     if (window.GalleryManager) {
       window.GalleryManager.allImages = this.allImages;
     }
-  },
+  }
 
   /**
    * Re-run IntersectionObserver on lazy images
@@ -357,6 +361,19 @@ class ContentLoader {
     }
   }
 }
+
+ContentLoader.CATEGORY_NAMES = {
+  'weddings': 'Weddings',
+  'portraits': 'Portraits',
+  'commercial': 'Commercial',
+  'events': 'Events',
+  'maternity': 'Maternity',
+  'kids': 'Kids',
+  'haldi': 'Haldi',
+  'engagement': 'Engagement',
+  'pre-wedding-photos-and-videos': 'Pre-Wedding',
+  'cinematics': 'Cinematics'
+};
 
 // Initialize content loader when DOM is ready
 if (document.readyState === 'loading') {
