@@ -17,16 +17,6 @@ class GalleryState {
     this.activeCategory = 'all';
     this.isLoading = false;
     this.hasError = false;
-    this.listeners = new Set();
-  }
-
-  subscribe(callback) {
-    this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
-  }
-
-  notify() {
-    this.listeners.forEach(cb => cb(this.getState()));
   }
 
   getState() {
@@ -43,33 +33,27 @@ class GalleryState {
   setMediaList(items) {
     this.mediaList = items;
     this.filteredList = items;
-    this.notify();
   }
 
   setFilteredList(items) {
     this.filteredList = items;
     this.currentIndex = 0;
-    this.notify();
   }
 
   setActiveCategory(category) {
     this.activeCategory = category;
-    this.notify();
   }
 
   setCurrentIndex(index) {
     this.currentIndex = Math.max(0, Math.min(index, this.filteredList.length - 1));
-    this.notify();
   }
 
   setLoading(loading) {
     this.isLoading = loading;
-    this.notify();
   }
 
   setError(error) {
     this.hasError = error;
-    this.notify();
   }
 }
 
@@ -179,13 +163,21 @@ class GalleryRenderer {
       }
     }
 
-    // Overlay with title/category
+    // Overlay with title/category - Optimized with textContent and pre-cached category name
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const h3 = document.createElement('h3');
+    h3.className = 'gallery-item-title';
+    h3.textContent = item.title || '';
+
+    const p = document.createElement('p');
+    p.className = 'gallery-item-category';
+    // Use the enriched property from processData if available
+    p.textContent = item._formattedCategory || this.formatCategory(item.category);
+
+    overlay.appendChild(h3);
+    overlay.appendChild(p);
     article.appendChild(overlay);
 
     // Click handler
@@ -416,9 +408,10 @@ class ModalViewer {
 // FILTER CONTROLLER
 // ========================================
 class FilterController {
-  constructor(state, chipsContainer) {
+  constructor(state, chipsContainer, onFilter) {
     this.state = state;
     this.chipsContainer = chipsContainer;
+    this.onFilter = onFilter;
     this.init();
   }
 
@@ -462,19 +455,19 @@ class FilterController {
     const state = this.state.getState();
     const allItems = state.mediaList;
 
-    if (category === 'all') {
-      this.state.setFilteredList(allItems);
-      this.state.setActiveCategory('all');
-      return;
+    let filtered = allItems;
+    if (category !== 'all') {
+      filtered = allItems.filter(item =>
+        item.category === category ||
+        (item.categories && item.categories.includes(category))
+      );
     }
-
-    const filtered = allItems.filter(item =>
-      item.category === category ||
-      (item.categories && item.categories.includes(category))
-    );
 
     this.state.setFilteredList(filtered);
     this.state.setActiveCategory(category);
+
+    // Explicitly trigger render
+    if (this.onFilter) this.onFilter(filtered, category);
 
     // Update URL for shareability
     this.updateURL(category);
@@ -583,20 +576,24 @@ class PortfolioGallery {
       // Fetch data
       const data = await this.fetchData();
 
-      // Process and flatten items
+      // Process and flatten items - Optimized with Schwartzian Transform
       const allItems = this.processData(data);
 
       // Update state
       this.state.setMediaList(allItems);
       this.state.setLoading(false);
 
-      // Initial render
+      // Explicitly trigger initial render
       this.renderer.render(allItems, 'all');
 
       // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
       if (chipsContainer) {
-        this.filterController = new FilterController(this.state, chipsContainer);
+        this.filterController = new FilterController(
+          this.state,
+          chipsContainer,
+          (items, cat) => this.renderer.render(items, cat)
+        );
         this.filterController.selectFromURL();
       }
 
@@ -628,25 +625,7 @@ class PortfolioGallery {
     const allItems = [];
     const images = data.portfolio?.images || {};
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
-      }
-    }
-
-    // Sort by category order, then by item order
+    // Pre-calculate sorting weights for O(1) lookup
     const categoryOrder = [
       'weddings',
       'pre-wedding-photos-and-videos',
@@ -660,14 +639,46 @@ class PortfolioGallery {
       'commercial'
     ];
 
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+    const weights = {};
+    categoryOrder.forEach((cat, index) => { weights[cat] = index; });
 
-      if (catA !== catB) {
-        return catA - catB;
+    // Cache for formatted category names to avoid repeated string manipulations
+    this._categoryNameCache = this._categoryNameCache || {};
+    const getFormattedName = (slug) => {
+      if (this._categoryNameCache[slug]) return this._categoryNameCache[slug];
+      const formatted = this.formatCategoryName(slug);
+      this._categoryNameCache[slug] = formatted;
+      return formatted;
+    };
+
+    // Flatten and enrich in a single pass with optimized lookups
+    for (const [category, items] of Object.entries(images)) {
+      if (Array.isArray(items)) {
+        const weight = weights[category] !== undefined ? weights[category] : 999;
+        const formattedCat = getFormattedName(category);
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          allItems.push({
+            ...item,
+            category,
+            _weight: weight, // Schwartzian Transform-like weight for O(1) sort
+            _formattedCategory: formattedCat, // Pre-cache for renderer
+            order: i,
+            id: item.id || `${category}-${i}`,
+            title: item.title || `${formattedCat} ${i + 1}`,
+            alt: item.alt || item.title || `${formattedCat} photography`,
+            type: item.type || 'image'
+          });
+        }
       }
+    }
 
+    // Sort using pre-calculated weights (O(N log N) total complexity)
+    allItems.sort((a, b) => {
+      if (a._weight !== b._weight) {
+        return a._weight - b._weight;
+      }
       return (a.order || 0) - (b.order || 0);
     });
 
@@ -682,7 +693,6 @@ class PortfolioGallery {
   }
 
   retry() {
-    this.state = new GalleryState();
     this.setup();
   }
 }
