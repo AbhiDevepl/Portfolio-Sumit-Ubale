@@ -552,6 +552,24 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+
+    // Performance Optimization: Cache for category name transformations
+    this._categoryNameCache = {};
+
+    // Performance Optimization: Pre-calculated sorting weights for categories
+    this._categoryWeights = {
+      'weddings': 0,
+      'pre-wedding-photos-and-videos': 1,
+      'engagement': 2,
+      'haldi': 3,
+      'maternity': 4,
+      'portraits': 5,
+      'cinematics': 6,
+      'kids': 7,
+      'events': 8,
+      'commercial': 9
+    };
+
     this.init();
   }
 
@@ -628,9 +646,12 @@ class PortfolioGallery {
     const allItems = [];
     const images = data.portfolio?.images || {};
 
-    // Flatten all category images
+    // Flatten all category images and enrich with weights for O(1) sorting lookups
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
+        const formattedName = this.formatCategoryName(category);
+        const weight = this._categoryWeights.hasOwnProperty(category) ? this._categoryWeights[category] : -1;
+
         items.forEach((item, index) => {
           allItems.push({
             ...item,
@@ -638,47 +659,41 @@ class PortfolioGallery {
             order: index,
             // Ensure consistent property names
             id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
+            title: item.title || `${formattedName} ${index + 1}`,
+            alt: item.alt || item.title || `${formattedName} photography`,
+            type: item.type || 'image',
+            _weight: weight
           });
         });
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Performance: Sort using pre-calculated weights to avoid O(C) indexOf calls inside O(N log N) sort
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+      if (a._weight !== b._weight) {
+        return a._weight - b._weight;
       }
-
       return (a.order || 0) - (b.order || 0);
     });
 
     return allItems;
   }
 
+  /**
+   * Transforms category slug to title case with caching
+   * @param {string} slug
+   * @returns {string}
+   */
   formatCategoryName(slug) {
-    return slug
+    if (this._categoryNameCache[slug]) return this._categoryNameCache[slug];
+
+    const formatted = slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+
+    this._categoryNameCache[slug] = formatted;
+    return formatted;
   }
 
   retry() {
