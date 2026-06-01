@@ -671,12 +671,12 @@ class PortfolioGallery {
         const item = items[i];
         allItems.push({
           ...item,
-          category,
+          category: category,
           order: i,
           // Ensure consistent property names
-          id: item.id || `${category}-${i}`,
-          title: item.title || `${catDisplayName} ${i + 1}`,
-          alt: item.alt || item.title || `${catDisplayName} photography`,
+          id: item.id || (category + '-' + i),
+          title: item.title || (catDisplayName + ' ' + (i + 1)),
+          alt: item.alt || item.title || (catDisplayName + ' photography'),
           type: item.type || 'image',
           _weight: weight // Schwartzian transform: store weight for O(N log N) sorting
         });
