@@ -89,7 +89,8 @@ class ContentLoader {
 
     if (category === 'all') {
       // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      // Note: Using reduce/concat for broader compatibility (e.g. older Cloudflare Worker environments)
+      return Object.values(this.mediaData).reduce((acc, val) => acc.concat(val), []);
     }
 
     return this.mediaData[category] || [];
