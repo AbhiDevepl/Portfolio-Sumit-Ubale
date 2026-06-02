@@ -77,7 +77,7 @@ class ContentLoader {
    */
   getCategoryName(category) {
     return ContentLoader.CATEGORY_NAMES[category] || category;
-  },
+  }
 
   /**
    * Get images for a category
@@ -89,11 +89,11 @@ class ContentLoader {
 
     if (category === 'all') {
       // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      return Object.values(this.mediaData).reduce((acc, val) => acc.concat(val), []);
     }
 
     return this.mediaData[category] || [];
-  },
+  }
 
   /**
    * Render gallery items for a category
@@ -192,7 +192,7 @@ class ContentLoader {
     if (window.GalleryManager) {
       window.GalleryManager.allImages = this.allImages;
     }
-  },
+  }
 
   /**
    * Re-run IntersectionObserver on lazy images
@@ -221,8 +221,6 @@ class ContentLoader {
       }
     });
   }
-
-
 
   /**
    * Populate events section
@@ -332,7 +330,6 @@ class ContentLoader {
         clientsContainer.appendChild(clientItem);
       });
     }
-
   }
 
   /**
