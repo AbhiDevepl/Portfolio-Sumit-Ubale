@@ -81,6 +81,7 @@ class GalleryRenderer {
     this.state = state;
     this.container = container;
     this.animationFrame = null;
+    this._categoryCache = Object.create(null);
   }
 
   render(items, category) {
@@ -182,10 +183,17 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const title = document.createElement('h3');
+    title.className = 'gallery-item-title';
+    title.textContent = item.title || '';
+
+    const categoryLabel = document.createElement('p');
+    categoryLabel.className = 'gallery-item-category';
+    categoryLabel.textContent = this.formatCategory(item.category);
+
+    overlay.appendChild(title);
+    overlay.appendChild(categoryLabel);
     article.appendChild(overlay);
 
     // Click handler
@@ -220,10 +228,15 @@ class GalleryRenderer {
 
   formatCategory(category) {
     if (!category) return '';
-    return category
+    if (this._categoryCache[category]) return this._categoryCache[category];
+
+    const formatted = category
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+
+    this._categoryCache[category] = formatted;
+    return formatted;
   }
 
   openLightbox(index) {
@@ -552,6 +565,8 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+    this._categoryNameCache = Object.create(null);
+    this._categoryWeights = null;
     this.init();
   }
 
@@ -628,57 +643,72 @@ class PortfolioGallery {
     const allItems = [];
     const images = data.portfolio?.images || {};
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
+    if (!this._categoryWeights) {
+      const categoryOrder = [
+        'weddings',
+        'pre-wedding-photos-and-videos',
+        'engagement',
+        'haldi',
+        'maternity',
+        'portraits',
+        'cinematics',
+        'kids',
+        'events',
+        'commercial'
+      ];
+      this._categoryWeights = Object.create(null);
+      for (let i = 0; i < categoryOrder.length; i++) {
+        this._categoryWeights[categoryOrder[i]] = i;
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
+    // Flatten all category images and enrich with metadata for O(1) sorting
+    for (const category in images) {
+      if (Object.prototype.hasOwnProperty.call(images, category)) {
+        const items = images[category];
+        if (Array.isArray(items)) {
+          const formattedCategory = this.formatCategoryName(category);
+          const weight = this._categoryWeights[category] !== undefined ? this._categoryWeights[category] : 999;
 
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+          for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            allItems.push({
+              ...item,
+              category,
+              _weight: weight,
+              _order: i,
+              id: item.id || `${category}-${i}`,
+              title: item.title || `${formattedCategory} ${i + 1}`,
+              alt: item.alt || item.title || `${formattedCategory} photography`,
+              type: item.type || 'image'
+            });
+          }
+        }
       }
+    }
 
-      return (a.order || 0) - (b.order || 0);
+    // Schwartzian transform-like sort using pre-calculated weights and orders
+    allItems.sort((a, b) => {
+      if (a._weight !== b._weight) {
+        return a._weight - b._weight;
+      }
+      return a._order - b._order;
     });
 
     return allItems;
   }
 
   formatCategoryName(slug) {
-    return slug
+    if (!slug) return '';
+    if (this._categoryNameCache[slug]) return this._categoryNameCache[slug];
+
+    const formatted = slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+
+    this._categoryNameCache[slug] = formatted;
+    return formatted;
   }
 
   retry() {
