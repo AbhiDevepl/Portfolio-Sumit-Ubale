@@ -39,7 +39,7 @@ class ContentLoader {
       const response = await fetch(this.dataUrl);
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error('HTTP error! status: ' + response.status);
       }
 
       this.data = await response.json();
@@ -47,7 +47,7 @@ class ContentLoader {
       this.mediaData = this.data.portfolio.images;
       return this.data;
     } catch (error) {
-      throw new Error(`Failed to load portfolio data: ${error.message}`);
+      throw new Error('Failed to load portfolio data: ' + error.message);
     }
   }
 
@@ -76,7 +76,10 @@ class ContentLoader {
 
     if (category === 'all') {
       // Flatten all category arrays
-      return Object.values(this.mediaData).reduce((acc, val) => acc.concat(val), []);
+      var mediaData = this.mediaData;
+      return Object.keys(mediaData).reduce(function(acc, key) {
+        return acc.concat(mediaData[key]);
+      }, []);
     }
 
     return this.mediaData[category] || [];
@@ -104,29 +107,29 @@ class ContentLoader {
     // Create gallery items with proper structure
     const fragment = document.createDocumentFragment();
 
-    items.forEach((item, index) => {
+    items.forEach(function(item, index) {
       const isVideo = item.type === 'video';
       const el = document.createElement('article');
-      el.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'} reveal-item loading`;
+      el.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image') + ' reveal-item loading';
       el.dataset.index = index;
       el.dataset.category = category === 'all' ? (item.category || 'uncategorized') : category;
       el.setAttribute('tabindex', '0');
       el.setAttribute('role', 'button');
-      el.setAttribute('aria-label', `${item.title || 'Open preview'}${item.category ? ', ' + item.category : ''}`);
+      el.setAttribute('aria-label', (item.title || 'Open preview') + (item.category ? ', ' + item.category : ''));
 
       // Click handler for lightbox
-      el.addEventListener('click', () => {
-        const visibleItems = window.GalleryManager?.getVisibleData?.() || items;
-        const itemIndex = visibleItems.findIndex(entry => entry.originalIndex === index);
+      el.addEventListener('click', function() {
+        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : items;
+        const itemIndex = visibleItems.findIndex(function(entry) { return entry.originalIndex === index; });
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
-        if (window.Core?.Lightbox) {
+        if (window.Core && window.Core.Lightbox) {
           window.Core.Lightbox.open(targetIndex, visibleItems);
         }
       });
 
       // Keyboard handler
-      el.addEventListener('keydown', (e) => {
+      el.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           el.click();
@@ -167,7 +170,7 @@ class ContentLoader {
       el.appendChild(overlay);
 
       fragment.appendChild(el);
-    });
+    }.bind(this));
 
     galleryGrid.appendChild(fragment);
 
@@ -175,7 +178,16 @@ class ContentLoader {
     this.initLazyLoader();
 
     // Update allImages cache for lightbox (with original index for lightbox navigation)
-    this.allImages = items.map((item, idx) => ({ ...item, originalIndex: idx }));
+    this.allImages = items.map(function(item, idx) {
+      var newItem = {};
+      for (var key in item) {
+        if (Object.prototype.hasOwnProperty.call(item, key)) {
+          newItem[key] = item[key];
+        }
+      }
+      newItem.originalIndex = idx;
+      return newItem;
+    });
     if (window.GalleryManager) {
       window.GalleryManager.allImages = this.allImages;
     }
@@ -189,8 +201,8 @@ class ContentLoader {
 
     // Create or reuse observer
     if (!window.lazyImageObserver) {
-      window.lazyImageObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
+      window.lazyImageObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
           if (entry.isIntersecting) {
             const img = entry.target;
             img.src = img.dataset.src;
@@ -202,7 +214,7 @@ class ContentLoader {
     }
 
     // Observe new lazy images
-    lazyImages.forEach(img => {
+    lazyImages.forEach(function(img) {
       if (img.dataset.src) {
         window.lazyImageObserver.observe(img);
       }
@@ -215,7 +227,7 @@ class ContentLoader {
   populateEvents() {
     const eventsGrid = document.querySelector('.events-grid');
     
-    if (!eventsGrid || !this.data?.recentEvents) {
+    if (!eventsGrid || !this.data || !this.data.recentEvents) {
       console.warn('Events grid or data not found');
       return;
     }
@@ -224,14 +236,7 @@ class ContentLoader {
     eventsGrid.innerHTML = '';
 
     // Create event items (reusing gallery item structure for consistency)
-    this.data.recentEvents.forEach((event, index) => {
-      // Use createGalleryItem styling/structure but appended to events grid
-      // We manually recreate it here to ensure specific event classes if needed
-      // or we can reuse createGalleryItem if we want identical behavior.
-      // User asked for "like Portfolio", so let's stick to the Project Card style 
-      // or the Gallery Item style. The HTML had .event-item structure.
-      // Let's use the .event-item structure but make it dynamic.
-      
+    this.data.recentEvents.forEach(function(event, index) {
       const item = document.createElement('div');
       item.className = 'event-item';
       
@@ -241,18 +246,9 @@ class ContentLoader {
       img.className = 'event-image';
       img.loading = 'lazy';
       
-      // Maintain aspect ratio via CSS or style if variable
-      // The CSS has :nth-child rules for aspect ratios, but data has valid aspect ratios.
-      // We can override via style if needed, or let CSS handle it.
-      // Let's adhere to the data if provided.
       if (event.aspectRatio) {
         img.style.aspectRatio = event.aspectRatio;
       }
-      
-      // Optional: Add overlay content like portfolio if desired?
-      // The original HTML structure for events was just image.
-      // "make same as a Recent Events like Portfolio" implies showing title/category.
-      // Let's add an overlay similar to gallery items.
       
       const overlay = document.createElement('div');
       overlay.className = 'gallery-overlay'; // Reuse gallery overlay class
@@ -271,10 +267,6 @@ class ContentLoader {
       item.appendChild(img);
       item.appendChild(overlay);
       
-      // Add click listener for lightbox if we want events to open there too
-      // We need to add it to the GalleryManager access if we do that.
-      // For now, let's just make it visual.
-      
       eventsGrid.appendChild(item);
     });
   }
@@ -283,11 +275,12 @@ class ContentLoader {
    * Populate about section with social proof
    */
   populateAbout() {
+    const data = this.data;
     // Populate publications
     const publicationsContainer = document.getElementById('publications');
-    if (publicationsContainer && this.data?.socialProof?.publications) {
+    if (publicationsContainer && data && data.socialProof && data.socialProof.publications) {
       publicationsContainer.innerHTML = '';
-      this.data.socialProof.publications.forEach(pub => {
+      data.socialProof.publications.forEach(function(pub) {
         const pubItem = document.createElement('span');
         pubItem.className = 'publication-item';
         pubItem.textContent = pub;
@@ -297,9 +290,9 @@ class ContentLoader {
 
     // Populate awards
     const awardsContainer = document.getElementById('awards');
-    if (awardsContainer && this.data?.socialProof?.awards) {
+    if (awardsContainer && data && data.socialProof && data.socialProof.awards) {
       awardsContainer.innerHTML = '';
-      this.data.socialProof.awards.forEach(award => {
+      data.socialProof.awards.forEach(function(award) {
         const awardItem = document.createElement('li');
         awardItem.textContent = award;
         awardsContainer.appendChild(awardItem);
@@ -308,9 +301,9 @@ class ContentLoader {
 
     // Populate clients
     const clientsContainer = document.getElementById('clients');
-    if (clientsContainer && this.data?.socialProof?.clients) {
+    if (clientsContainer && data && data.socialProof && data.socialProof.clients) {
       clientsContainer.innerHTML = '';
-      this.data.socialProof.clients.forEach(client => {
+      data.socialProof.clients.forEach(function(client) {
         const clientItem = document.createElement('span');
         clientItem.className = 'client-item';
         clientItem.textContent = client;
@@ -328,10 +321,7 @@ class ContentLoader {
     // Show user-friendly error message
     const errorMessage = document.createElement('div');
     errorMessage.className = 'content-error';
-    errorMessage.innerHTML = `
-      <p>Unable to load portfolio content. Please try refreshing the page.</p>
-      <p class="error-details">${error.message}</p>
-    `;
+    errorMessage.innerHTML = '<p>Unable to load portfolio content. Please try refreshing the page.</p><p class="error-details">' + error.message + '</p>';
 
     // Try to insert error in gallery
     const galleryGrid = document.getElementById('gallery-grid');
@@ -344,7 +334,7 @@ class ContentLoader {
 
 // Initialize content loader when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', function() {
     window.contentLoader = new ContentLoader();
     window.contentLoader.init();
   });

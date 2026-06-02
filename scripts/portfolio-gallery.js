@@ -26,7 +26,7 @@ class GalleryState {
   }
 
   notify() {
-    this.listeners.forEach(cb => cb(this.getState()));
+    this.listeners.forEach(function(cb) { cb(this.getState()); }.bind(this));
   }
 
   getState() {
@@ -90,20 +90,20 @@ class GalleryRenderer {
       cancelAnimationFrame(this.animationFrame);
     }
 
-    this.animationFrame = requestAnimationFrame(() => {
+    this.animationFrame = requestAnimationFrame(function() {
       this._renderSync(items, category);
-    });
+    }.bind(this));
   }
 
   _renderSync(items, category) {
     const fragment = document.createDocumentFragment();
 
-    items.forEach((item, index) => {
+    items.forEach(function(item, index) {
       const element = this.createGalleryItem(item, index);
       if (element) {
         fragment.appendChild(element);
       }
-    });
+    }.bind(this));
 
     // Clear container and append new items
     this.container.innerHTML = '';
@@ -116,12 +116,12 @@ class GalleryRenderer {
   createGalleryItem(item, index) {
     const isVideo = item.type === 'video';
     const article = document.createElement('article');
-    article.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'}`;
+    article.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image');
     article.dataset.index = index;
     article.dataset.category = item.category || '';
     article.setAttribute('tabindex', '0');
     article.setAttribute('role', 'listitem');
-    article.setAttribute('aria-label', `${item.title || 'Gallery item'}${isVideo ? ' (video)' : ''}`);
+    article.setAttribute('aria-label', (item.title || 'Gallery item') + (isVideo ? ' (video)' : ''));
 
     // Create media element
     const media = document.createElement(isVideo ? 'video' : 'img');
@@ -138,13 +138,13 @@ class GalleryRenderer {
       if (item.poster) media.poster = item.poster;
 
       // Show when metadata loaded
-      media.addEventListener('loadedmetadata', () => {
+      media.addEventListener('loadedmetadata', function() {
         media.style.opacity = '1';
         article.classList.remove('loading');
       }, { once: true });
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
 
@@ -154,7 +154,7 @@ class GalleryRenderer {
       media.alt = item.alt || item.title || 'Portfolio image';
       media.decoding = 'async';
 
-      media.addEventListener('load', () => {
+      media.addEventListener('load', function() {
         media.style.opacity = '1';
         article.classList.remove('loading');
         article.classList.add('loaded');
@@ -175,7 +175,7 @@ class GalleryRenderer {
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
@@ -197,19 +197,19 @@ class GalleryRenderer {
     article.appendChild(overlay);
 
     // Click handler
-    article.addEventListener('click', (e) => {
+    article.addEventListener('click', function(e) {
       // If clicking video directly, let VideoHover handle play/pause
       if (e.target.closest('video') && e.target !== media) return;
       this.openLightbox(index);
-    });
+    }.bind(this));
 
     // Keyboard handler
-    article.addEventListener('keydown', (e) => {
+    article.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         this.openLightbox(index);
       }
-    });
+    }.bind(this));
 
     return article;
   }
@@ -218,11 +218,7 @@ class GalleryRenderer {
     const icon = document.createElement('div');
     icon.className = 'gallery-video-play-icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.innerHTML = `
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    `;
+    icon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
     return icon;
   }
 
@@ -232,7 +228,7 @@ class GalleryRenderer {
 
     const formatted = category
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
       .join(' ');
 
     this._categoryCache[category] = formatted;
@@ -240,17 +236,23 @@ class GalleryRenderer {
   }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map(function(item, i) {
+      const newItem = {};
+      for (const key in item) {
+        if (Object.prototype.hasOwnProperty.call(item, key)) {
+          newItem[key] = item[key];
+        }
+      }
+      newItem.type = item.type || 'image';
+      newItem.originalIndex = i;
+      return newItem;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -276,12 +278,12 @@ class GalleryRenderer {
       );
     } else {
       // Fallback to CSS animations
-      items.forEach((item, index) => {
+      items.forEach(function(item, index) {
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
+        item.style.transition = 'opacity 0.5s ease ' + (index * 0.05) + 's, transform 0.5s ease ' + (index * 0.05) + 's';
 
-        setTimeout(() => {
+        setTimeout(function() {
           item.style.opacity = '1';
           item.style.transform = 'translateY(0)';
         }, 50);
@@ -290,28 +292,11 @@ class GalleryRenderer {
   }
 
   showLoading() {
-    this.container.innerHTML = `
-      <div class="gallery-loading-state">
-        <div class="gallery-loading-spinner"></div>
-        <p>Loading portfolio...</p>
-      </div>
-    `;
+    this.container.innerHTML = '<div class="gallery-loading-state"><div class="gallery-loading-spinner"></div><p>Loading portfolio...</p></div>';
   }
 
   showError(message) {
-    this.container.innerHTML = `
-      <div class="gallery-error-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 8v4m0 4h.01"/>
-        </svg>
-        <h3>Failed to load portfolio</h3>
-        <p>${message}</p>
-        <button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">
-          Try Again
-        </button>
-      </div>
-    `;
+    this.container.innerHTML = '<div class="gallery-error-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg><h3>Failed to load portfolio</h3><p>' + message + '</p><button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">Try Again</button></div>';
   }
 }
 
@@ -331,7 +316,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
 
@@ -347,18 +332,18 @@ class ModalViewer {
     if (!mediaContainer) return;
 
     // Enhanced touch handling
-    mediaContainer.addEventListener('touchstart', (e) => {
+    mediaContainer.addEventListener('touchstart', function(e) {
       if (e.touches.length !== 1) return;
       this.touchStartX = e.touches[0].clientX;
       this.touchCurrentX = e.touches[0].clientX;
-    }, { passive: true });
+    }.bind(this), { passive: true });
 
-    mediaContainer.addEventListener('touchmove', (e) => {
+    mediaContainer.addEventListener('touchmove', function(e) {
       if (e.touches.length !== 1) return;
       this.touchCurrentX = e.touches[0].clientX;
-    }, { passive: true });
+    }.bind(this), { passive: true });
 
-    mediaContainer.addEventListener('touchend', () => {
+    mediaContainer.addEventListener('touchend', function() {
       const deltaX = this.touchCurrentX - this.touchStartX;
 
       if (Math.abs(deltaX) < this.touchThreshold) return;
@@ -367,9 +352,9 @@ class ModalViewer {
       if (this.navigationDebounce) return;
 
       this.navigationDebounce = true;
-      setTimeout(() => {
+      setTimeout(function() {
         this.navigationDebounce = false;
-      }, this.debounceDelay);
+      }.bind(this), this.debounceDelay);
 
       // Swipe left (deltaX < 0) = next, Swipe right (deltaX > 0) = previous
       if (deltaX < -this.touchThreshold) {
@@ -377,24 +362,25 @@ class ModalViewer {
       } else if (deltaX > this.touchThreshold) {
         this.navigate(-1);
       }
-    });
+    }.bind(this));
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
 
     this.navigationDebounce = true;
-    setTimeout(() => {
+    setTimeout(function() {
       this.navigationDebounce = false;
-    }, this.debounceDelay);
+    }.bind(this), this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
-    if (!state) return;
+    const portfolioGallery = window.PortfolioGallery;
+    const stateObj = portfolioGallery && portfolioGallery.state ? portfolioGallery.state.getState() : null;
+    if (!stateObj) return;
 
-    const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
+    const items = stateObj.filteredList.length > 0 ? stateObj.filteredList : stateObj.mediaList;
     const len = items.length;
 
     if (len === 0) return;
@@ -406,7 +392,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -418,7 +404,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -440,21 +426,21 @@ class FilterController {
 
     const chips = this.chipsContainer.querySelectorAll('.filter-chip');
 
-    chips.forEach(chip => {
-      chip.addEventListener('click', () => {
+    chips.forEach(function(chip) {
+      chip.addEventListener('click', function() {
         this.setActiveChip(chip);
         const category = chip.dataset.category;
         this.filterByCategory(category);
-      });
+      }.bind(this));
 
       // Keyboard support
-      chip.addEventListener('keydown', (e) => {
+      chip.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           chip.click();
         }
       });
-    });
+    }.bind(this));
 
     // Horizontal scroll with touch
     this.initHorizontalScroll();
@@ -462,7 +448,7 @@ class FilterController {
 
   setActiveChip(activeChip) {
     const chips = this.chipsContainer.querySelectorAll('.filter-chip');
-    chips.forEach(chip => {
+    chips.forEach(function(chip) {
       chip.classList.remove('active');
       chip.setAttribute('aria-selected', 'false');
     });
@@ -481,10 +467,10 @@ class FilterController {
       return;
     }
 
-    const filtered = allItems.filter(item =>
-      item.category === category ||
-      (item.categories && item.categories.includes(category))
-    );
+    const filtered = allItems.filter(function(item) {
+      return item.category === category ||
+      (item.categories && item.categories.indexOf(category) !== -1);
+    });
 
     this.state.setFilteredList(filtered);
     this.state.setActiveCategory(category);
@@ -494,13 +480,15 @@ class FilterController {
   }
 
   updateURL(category) {
-    const url = new URL(window.location);
-    if (category === 'all') {
-      url.searchParams.delete('category');
-    } else {
-      url.searchParams.set('category', category);
+    if (typeof URL !== 'undefined') {
+      const url = new URL(window.location);
+      if (category === 'all') {
+        url.searchParams.delete('category');
+      } else {
+        url.searchParams.set('category', category);
+      }
+      window.history.pushState({ category: category }, '', url);
     }
-    window.history.pushState({ category }, '', url);
   }
 
   initHorizontalScroll() {
@@ -508,30 +496,30 @@ class FilterController {
     let startX;
     let scrollLeft;
 
-    this.chipsContainer.addEventListener('mousedown', (e) => {
+    this.chipsContainer.addEventListener('mousedown', function(e) {
       isDown = true;
       startX = e.pageX - this.chipsContainer.offsetLeft;
       scrollLeft = this.chipsContainer.scrollLeft;
       this.chipsContainer.style.cursor = 'grabbing';
-    });
+    }.bind(this));
 
-    this.chipsContainer.addEventListener('mouseleave', () => {
+    this.chipsContainer.addEventListener('mouseleave', function() {
       isDown = false;
       this.chipsContainer.style.cursor = 'grab';
-    });
+    }.bind(this));
 
-    this.chipsContainer.addEventListener('mouseup', () => {
+    this.chipsContainer.addEventListener('mouseup', function() {
       isDown = false;
       this.chipsContainer.style.cursor = 'grab';
-    });
+    }.bind(this));
 
-    this.chipsContainer.addEventListener('mousemove', (e) => {
+    this.chipsContainer.addEventListener('mousemove', function(e) {
       if (!isDown) return;
       e.preventDefault();
       const x = e.pageX - this.chipsContainer.offsetLeft;
       const walk = (x - startX) * 2;
       this.chipsContainer.scrollLeft = scrollLeft - walk;
-    });
+    }.bind(this));
 
     // Touch scroll indicator
     this.chipsContainer.style.scrollbarWidth = 'none';
@@ -542,14 +530,16 @@ class FilterController {
   }
 
   selectFromURL() {
-    const params = new URLSearchParams(window.location.search);
-    const category = params.get('category');
+    if (typeof URLSearchParams !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const category = params.get('category');
 
-    if (category) {
-      const chip = this.chipsContainer.querySelector(`[data-category="${category}"]`);
-      if (chip) {
-        this.setActiveChip(chip);
-        this.filterByCategory(category);
+      if (category) {
+        const chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
+        if (chip) {
+          this.setActiveChip(chip);
+          this.filterByCategory(category);
+        }
       }
     }
   }
@@ -573,7 +563,7 @@ class PortfolioGallery {
   async init() {
     // Wait for DOM
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => this.setup());
+      document.addEventListener('DOMContentLoaded', function() { this.setup(); }.bind(this));
     } else {
       this.setup();
     }
@@ -620,7 +610,7 @@ class PortfolioGallery {
       this.modal.init();
 
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
@@ -641,7 +631,7 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
 
     if (!this._categoryWeights) {
       const categoryOrder = [
@@ -672,23 +662,28 @@ class PortfolioGallery {
 
           for (let i = 0; i < items.length; i++) {
             const item = items[i];
-            allItems.push({
-              ...item,
-              category,
-              _weight: weight,
-              _order: i,
-              id: item.id || `${category}-${i}`,
-              title: item.title || `${formattedCategory} ${i + 1}`,
-              alt: item.alt || item.title || `${formattedCategory} photography`,
-              type: item.type || 'image'
-            });
+            const enrichedItem = {};
+            for (const key in item) {
+              if (Object.prototype.hasOwnProperty.call(item, key)) {
+                enrichedItem[key] = item[key];
+              }
+            }
+            enrichedItem.category = category;
+            enrichedItem._weight = weight;
+            enrichedItem._order = i;
+            enrichedItem.id = item.id || (category + '-' + i);
+            enrichedItem.title = item.title || (formattedCategory + ' ' + (i + 1));
+            enrichedItem.alt = item.alt || item.title || (formattedCategory + ' photography');
+            enrichedItem.type = item.type || 'image';
+
+            allItems.push(enrichedItem);
           }
         }
       }
     }
 
     // Schwartzian transform-like sort using pre-calculated weights and orders
-    allItems.sort((a, b) => {
+    allItems.sort(function(a, b) {
       if (a._weight !== b._weight) {
         return a._weight - b._weight;
       }
@@ -704,7 +699,7 @@ class PortfolioGallery {
 
     const formatted = slug
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
       .join(' ');
 
     this._categoryNameCache[slug] = formatted;
