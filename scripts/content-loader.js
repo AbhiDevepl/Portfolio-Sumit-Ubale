@@ -89,7 +89,7 @@ class ContentLoader {
 
     if (category === 'all') {
       // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      return Object.values(this.mediaData).reduce(function(acc, val) { return acc.concat(val); }, []);
     }
 
     return this.mediaData[category] || [];

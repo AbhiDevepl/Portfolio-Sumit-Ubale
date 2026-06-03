@@ -672,7 +672,7 @@ class PortfolioGallery {
     // Flatten and enrich all category items in a single pass
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
-        const weight = weights[category] ?? defaultWeight;
+        const weight = weights[category] || defaultWeight;
         const formattedCategory = getFormattedName(category);
 
         for (let i = 0; i < items.length; i++) {
