@@ -1,0 +1,3 @@
+scripts/album-loader.js:        return cat.slug !== 'all' && (this.data.portfolio.images[cat.slug]?.length > 0);
+scripts/core.js:        const visibleItems = window.GalleryManager?.getVisibleData?.() || fallbackItems;
+scripts/core.js:        if (window.Core?.Lightbox) {
