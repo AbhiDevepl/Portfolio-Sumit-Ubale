@@ -182,18 +182,10 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-
-    const title = document.createElement('h3');
-    title.className = 'gallery-item-title';
-    title.textContent = item.title || '';
-
-    const category = document.createElement('p');
-    category.className = 'gallery-item-category';
-    // Use pre-formatted category from item
-    category.textContent = item.formattedCategory || this.formatCategory(item.category);
-
-    overlay.appendChild(title);
-    overlay.appendChild(category);
+    overlay.innerHTML = `
+      <h3 class="gallery-item-title">${item.title || ''}</h3>
+      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
+    `;
     article.appendChild(overlay);
 
     // Click handler
@@ -560,11 +552,6 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
-
-    // Performance Caches
-    this._categoryNameCache = Object.create(null);
-    this._categoryWeights = Object.create(null);
-
     this.init();
   }
 
@@ -587,11 +574,6 @@ class PortfolioGallery {
 
     // Initialize renderer
     this.renderer = new GalleryRenderer(this.state, this.container);
-
-    // Subscribe renderer to state changes
-    this.state.subscribe((state) => {
-      this.renderer.render(state.filteredList, state.activeCategory);
-    });
 
     // Show loading state
     this.renderer.showLoading();
@@ -646,6 +628,24 @@ class PortfolioGallery {
     const allItems = [];
     const images = data.portfolio?.images || {};
 
+    // Flatten all category images
+    for (const [category, items] of Object.entries(images)) {
+      if (Array.isArray(items)) {
+        items.forEach((item, index) => {
+          allItems.push({
+            ...item,
+            category,
+            order: index,
+            // Ensure consistent property names
+            id: item.id || `${category}-${index}`,
+            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
+            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            type: item.type || 'image'
+          });
+        });
+      }
+    }
+
     // Sort by category order, then by item order
     const categoryOrder = [
       'weddings',
@@ -660,57 +660,25 @@ class PortfolioGallery {
       'commercial'
     ];
 
-    // Pre-calculate weights for O(1) lookup during sort
-    categoryOrder.forEach((cat, index) => {
-      this._categoryWeights[cat] = index;
-    });
-
-    // Flatten all category images in a single pass with Schwartzian Transform
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        const weight = this._categoryWeights[category] ?? 999;
-        const formattedCategory = this.formatCategoryName(category);
-
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i];
-          allItems.push({
-            ...item,
-            category,
-            formattedCategory,
-            order: i,
-            _weight: weight,
-            id: item.id || `${category}-${i}`,
-            title: item.title || `${formattedCategory} ${i + 1}`,
-            alt: item.alt || item.title || `${formattedCategory} photography`,
-            type: item.type || 'image'
-          });
-        }
-      }
-    }
-
-    // Efficient sort using pre-calculated weights
     allItems.sort((a, b) => {
-      if (a._weight !== b._weight) {
-        return a._weight - b._weight;
+      const catA = categoryOrder.indexOf(a.category);
+      const catB = categoryOrder.indexOf(b.category);
+
+      if (catA !== catB) {
+        return catA - catB;
       }
-      return a.order - b.order;
+
+      return (a.order || 0) - (b.order || 0);
     });
 
     return allItems;
   }
 
   formatCategoryName(slug) {
-    if (this._categoryNameCache[slug]) {
-      return this._categoryNameCache[slug];
-    }
-
-    const formatted = slug
+    return slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-
-    this._categoryNameCache[slug] = formatted;
-    return formatted;
   }
 
   retry() {
