@@ -552,6 +552,16 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+
+    // Optimization: Pre-calculate category weights for O(1) sorting
+    this._categoryWeights = Object.create(null);
+    PortfolioGallery.CATEGORY_ORDER.forEach((cat, idx) => {
+      this._categoryWeights[cat] = idx;
+    });
+
+    // Optimization: Cache formatted category names
+    this._categoryNameCache = Object.create(null);
+
     this.init();
   }
 
@@ -604,6 +614,11 @@ class PortfolioGallery {
       this.modal = new ModalViewer(this.state);
       this.modal.init();
 
+      // Subscribe renderer to state changes
+      this.state.subscribe((state) => {
+        this.renderer.render(state.filteredList, state.activeCategory);
+      });
+
       // Initialize Core.Lightbox
       if (window.Core?.Lightbox) {
         window.Core.Lightbox.init();
@@ -625,60 +640,55 @@ class PortfolioGallery {
   }
 
   processData(data) {
-    const allItems = [];
     const images = data.portfolio?.images || {};
+    const categoryWeights = this._categoryWeights;
+    const allItems = [];
 
-    // Flatten all category images
+    // Optimization: Flatten and enrich in a single pass with O(1) lookups
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
-        items.forEach((item, index) => {
+        const catName = this.formatCategoryName(category);
+        const catWeight = categoryWeights[category] ?? 999;
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
           allItems.push({
             ...item,
             category,
-            order: index,
+            order: i, // Keep for backward compatibility
+            _weight: catWeight,
+            _order: i,
             // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            id: item.id || `${category}-${i}`,
+            title: item.title || `${catName} ${i + 1}`,
+            alt: item.alt || item.title || `${catName} photography`,
             type: item.type || 'image'
           });
-        });
+        }
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Optimization: Multi-tier O(N log N) sort using pre-calculated weights
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+      if (a._weight !== b._weight) {
+        return a._weight - b._weight;
       }
-
-      return (a.order || 0) - (b.order || 0);
+      return a._order - b._order;
     });
 
     return allItems;
   }
 
   formatCategoryName(slug) {
-    return slug
+    if (this._categoryNameCache[slug]) return this._categoryNameCache[slug];
+
+    const name = slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+
+    this._categoryNameCache[slug] = name;
+    return name;
   }
 
   retry() {
@@ -686,6 +696,22 @@ class PortfolioGallery {
     this.setup();
   }
 }
+
+// ========================================
+// CONFIGURATION
+// ========================================
+PortfolioGallery.CATEGORY_ORDER = [
+  'weddings',
+  'pre-wedding-photos-and-videos',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial'
+];
 
 // ========================================
 // INITIALIZE
