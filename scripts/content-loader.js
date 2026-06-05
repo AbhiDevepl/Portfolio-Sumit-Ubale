@@ -77,7 +77,7 @@ class ContentLoader {
    */
   getCategoryName(category) {
     return ContentLoader.CATEGORY_NAMES[category] || category;
-  },
+  }
 
   /**
    * Get images for a category
@@ -89,11 +89,13 @@ class ContentLoader {
 
     if (category === 'all') {
       // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      return Object.values(this.mediaData).reduce(function(acc, val) {
+        return acc.concat(val);
+      }, []);
     }
 
     return this.mediaData[category] || [];
-  },
+  }
 
   /**
    * Render gallery items for a category
