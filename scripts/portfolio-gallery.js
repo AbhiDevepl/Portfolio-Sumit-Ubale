@@ -663,7 +663,7 @@ class PortfolioGallery {
       if (Array.isArray(items)) {
         // Cache formatted category name and weight for this category
         const categoryName = this.formatCategoryName(category);
-        const weight = this._categoryWeights[category] ?? -1;
+        const weight = this._categoryWeights[category] !== undefined ? this._categoryWeights[category] : -1;
 
         items.forEach((item, index) => {
           allItems.push({
