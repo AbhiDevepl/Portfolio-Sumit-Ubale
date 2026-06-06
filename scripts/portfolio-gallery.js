@@ -240,11 +240,12 @@ class GalleryRenderer {
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map((item, i) => {
+      return Object.assign({}, item, {
+        type: item.type || 'image',
+        originalIndex: i
+      });
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -648,7 +649,10 @@ class PortfolioGallery {
     const images = (data.portfolio && data.portfolio.images) ? data.portfolio.images : {};
 
     // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
+    const categories = Object.keys(images);
+    for (let c = 0; c < categories.length; c++) {
+      const category = categories[c];
+      const items = images[category];
       if (Array.isArray(items)) {
         // Cache category name once per category
         if (!this._categoryNameCache[category]) {
@@ -656,19 +660,19 @@ class PortfolioGallery {
         }
         const formattedCategory = this._categoryNameCache[category];
 
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            formattedCategory,
-            order: index,
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          allItems.push(Object.assign({}, item, {
+            category: category,
+            formattedCategory: formattedCategory,
+            order: i,
             // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${formattedCategory} ${index + 1}`,
-            alt: item.alt || item.title || `${formattedCategory} photography`,
+            id: item.id || (category + '-' + i),
+            title: item.title || (formattedCategory + ' ' + (i + 1)),
+            alt: item.alt || item.title || (formattedCategory + ' photography'),
             type: item.type || 'image'
-          });
-        });
+          }));
+        }
       }
     }
 

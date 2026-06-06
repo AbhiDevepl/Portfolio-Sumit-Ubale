@@ -75,11 +75,12 @@ class ContentLoader {
     if (!this.mediaData) return [];
 
     if (category === 'all') {
-      // Flatten all category arrays (ES2019 compatibility)
+      // Flatten all category arrays (ES2015 compatibility)
       const values = [];
-      const mediaValues = Object.values(this.mediaData);
-      for (let i = 0; i < mediaValues.length; i++) {
-        const val = mediaValues[i];
+      const keys = Object.keys(this.mediaData);
+      for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        const val = this.mediaData[key];
         if (Array.isArray(val)) {
           for (let j = 0; j < val.length; j++) {
             values.push(val[j]);
@@ -187,7 +188,9 @@ class ContentLoader {
     this.initLazyLoader();
 
     // Update allImages cache for lightbox (with original index for lightbox navigation)
-    this.allImages = items.map((item, idx) => ({ ...item, originalIndex: idx }));
+    this.allImages = items.map((item, idx) => {
+      return Object.assign({}, item, { originalIndex: idx });
+    });
     if (window.GalleryManager) {
       window.GalleryManager.allImages = this.allImages;
     }
