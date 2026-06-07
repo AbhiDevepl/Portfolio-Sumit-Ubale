@@ -1,0 +1,4 @@
+## 2025-05-15 - [Data Processing & Sorting Optimization]
+**Learning:** For datasets exceeding 1,000 items, using `Array.prototype.indexOf` inside a sort comparator creates an O(N log N * M) bottleneck (where M is the number of categories). Pre-calculating sort weights into a hash map (`Object.create(null)`) reduces this to O(N log N). Additionally, batching string manipulations (like category name formatting) during a single-pass flattening of the JSON data, rather than performing them during rendering, significantly reduces main thread blocking.
+
+**Action:** Always pre-calculate sort weights and formatted display strings for large datasets during the initial data processing phase. Avoid `innerHTML` in high-frequency rendering loops; prefer `createElement` and `textContent` for measurable DOM performance gains and better security.
