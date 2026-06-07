@@ -22,11 +22,12 @@ class GalleryState {
 
   subscribe(callback) {
     this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
+    return function() { this.listeners.delete(callback); }.bind(this);
   }
 
   notify() {
-    this.listeners.forEach(cb => cb(this.getState()));
+    var self = this;
+    this.listeners.forEach(function(cb) { cb(self.getState()); });
   }
 
   getState() {
@@ -84,21 +85,23 @@ class GalleryRenderer {
   }
 
   render(items, category) {
+    var self = this;
     // Cancel pending animation frame
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
     }
 
-    this.animationFrame = requestAnimationFrame(() => {
-      this._renderSync(items, category);
+    this.animationFrame = requestAnimationFrame(function() {
+      self._renderSync(items, category);
     });
   }
 
   _renderSync(items, category) {
-    const fragment = document.createDocumentFragment();
+    var self = this;
+    var fragment = document.createDocumentFragment();
 
-    items.forEach((item, index) => {
-      const element = this.createGalleryItem(item, index);
+    items.forEach(function(item, index) {
+      var element = self.createGalleryItem(item, index);
       if (element) {
         fragment.appendChild(element);
       }
@@ -113,17 +116,18 @@ class GalleryRenderer {
   }
 
   createGalleryItem(item, index) {
-    const isVideo = item.type === 'video';
-    const article = document.createElement('article');
-    article.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'}`;
+    var self = this;
+    var isVideo = item.type === 'video';
+    var article = document.createElement('article');
+    article.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image');
     article.dataset.index = index;
     article.dataset.category = item.category || '';
     article.setAttribute('tabindex', '0');
     article.setAttribute('role', 'listitem');
-    article.setAttribute('aria-label', `${item.title || 'Gallery item'}${isVideo ? ' (video)' : ''}`);
+    article.setAttribute('aria-label', (item.title || 'Gallery item') + (isVideo ? ' (video)' : ''));
 
     // Create media element
-    const media = document.createElement(isVideo ? 'video' : 'img');
+    var media = document.createElement(isVideo ? 'video' : 'img');
     media.className = 'gallery-media';
     media.style.opacity = '0';
     media.style.transition = 'opacity 0.6s ease-out';
@@ -137,13 +141,13 @@ class GalleryRenderer {
       if (item.poster) media.poster = item.poster;
 
       // Show when metadata loaded
-      media.addEventListener('loadedmetadata', () => {
+      media.addEventListener('loadedmetadata', function() {
         media.style.opacity = '1';
         article.classList.remove('loading');
       }, { once: true });
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
 
@@ -153,7 +157,7 @@ class GalleryRenderer {
       media.alt = item.alt || item.title || 'Portfolio image';
       media.decoding = 'async';
 
-      media.addEventListener('load', () => {
+      media.addEventListener('load', function() {
         media.style.opacity = '1';
         article.classList.remove('loading');
         article.classList.add('loaded');
@@ -170,36 +174,44 @@ class GalleryRenderer {
 
     // Video play icon overlay
     if (isVideo) {
-      const playIcon = this.createPlayIcon();
+      var playIcon = this.createPlayIcon();
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
 
     // Overlay with title/category
-    const overlay = document.createElement('div');
+    var overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    var title = document.createElement('h3');
+    title.className = 'gallery-item-title';
+    title.textContent = item.title || '';
+
+    var categoryLabel = document.createElement('p');
+    categoryLabel.className = 'gallery-item-category';
+    // Use pre-calculated formatted category
+    categoryLabel.textContent = item.formattedCategory || this.formatCategory(item.category);
+
+    overlay.appendChild(title);
+    overlay.appendChild(categoryLabel);
     article.appendChild(overlay);
 
     // Click handler
-    article.addEventListener('click', (e) => {
+    article.addEventListener('click', function(e) {
       // If clicking video directly, let VideoHover handle play/pause
       if (e.target.closest('video') && e.target !== media) return;
-      this.openLightbox(index);
+      self.openLightbox(index);
     });
 
     // Keyboard handler
-    article.addEventListener('keydown', (e) => {
+    article.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        this.openLightbox(index);
+        self.openLightbox(index);
       }
     });
 
@@ -207,14 +219,10 @@ class GalleryRenderer {
   }
 
   createPlayIcon() {
-    const icon = document.createElement('div');
+    var icon = document.createElement('div');
     icon.className = 'gallery-video-play-icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.innerHTML = `
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    `;
+    icon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
     return icon;
   }
 
@@ -222,28 +230,30 @@ class GalleryRenderer {
     if (!category) return '';
     return category
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
       .join(' ');
   }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
-    const state = this.state.getState();
-    const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
+    var state = this.state.getState();
+    var items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    var lightboxItems = items.map(function(item, i) {
+      var newItem = {};
+      for (var key in item) newItem[key] = item[key];
+      newItem.type = item.type || 'image';
+      newItem.originalIndex = i;
+      return newItem;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
 
   triggerRevealAnimations() {
-    const items = this.container.querySelectorAll('.gallery-item');
+    var items = this.container.querySelectorAll('.gallery-item');
 
     if (window.GSAP && window.ScrollTrigger) {
       // Use GSAP if available
@@ -263,12 +273,12 @@ class GalleryRenderer {
       );
     } else {
       // Fallback to CSS animations
-      items.forEach((item, index) => {
+      items.forEach(function(item, index) {
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
+        item.style.transition = 'opacity 0.5s ease ' + (index * 0.05) + 's, transform 0.5s ease ' + (index * 0.05) + 's';
 
-        setTimeout(() => {
+        setTimeout(function() {
           item.style.opacity = '1';
           item.style.transform = 'translateY(0)';
         }, 50);
@@ -277,28 +287,11 @@ class GalleryRenderer {
   }
 
   showLoading() {
-    this.container.innerHTML = `
-      <div class="gallery-loading-state">
-        <div class="gallery-loading-spinner"></div>
-        <p>Loading portfolio...</p>
-      </div>
-    `;
+    this.container.innerHTML = '<div class="gallery-loading-state"><div class="gallery-loading-spinner"></div><p>Loading portfolio...</p></div>';
   }
 
   showError(message) {
-    this.container.innerHTML = `
-      <div class="gallery-error-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 8v4m0 4h.01"/>
-        </svg>
-        <h3>Failed to load portfolio</h3>
-        <p>${message}</p>
-        <button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">
-          Try Again
-        </button>
-      </div>
-    `;
+    this.container.innerHTML = '<div class="gallery-error-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg><h3>Failed to load portfolio</h3><p>' + message + '</p><button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">Try Again</button></div>';
   }
 }
 
@@ -318,7 +311,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
 
@@ -327,76 +320,78 @@ class ModalViewer {
   }
 
   bindEnhancedGestures() {
-    const lightbox = document.getElementById('lightbox');
+    var self = this;
+    var lightbox = document.getElementById('lightbox');
     if (!lightbox) return;
 
-    const mediaContainer = lightbox.querySelector('.lightbox-media-container');
+    var mediaContainer = lightbox.querySelector('.lightbox-media-container');
     if (!mediaContainer) return;
 
     // Enhanced touch handling
-    mediaContainer.addEventListener('touchstart', (e) => {
+    mediaContainer.addEventListener('touchstart', function(e) {
       if (e.touches.length !== 1) return;
-      this.touchStartX = e.touches[0].clientX;
-      this.touchCurrentX = e.touches[0].clientX;
+      self.touchStartX = e.touches[0].clientX;
+      self.touchCurrentX = e.touches[0].clientX;
     }, { passive: true });
 
-    mediaContainer.addEventListener('touchmove', (e) => {
+    mediaContainer.addEventListener('touchmove', function(e) {
       if (e.touches.length !== 1) return;
-      this.touchCurrentX = e.touches[0].clientX;
+      self.touchCurrentX = e.touches[0].clientX;
     }, { passive: true });
 
-    mediaContainer.addEventListener('touchend', () => {
-      const deltaX = this.touchCurrentX - this.touchStartX;
+    mediaContainer.addEventListener('touchend', function() {
+      var deltaX = self.touchCurrentX - self.touchStartX;
 
-      if (Math.abs(deltaX) < this.touchThreshold) return;
+      if (Math.abs(deltaX) < self.touchThreshold) return;
 
       // Debounce navigation
-      if (this.navigationDebounce) return;
+      if (self.navigationDebounce) return;
 
-      this.navigationDebounce = true;
-      setTimeout(() => {
-        this.navigationDebounce = false;
-      }, this.debounceDelay);
+      self.navigationDebounce = true;
+      setTimeout(function() {
+        self.navigationDebounce = false;
+      }, self.debounceDelay);
 
       // Swipe left (deltaX < 0) = next, Swipe right (deltaX > 0) = previous
-      if (deltaX < -this.touchThreshold) {
-        this.navigate(1);
-      } else if (deltaX > this.touchThreshold) {
-        this.navigate(-1);
+      if (deltaX < -self.touchThreshold) {
+        self.navigate(1);
+      } else if (deltaX > self.touchThreshold) {
+        self.navigate(-1);
       }
     });
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    var self = this;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
 
     this.navigationDebounce = true;
-    setTimeout(() => {
-      this.navigationDebounce = false;
+    setTimeout(function() {
+      self.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    var state = window.PortfolioGallery && window.PortfolioGallery.state && window.PortfolioGallery.state.getState();
     if (!state) return;
 
-    const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
-    const len = items.length;
+    var items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
+    var len = items.length;
 
     if (len === 0) return;
 
-    const currentIndex = window.Core.Lightbox.state.currentIndex;
-    const newIndex = (currentIndex + direction + len) % len;
+    var currentIndex = window.Core.Lightbox.state.currentIndex;
+    var newIndex = (currentIndex + direction + len) % len;
 
     window.Core.Lightbox.open(newIndex, items);
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
-    const state = this.state.getState();
-    const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
+    var state = this.state.getState();
+    var items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     if (items.length === 0) return;
 
@@ -405,7 +400,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -423,19 +418,20 @@ class FilterController {
   }
 
   init() {
+    var self = this;
     if (!this.chipsContainer) return;
 
-    const chips = this.chipsContainer.querySelectorAll('.filter-chip');
+    var chips = this.chipsContainer.querySelectorAll('.filter-chip');
 
-    chips.forEach(chip => {
-      chip.addEventListener('click', () => {
-        this.setActiveChip(chip);
-        const category = chip.dataset.category;
-        this.filterByCategory(category);
+    chips.forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        self.setActiveChip(chip);
+        var category = chip.dataset.category;
+        self.filterByCategory(category);
       });
 
       // Keyboard support
-      chip.addEventListener('keydown', (e) => {
+      chip.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           chip.click();
@@ -448,8 +444,8 @@ class FilterController {
   }
 
   setActiveChip(activeChip) {
-    const chips = this.chipsContainer.querySelectorAll('.filter-chip');
-    chips.forEach(chip => {
+    var chips = this.chipsContainer.querySelectorAll('.filter-chip');
+    chips.forEach(function(chip) {
       chip.classList.remove('active');
       chip.setAttribute('aria-selected', 'false');
     });
@@ -459,8 +455,8 @@ class FilterController {
   }
 
   filterByCategory(category) {
-    const state = this.state.getState();
-    const allItems = state.mediaList;
+    var state = this.state.getState();
+    var allItems = state.mediaList;
 
     if (category === 'all') {
       this.state.setFilteredList(allItems);
@@ -468,10 +464,9 @@ class FilterController {
       return;
     }
 
-    const filtered = allItems.filter(item =>
-      item.category === category ||
-      (item.categories && item.categories.includes(category))
-    );
+    var filtered = allItems.filter(function(item) {
+      return item.category === category || (item.categories && item.categories.indexOf(category) !== -1);
+    });
 
     this.state.setFilteredList(filtered);
     this.state.setActiveCategory(category);
@@ -481,59 +476,62 @@ class FilterController {
   }
 
   updateURL(category) {
-    const url = new URL(window.location);
+    if (!window.location || !window.history) return;
+    var url = new URL(window.location.href);
     if (category === 'all') {
       url.searchParams.delete('category');
     } else {
       url.searchParams.set('category', category);
     }
-    window.history.pushState({ category }, '', url);
+    window.history.pushState({ category: category }, '', url.toString());
   }
 
   initHorizontalScroll() {
-    let isDown = false;
-    let startX;
-    let scrollLeft;
+    var self = this;
+    var isDown = false;
+    var startX;
+    var scrollLeft;
 
-    this.chipsContainer.addEventListener('mousedown', (e) => {
+    this.chipsContainer.addEventListener('mousedown', function(e) {
       isDown = true;
-      startX = e.pageX - this.chipsContainer.offsetLeft;
-      scrollLeft = this.chipsContainer.scrollLeft;
-      this.chipsContainer.style.cursor = 'grabbing';
+      startX = e.pageX - self.chipsContainer.offsetLeft;
+      scrollLeft = self.chipsContainer.scrollLeft;
+      self.chipsContainer.style.cursor = 'grabbing';
     });
 
-    this.chipsContainer.addEventListener('mouseleave', () => {
+    this.chipsContainer.addEventListener('mouseleave', function() {
       isDown = false;
-      this.chipsContainer.style.cursor = 'grab';
+      self.chipsContainer.style.cursor = 'grab';
     });
 
-    this.chipsContainer.addEventListener('mouseup', () => {
+    this.chipsContainer.addEventListener('mouseup', function() {
       isDown = false;
-      this.chipsContainer.style.cursor = 'grab';
+      self.chipsContainer.style.cursor = 'grab';
     });
 
-    this.chipsContainer.addEventListener('mousemove', (e) => {
+    this.chipsContainer.addEventListener('mousemove', function(e) {
       if (!isDown) return;
       e.preventDefault();
-      const x = e.pageX - this.chipsContainer.offsetLeft;
-      const walk = (x - startX) * 2;
-      this.chipsContainer.scrollLeft = scrollLeft - walk;
+      var x = e.pageX - self.chipsContainer.offsetLeft;
+      var walk = (x - startX) * 2;
+      self.chipsContainer.scrollLeft = scrollLeft - walk;
     });
 
     // Touch scroll indicator
     this.chipsContainer.style.scrollbarWidth = 'none';
     this.chipsContainer.style.msOverflowStyle = 'none';
-    const style = document.createElement('style');
+    var style = document.createElement('style');
     style.textContent = '.filter-chips-container::-webkit-scrollbar { display: none; }';
     document.head.appendChild(style);
   }
 
   selectFromURL() {
-    const params = new URLSearchParams(window.location.search);
-    const category = params.get('category');
+    if (!window.location) return;
+    var params = new URLSearchParams(window.location.search);
+    var category = params.get('category');
 
     if (category) {
-      const chip = this.chipsContainer.querySelector(`[data-category="${category}"]`);
+      var chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
       if (chip) {
         this.setActiveChip(chip);
         this.filterByCategory(category);
@@ -552,19 +550,32 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+
+    // Performance caches
+    this._categoryWeights = Object.create(null);
+    this._categoryNameCache = Object.create(null);
+
+    // Pre-calculate weights for O(1) lookup
+    var self = this;
+    PortfolioGallery.CATEGORY_ORDER.forEach(function(cat, idx) {
+      self._categoryWeights[cat] = idx;
+    });
+
     this.init();
   }
 
   async init() {
+    var self = this;
     // Wait for DOM
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => this.setup());
+      document.addEventListener('DOMContentLoaded', function() { self.setup(); });
     } else {
       this.setup();
     }
   }
 
   async setup() {
+    var self = this;
     // Get container
     this.container = document.getElementById('gallery-grid');
     if (!this.container) {
@@ -575,16 +586,21 @@ class PortfolioGallery {
     // Initialize renderer
     this.renderer = new GalleryRenderer(this.state, this.container);
 
+    // Subscribe renderer to state changes
+    this.state.subscribe(function(state) {
+      self.renderer.render(state.filteredList, state.activeCategory);
+    });
+
     // Show loading state
     this.renderer.showLoading();
     this.state.setLoading(true);
 
     try {
       // Fetch data
-      const data = await this.fetchData();
+      var data = await this.fetchData();
 
       // Process and flatten items
-      const allItems = this.processData(data);
+      var allItems = this.processData(data);
 
       // Update state
       this.state.setMediaList(allItems);
@@ -594,7 +610,7 @@ class PortfolioGallery {
       this.renderer.render(allItems, 'all');
 
       // Initialize filter controller
-      const chipsContainer = document.querySelector('.filter-chips-container');
+      var chipsContainer = document.querySelector('.filter-chips-container');
       if (chipsContainer) {
         this.filterController = new FilterController(this.state, chipsContainer);
         this.filterController.selectFromURL();
@@ -605,7 +621,7 @@ class PortfolioGallery {
       this.modal.init();
 
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
@@ -617,7 +633,7 @@ class PortfolioGallery {
   }
 
   async fetchData() {
-    const response = await fetch('/data/portfolio.json');
+    var response = await fetch('/data/portfolio.json');
     if (!response.ok) {
       throw new Error('Failed to fetch portfolio data');
     }
@@ -625,49 +641,49 @@ class PortfolioGallery {
   }
 
   processData(data) {
-    const allItems = [];
-    const images = data.portfolio?.images || {};
+    var images = (data.portfolio && data.portfolio.images) || {};
+    var categories = Object.keys(images);
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
+    // Pre-calculate total items to minimize array allocations
+    var totalLen = 0;
+    categories.forEach(function(cat) {
+      if (Array.isArray(images[cat])) totalLen += images[cat].length;
+    });
+
+    var allItems = new Array(totalLen);
+    var pointer = 0;
+
+    // Single-pass flattening and enrichment
+    for (var i = 0; i < categories.length; i++) {
+      var category = categories[i];
+      var items = images[category];
+
       if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
+        var formattedCat = this.formatCategoryName(category);
+        var weight = this._categoryWeights[category] !== undefined ? this._categoryWeights[category] : 999;
+
+        for (var j = 0; j < items.length; j++) {
+          var item = items[j];
+          var newItem = {};
+          for (var key in item) newItem[key] = item[key];
+          newItem.category = category;
+          newItem.formattedCategory = formattedCat;
+          newItem.order = j;
+          newItem._weight = weight;
+          newItem.id = item.id || (category + '-' + j);
+          newItem.title = item.title || (formattedCat + ' ' + (j + 1));
+          newItem.alt = item.alt || item.title || (formattedCat + ' photography');
+          newItem.type = item.type || 'image';
+          allItems[pointer++] = newItem;
+        }
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+    // Sort using pre-calculated weights O(1) vs O(M) indexOf
+    allItems.sort(function(a, b) {
+      if (a._weight !== b._weight) {
+        return a._weight - b._weight;
       }
-
       return (a.order || 0) - (b.order || 0);
     });
 
@@ -675,10 +691,15 @@ class PortfolioGallery {
   }
 
   formatCategoryName(slug) {
-    return slug
+    if (this._categoryNameCache[slug]) return this._categoryNameCache[slug];
+
+    var formatted = slug
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
       .join(' ');
+
+    this._categoryNameCache[slug] = formatted;
+    return formatted;
   }
 
   retry() {
@@ -690,4 +711,19 @@ class PortfolioGallery {
 // ========================================
 // INITIALIZE
 // ========================================
+
+// Define Category Order for sorting
+PortfolioGallery.CATEGORY_ORDER = [
+  'weddings',
+  'pre-wedding-photos-and-videos',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial'
+];
+
 window.PortfolioGallery = new PortfolioGallery();
