@@ -77,7 +77,7 @@ class ContentLoader {
    */
   getCategoryName(category) {
     return ContentLoader.CATEGORY_NAMES[category] || category;
-  },
+  }
 
   /**
    * Get images for a category
@@ -88,8 +88,10 @@ class ContentLoader {
     if (!this.mediaData) return [];
 
     if (category === 'all') {
-      // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      // Flatten all category arrays (avoid .flat() for compatibility)
+      return Object.values(this.mediaData).reduce(function(acc, val) {
+        return acc.concat(val);
+      }, []);
     }
 
     return this.mediaData[category] || [];
@@ -192,7 +194,7 @@ class ContentLoader {
     if (window.GalleryManager) {
       window.GalleryManager.allImages = this.allImages;
     }
-  },
+  }
 
   /**
    * Re-run IntersectionObserver on lazy images
