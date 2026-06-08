@@ -4,24 +4,6 @@
  */
 
 class ContentLoader {
-  static CATEGORY_NAMES = {
-    'weddings': 'Weddings',
-    'portraits': 'Portraits',
-    'commercial': 'Commercial',
-    'events': 'Events',
-    'maternity': 'Maternity',
-    'kids': 'Kids',
-    'haldi': 'Haldi',
-    'engagement': 'Engagement',
-    'pre-wedding-photos-and-videos': 'Pre-Wedding',
-    'cinematics': 'Cinematics',
-    'candid': 'Candid',
-    'hero': 'Hero',
-    'video': 'Video',
-    'perwedding': 'Pre-Wedding',
-    'model': 'Model'
-  };
-
   constructor() {
     this.dataUrls = ['/data/portfolio.json', '/data/new_portfolio.json'];
     this.data = null;
@@ -542,6 +524,24 @@ class ContentLoader {
     }
   }
 }
+
+ContentLoader.CATEGORY_NAMES = {
+  'weddings': 'Weddings',
+  'portraits': 'Portraits',
+  'commercial': 'Commercial',
+  'events': 'Events',
+  'maternity': 'Maternity',
+  'kids': 'Kids',
+  'haldi': 'Haldi',
+  'engagement': 'Engagement',
+  'pre-wedding-photos-and-videos': 'Pre-Wedding',
+  'cinematics': 'Cinematics',
+  'candid': 'Candid',
+  'hero': 'Hero',
+  'video': 'Video',
+  'perwedding': 'Pre-Wedding',
+  'model': 'Model'
+};
 
 // Initialize content loader when DOM is ready
 if (document.readyState === 'loading') {
