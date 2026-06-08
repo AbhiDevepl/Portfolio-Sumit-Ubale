@@ -4,11 +4,11 @@
  */
 
 var ContentLoader = function() {
-  // Use relative paths to support non-root hosting
-  this.dataUrls = ['data/portfolio.json', 'data/new_portfolio.json'];
+  // Use absolute paths for reliability from sub-pages
+  this.dataUrls = ['/data/portfolio.json', '/data/new_portfolio.json'];
   this.data = null;
-  this.allImages = []; // Flattened and processed items
-  this.mediaData = {}; // Merged raw portfolio images
+  this.allImages = [];
+  this.mediaData = {};
 
   this.visibleImagesCount = 0;
   this.visibleVideosCount = 0;
@@ -17,6 +17,24 @@ var ContentLoader = function() {
   this.grid = null;
   this.moreBtnWrapper = null;
   this.loadMoreBtn = null;
+};
+
+ContentLoader.CATEGORY_NAMES = {
+  'weddings': 'Weddings',
+  'portraits': 'Portraits',
+  'commercial': 'Commercial',
+  'events': 'Events',
+  'maternity': 'Maternity',
+  'kids': 'Kids',
+  'haldi': 'Haldi',
+  'engagement': 'Engagement',
+  'pre-wedding-photos-and-videos': 'Pre-Wedding',
+  'cinematics': 'Cinematics',
+  'candid': 'Candid',
+  'hero': 'Hero',
+  'video': 'Video',
+  'perwedding': 'Pre-Wedding',
+  'model': 'Model'
 };
 
 ContentLoader.prototype.init = function() {
@@ -41,6 +59,9 @@ ContentLoader.prototype.init = function() {
     });
 };
 
+/**
+ * Setup UI references and event listeners for homepage gallery
+ */
 ContentLoader.prototype.setupHomepageUI = function() {
   var self = this;
   this.grid = document.getElementById('portfolio-inline-grid');
@@ -62,10 +83,10 @@ ContentLoader.prototype.setupHomepageUI = function() {
 
   // Category buttons on homepage
   var categoryBtns = document.querySelectorAll('.category-btn');
-  if (categoryBtns.length > 0) {
+  if (categoryBtns && categoryBtns.length > 0) {
     for (var i = 0; i < categoryBtns.length; i++) {
-      (function(index) {
-        var btn = categoryBtns[index];
+      (function(idx) {
+        var btn = categoryBtns[idx];
         btn.addEventListener('click', function() {
           var newCategory = btn.getAttribute('data-category');
           if (self.activeCategory !== newCategory) {
@@ -90,13 +111,21 @@ ContentLoader.prototype.setupHomepageUI = function() {
   }
 };
 
+/**
+ * Fetch JSON data from multiple sources
+ */
 ContentLoader.prototype.loadData = function() {
   var self = this;
-  var promises = this.dataUrls.map(function(url) {
-    return fetch(url)
-      .then(function(res) { return res.ok ? res.json() : null; })
-      ['catch'](function() { return null; });
-  });
+  var promises = [];
+  for (var i = 0; i < this.dataUrls.length; i++) {
+    (function(url) {
+      promises.push(
+        fetch(url)
+          .then(function(res) { return res.ok ? res.json() : null; })
+          ['catch'](function() { return null; })
+      );
+    })(this.dataUrls[i]);
+  }
 
   return Promise.all(promises).then(function(results) {
     self.mediaData = {};
@@ -133,6 +162,9 @@ ContentLoader.prototype.loadData = function() {
   });
 };
 
+/**
+ * Process raw data into a flat array with metadata
+ */
 ContentLoader.prototype.processData = function() {
   var self = this;
   this.allImages = [];
@@ -175,27 +207,40 @@ ContentLoader.prototype.processData = function() {
   }
 };
 
+/**
+ * Populate gallery grid with images
+ */
 ContentLoader.prototype.populateGallery = function() {
   this.renderCategory('all');
 };
 
+/**
+ * Helper to get category name from slug
+ */
 ContentLoader.prototype.getCategoryName = function(category) {
   var name = ContentLoader.CATEGORY_NAMES[category];
   return name ? name : category;
 };
 
+/**
+ * Get items for a category
+ */
 ContentLoader.prototype.getFilteredItems = function(category, type) {
-  var items = category === 'all'
-    ? this.allImages
-    : this.allImages.filter(function(item) { return item.category === category; });
-
-  if (type) {
-    items = items.filter(function(item) { return item.type === type; });
+  var items = [];
+  for (var i = 0; i < this.allImages.length; i++) {
+    var item = this.allImages[i];
+    if (category === 'all' || item.category === category) {
+      if (!type || item.type === type) {
+        items.push(item);
+      }
+    }
   }
-
   return items;
 };
 
+/**
+ * Render gallery items for a category
+ */
 ContentLoader.prototype.renderCategory = function(category) {
   this.activeCategory = category;
 
@@ -220,6 +265,9 @@ ContentLoader.prototype.renderCategory = function(category) {
   }
 };
 
+/**
+ * Render full gallery (for portfolio/gallery pages)
+ */
 ContentLoader.prototype.renderFull = function(container, category) {
   var self = this;
   var items = this.getFilteredItems(category);
@@ -243,13 +291,19 @@ ContentLoader.prototype.renderFull = function(container, category) {
   if (window.GalleryManager) {
     window.GalleryManager.allImages = items.map(function(item, idx) {
       var entry = {};
-      for (var key in item) { if (item.hasOwnProperty(key)) entry[key] = item[key]; }
+      var keys = Object.keys(item);
+      for (var k = 0; k < keys.length; k++) {
+        entry[keys[k]] = item[keys[k]];
+      }
       entry.originalIndex = idx;
       return entry;
     });
   }
 };
 
+/**
+ * Initial rendering for homepage (incremental)
+ */
 ContentLoader.prototype.renderIncremental = function(container, category) {
   container.innerHTML = '';
   this.visibleImagesCount = 0;
@@ -277,20 +331,21 @@ ContentLoader.prototype.renderIncremental = function(container, category) {
   this.appendItems(iAdd, vAdd);
 };
 
+/**
+ * Append items to the homepage grid
+ */
 ContentLoader.prototype.appendItems = function(imgCount, vidCount) {
   var self = this;
   var images = this.getFilteredItems(this.activeCategory, 'image');
   var videos = this.getFilteredItems(this.activeCategory, 'video');
 
   var toAppend = [];
-
   for (var i = 0; i < imgCount; i++) {
     if (this.visibleImagesCount < images.length) {
       toAppend.push(images[this.visibleImagesCount]);
       this.visibleImagesCount++;
     }
   }
-
   for (var j = 0; j < vidCount; j++) {
     if (this.visibleVideosCount < videos.length) {
       toAppend.push(videos[this.visibleVideosCount]);
@@ -325,8 +380,10 @@ ContentLoader.prototype.appendItems = function(imgCount, vidCount) {
   }
 };
 
+/**
+ * Create gallery item for homepage (matches index.html styles)
+ */
 ContentLoader.prototype.createHomepageItem = function(item, idx) {
-  var self = this;
   var el = document.createElement('div');
   el.className = 'portfolio-item fade-in-up';
   el.dataset.type = item.type;
@@ -390,6 +447,9 @@ ContentLoader.prototype.createHomepageItem = function(item, idx) {
   return el;
 };
 
+/**
+ * Create gallery item (standard version)
+ */
 ContentLoader.prototype.createGalleryItem = function(item, index, category) {
   var self = this;
   var isVideo = item.type === 'video';
@@ -403,7 +463,8 @@ ContentLoader.prototype.createGalleryItem = function(item, index, category) {
 
   // Click handler for lightbox
   el.addEventListener('click', function() {
-    var visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : self.getFilteredItems(category);
+    var galleryMgr = window.GalleryManager;
+    var visibleItems = (galleryMgr && galleryMgr.getVisibleData) ? galleryMgr.getVisibleData() : self.getFilteredItems(category);
     var itemIndex = -1;
     for (var i = 0; i < visibleItems.length; i++) {
       if (visibleItems[i].originalIndex === index) {
@@ -442,26 +503,29 @@ ContentLoader.prototype.createGalleryItem = function(item, index, category) {
   var overlay = document.createElement('div');
   overlay.className = 'gallery-overlay';
   overlay.innerHTML = '<h3 class="gallery-title">' + (item.title ? item.title : 'Untitled') + '</h3>' +
-                       '<p class="gallery-category">' + self.getCategoryName(item.category ? item.category : category) + '</p>';
+                         '<p class="gallery-category">' + self.getCategoryName(item.category ? item.category : category) + '</p>';
   el.appendChild(overlay);
 
   return el;
 };
 
+/**
+ * Re-run IntersectionObserver on lazy images
+ */
 ContentLoader.prototype.initLazyLoader = function() {
-  var self = this;
   var lazyImages = document.querySelectorAll('#gallery-grid img[data-src]');
 
   if (!window.lazyImageObserver) {
     window.lazyImageObserver = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
+      for (var i = 0; i < entries.length; i++) {
+        var entry = entries[i];
         if (entry.isIntersecting) {
           var img = entry.target;
           img.src = img.dataset.src;
           img.removeAttribute('data-src');
           window.lazyImageObserver.unobserve(img);
         }
-      });
+      }
     }, { rootMargin: '200px' });
   }
 
@@ -473,10 +537,13 @@ ContentLoader.prototype.initLazyLoader = function() {
   }
 };
 
+/**
+ * Populate events section
+ */
 ContentLoader.prototype.populateEvents = function() {
-  var self = this;
+  if (!this.data || !this.data.recentEvents) return;
   var eventsGrid = document.querySelector('.events-grid');
-  if (!eventsGrid || !this.data || !this.data.recentEvents) return;
+  if (!eventsGrid) return;
 
   eventsGrid.innerHTML = '';
   var events = this.data.recentEvents;
@@ -497,7 +564,7 @@ ContentLoader.prototype.populateEvents = function() {
     var overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
     overlay.innerHTML = '<h3 class="gallery-title">' + event.title + '</h3>' +
-                         '<p class="gallery-category">' + event.category + '</p>';
+                           '<p class="gallery-category">' + event.category + '</p>';
 
     item.appendChild(img);
     item.appendChild(overlay);
@@ -505,8 +572,10 @@ ContentLoader.prototype.populateEvents = function() {
   }
 };
 
+/**
+ * Populate about section with social proof
+ */
 ContentLoader.prototype.populateAbout = function() {
-  var self = this;
   var populate = function(id, data) {
     var container = document.getElementById(id);
     if (container && data) {
@@ -530,6 +599,9 @@ ContentLoader.prototype.populateAbout = function() {
   }
 };
 
+/**
+ * Handle errors
+ */
 ContentLoader.prototype.handleError = function(error) {
   console.error('❌ Content loading error:', error);
   var galleryGrid = document.getElementById('gallery-grid') || document.getElementById('portfolio-inline-grid');
@@ -539,24 +611,6 @@ ContentLoader.prototype.handleError = function(error) {
       '<p class="error-details">' + error.message + '</p>' +
     '</div>';
   }
-};
-
-ContentLoader.CATEGORY_NAMES = {
-  'weddings': 'Weddings',
-  'portraits': 'Portraits',
-  'commercial': 'Commercial',
-  'events': 'Events',
-  'maternity': 'Maternity',
-  'kids': 'Kids',
-  'haldi': 'Haldi',
-  'engagement': 'Engagement',
-  'pre-wedding-photos-and-videos': 'Pre-Wedding',
-  'cinematics': 'Cinematics',
-  'candid': 'Candid',
-  'hero': 'Hero',
-  'video': 'Video',
-  'perwedding': 'Pre-Wedding',
-  'model': 'Model'
 };
 
 // Initialize content loader when DOM is ready
