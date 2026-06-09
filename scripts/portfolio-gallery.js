@@ -241,11 +241,12 @@ class GalleryRenderer {
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map((item, i) => {
+      const entry = Object.assign({}, item);
+      entry.type = entry.type || 'image';
+      entry.originalIndex = i;
+      return entry;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -665,7 +666,9 @@ class PortfolioGallery {
 
     // Single-pass processing and flattening
     for (let i = 0; i < entries.length; i++) {
-      const [category, items] = entries[i];
+      const entry = entries[i];
+      const category = entry[0];
+      const items = entry[1];
       if (Array.isArray(items)) {
         const weight = this._categoryWeights[category] !== undefined ? this._categoryWeights[category] : 1000;
         const formattedCat = this._getFormattedCategoryName(category);
@@ -673,17 +676,16 @@ class PortfolioGallery {
         for (let j = 0; j < items.length; j++) {
           const item = items[j];
           // Use Schwartzian transform-like approach: store sort keys on item
-          allItems[k++] = {
-            ...item,
-            category,
-            formattedCategory: formattedCat,
-            _weight: weight,
-            _order: j,
-            id: item.id || `${category}-${j}`,
-            title: item.title || `${formattedCat} ${j + 1}`,
-            alt: item.alt || item.title || `${formattedCat} photography`,
-            type: item.type || 'image'
-          };
+          const entry = Object.assign({}, item);
+          entry.category = category;
+          entry.formattedCategory = formattedCat;
+          entry._weight = weight;
+          entry._order = j;
+          entry.id = entry.id || (category + '-' + j);
+          entry.title = entry.title || (formattedCat + ' ' + (j + 1));
+          entry.alt = entry.alt || entry.title || (formattedCat + ' photography');
+          entry.type = entry.type || 'image';
+          allItems[k++] = entry;
         }
       }
     }
