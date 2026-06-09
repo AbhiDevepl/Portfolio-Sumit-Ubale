@@ -688,7 +688,7 @@ class PortfolioGallery {
       const items = images[category];
       if (Array.isArray(items)) {
         const formattedCategory = this.formatCategoryName(category);
-        const weight = this._categoryWeights[category] ?? 999;
+        const weight = typeof this._categoryWeights[category] !== 'undefined' ? this._categoryWeights[category] : 999;
 
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
