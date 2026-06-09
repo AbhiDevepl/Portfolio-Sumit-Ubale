@@ -247,11 +247,12 @@ class GalleryRenderer {
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map(function(item, i) {
+      var newItem = Object.assign({}, item);
+      newItem.type = item.type || 'image';
+      newItem.originalIndex = i;
+      return newItem;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -684,7 +685,8 @@ class PortfolioGallery {
     let currentIdx = 0;
 
     // Flatten all category images
-    for (const category of categories) {
+    for (let j = 0; j < categories.length; j++) {
+      const category = categories[j];
       const items = images[category];
       if (Array.isArray(items)) {
         const formattedCategory = this.formatCategoryName(category);
@@ -692,18 +694,18 @@ class PortfolioGallery {
 
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
-          allItems[currentIdx++] = {
-            ...item,
-            category,
-            formattedCategory,
-            order: i,
-            // Ensure consistent property names
-            id: item.id || `${category}-${i}`,
-            title: item.title || `${formattedCategory} ${i + 1}`,
-            alt: item.alt || item.title || `${formattedCategory} photography`,
-            type: item.type || 'image',
-            _weight: weight
-          };
+          var enrichedItem = Object.assign({}, item);
+          enrichedItem.category = category;
+          enrichedItem.formattedCategory = formattedCategory;
+          enrichedItem.order = i;
+          // Ensure consistent property names
+          enrichedItem.id = item.id || (category + '-' + i);
+          enrichedItem.title = item.title || (formattedCategory + ' ' + (i + 1));
+          enrichedItem.alt = item.alt || item.title || (formattedCategory + ' photography');
+          enrichedItem.type = item.type || 'image';
+          enrichedItem._weight = weight;
+
+          allItems[currentIdx++] = enrichedItem;
         }
       }
     }
