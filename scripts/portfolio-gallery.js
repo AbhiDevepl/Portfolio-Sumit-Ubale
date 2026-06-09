@@ -667,7 +667,7 @@ class PortfolioGallery {
     for (let i = 0; i < entries.length; i++) {
       const [category, items] = entries[i];
       if (Array.isArray(items)) {
-        const weight = this._categoryWeights[category] ?? 1000;
+        const weight = this._categoryWeights[category] !== undefined ? this._categoryWeights[category] : 1000;
         const formattedCat = this._getFormattedCategoryName(category);
 
         for (let j = 0; j < items.length; j++) {
