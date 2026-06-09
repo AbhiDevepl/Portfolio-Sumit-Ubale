@@ -182,10 +182,18 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const h3 = document.createElement('h3');
+    h3.className = 'gallery-item-title';
+    h3.textContent = item.title || '';
+
+    const p = document.createElement('p');
+    p.className = 'gallery-item-category';
+    // Use pre-calculated formattedCategory for better performance
+    p.textContent = item.formattedCategory || this.formatCategory(item.category);
+
+    overlay.appendChild(h3);
+    overlay.appendChild(p);
     article.appendChild(overlay);
 
     // Click handler
@@ -552,6 +560,16 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+
+    // Performance caches
+    this._categoryNameCache = Object.create(null);
+    this._categoryWeights = Object.create(null);
+
+    // Pre-calculate sorting weights
+    PortfolioGallery.CATEGORY_ORDER.forEach((cat, index) => {
+      this._categoryWeights[cat] = index;
+    });
+
     this.init();
   }
 
@@ -590,6 +608,14 @@ class PortfolioGallery {
       this.state.setMediaList(allItems);
       this.state.setLoading(false);
 
+      // Subscribe renderer to state changes for reactive updates
+      this.state.subscribe((state) => {
+        // Only re-render if not loading and no error
+        if (!state.isLoading && !state.hasError) {
+          this.renderer.render(state.filteredList, state.activeCategory);
+        }
+      });
+
       // Initial render
       this.renderer.render(allItems, 'all');
 
@@ -625,53 +651,60 @@ class PortfolioGallery {
   }
 
   processData(data) {
-    const allItems = [];
     const images = data.portfolio?.images || {};
+    const entries = Object.entries(images);
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
+    // Pre-calculate total items for optimal array allocation
+    let totalLen = 0;
+    for (let i = 0; i < entries.length; i++) {
+      if (Array.isArray(entries[i][1])) totalLen += entries[i][1].length;
+    }
+
+    const allItems = new Array(totalLen);
+    let k = 0;
+
+    // Single-pass processing and flattening
+    for (let i = 0; i < entries.length; i++) {
+      const [category, items] = entries[i];
       if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
+        const weight = this._categoryWeights[category] ?? 1000;
+        const formattedCat = this._getFormattedCategoryName(category);
+
+        for (let j = 0; j < items.length; j++) {
+          const item = items[j];
+          // Use Schwartzian transform-like approach: store sort keys on item
+          allItems[k++] = {
             ...item,
             category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            formattedCategory: formattedCat,
+            _weight: weight,
+            _order: j,
+            id: item.id || `${category}-${j}`,
+            title: item.title || `${formattedCat} ${j + 1}`,
+            alt: item.alt || item.title || `${formattedCat} photography`,
             type: item.type || 'image'
-          });
-        });
+          };
+        }
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Optimized sort using pre-calculated weights and order
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+      if (a._weight !== b._weight) {
+        return a._weight - b._weight;
       }
-
-      return (a.order || 0) - (b.order || 0);
+      return a._order - b._order;
     });
 
     return allItems;
+  }
+
+  /**
+   * Cached category name formatting
+   */
+  _getFormattedCategoryName(slug) {
+    if (this._categoryNameCache[slug]) return this._categoryNameCache[slug];
+    return this._categoryNameCache[slug] = this.formatCategoryName(slug);
   }
 
   formatCategoryName(slug) {
@@ -686,6 +719,22 @@ class PortfolioGallery {
     this.setup();
   }
 }
+
+/**
+ * Static category order for sorting
+ */
+PortfolioGallery.CATEGORY_ORDER = [
+  'weddings',
+  'pre-wedding-photos-and-videos',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial'
+];
 
 // ========================================
 // INITIALIZE
