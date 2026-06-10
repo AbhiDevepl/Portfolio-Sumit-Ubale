@@ -11,3 +11,7 @@
 ## 2025-06-11 - [DOM Manipulation Security and Performance]
 **Learning:** Using `innerHTML` is slower and less secure than `textContent` combined with manual element creation via `createElement`.
 **Action:** Favor `textContent` for dynamic text and `appendChild` for structured content to improve both rendering speed and security (XSS prevention).
+
+## 2025-06-11 - [CI Syntax Constraints for ES6 Classes]
+**Learning:** Some CI environments (like Cloudflare Workers) strictly enforce ES6 class syntax, where trailing commas after class methods are invalid (unlike object literals). This causes `SyntaxError: Unexpected token ','`.
+**Action:** Always validate script syntax using `node -c` before submission and ensure no trailing commas follow class method declarations.
