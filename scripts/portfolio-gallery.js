@@ -236,11 +236,12 @@ class GalleryRenderer {
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map(function(item, i) {
+      return Object.assign({}, item, {
+        type: item.type || 'image',
+        originalIndex: i
+      });
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -664,17 +665,16 @@ class PortfolioGallery {
 
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        allItems[k++] = {
-          ...item,
-          category,
+        allItems[k++] = Object.assign({}, item, {
+          category: category,
           _weight: weight,
           order: i,
-          id: item.id || `${category}-${i}`,
-          title: item.title || `${formattedName} ${i + 1}`,
-          alt: item.alt || item.title || `${formattedName} photography`,
+          id: item.id || (category + "-" + i),
+          title: item.title || (formattedName + " " + (i + 1)),
+          alt: item.alt || item.title || (formattedName + " photography"),
           type: item.type || 'image',
           formattedCategory: formattedName
-        };
+        });
       }
     }
 
