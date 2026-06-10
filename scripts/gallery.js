@@ -30,7 +30,7 @@ window.GalleryManager = {
     });
     
     window.addEventListener('popstate', (e) => {
-      this.filterGallery(e.state?.category || 'all');
+      this.filterGallery((e.state && e.state.category) ? e.state.category : 'all');
     });
   },
 
@@ -40,7 +40,7 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    const all = this.allImages || window.contentLoader?.allImages || [];
+    const all = this.allImages || (window.contentLoader ? window.contentLoader.allImages : []) || [];
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => !item.classList.contains('is-hidden'))
       .map(item => {
@@ -50,12 +50,16 @@ window.GalleryManager = {
 
         // Fallback if data is not yet loaded (should not happen after init)
         const media = item.querySelector('img, video');
+        const titleEl = item.querySelector('.gallery-title');
+        const catEl = item.querySelector('.gallery-category');
+        const videoEl = item.querySelector('video');
+
         return {
-          src: media?.src || media?.dataset?.src || '',
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
-          type: item.querySelector('video') ? 'video' : 'image',
-          poster: item.querySelector('video')?.poster || '',
+          src: media ? (media.src || media.dataset.src || '') : '',
+          title: titleEl ? titleEl.textContent : '',
+          category: catEl ? catEl.textContent : item.dataset.category,
+          type: videoEl ? 'video' : 'image',
+          poster: videoEl ? (videoEl.poster || '') : '',
           originalIndex: idx
         };
       });
