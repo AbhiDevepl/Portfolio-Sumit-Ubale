@@ -549,19 +549,6 @@ class FilterController {
 // MAIN GALLERY CONTROLLER
 // ========================================
 class PortfolioGallery {
-  static CATEGORY_ORDER = [
-    'weddings',
-    'pre-wedding-photos-and-videos',
-    'engagement',
-    'haldi',
-    'maternity',
-    'portraits',
-    'cinematics',
-    'kids',
-    'events',
-    'commercial'
-  ];
-
   constructor() {
     this.state = new GalleryState();
     this.container = null;
@@ -702,21 +689,34 @@ class PortfolioGallery {
     return allItems;
   }
 
-  static formatCategory(slug) {
-    if (!slug) return '';
-    return slug
-      .split('-')
-      .map(function(word) {
-        return word.charAt(0).toUpperCase() + word.slice(1);
-      })
-      .join(' ');
-  }
-
   retry() {
     this.state = new GalleryState();
     this.setup();
   }
 }
+
+PortfolioGallery.CATEGORY_ORDER = [
+  'weddings',
+  'pre-wedding-photos-and-videos',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial'
+];
+
+PortfolioGallery.formatCategory = function(slug) {
+  if (!slug) return '';
+  return slug
+    .split('-')
+    .map(function(word) {
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(' ');
+};
 
 // ========================================
 // INITIALIZE
