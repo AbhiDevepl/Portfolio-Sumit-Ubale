@@ -675,7 +675,7 @@ class PortfolioGallery {
             alt: item.alt || item.title || `${formattedCategory} photography`,
             type: item.type || 'image',
             // Pre-calculate weight for sorting
-            _weight: this._categoryWeights[category] ?? 999
+            _weight: this._categoryWeights[category] !== undefined ? this._categoryWeights[category] : 999
           });
         });
       }
