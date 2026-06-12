@@ -1,0 +1,3 @@
+## 2026-06-12 - [Algorithmic and DOM optimization in Portfolio Gallery]
+**Learning:** The primary performance bottleneck for the 1,000+ item portfolio was $O(N \log N \cdot M)$ complexity during sorting due to `indexOf` calls inside the comparator, combined with redundant string manipulations and `innerHTML` overhead in the rendering loop.
+**Action:** Use pre-calculated lookup tables (category weights) for $O(1)$ access during sorting. Pre-calculate and cache formatted strings during data ingestion. Favor `textContent` and manual element creation over `innerHTML` for high-frequency rendering. Always subscribe renderers to state changes to ensure reactive updates.
