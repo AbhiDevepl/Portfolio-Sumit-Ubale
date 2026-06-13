@@ -665,20 +665,21 @@ class PortfolioGallery {
     // Flatten all category images
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
-        const catWeight = PortfolioGallery.CATEGORY_WEIGHTS[category] ?? 999;
+        const weightValue = PortfolioGallery.CATEGORY_WEIGHTS[category];
+        const catWeight = weightValue !== undefined ? weightValue : 999;
         const formattedCategory = this.formatCategoryName(category);
 
         items.forEach((item, index) => {
           allItems.push({
             ...item,
-            category,
-            formattedCategory,
+            category: category,
+            formattedCategory: formattedCategory,
             _catWeight: catWeight,
             order: index,
             // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${formattedCategory} ${index + 1}`,
-            alt: item.alt || item.title || `${formattedCategory} photography`,
+            id: item.id || (category + "-" + index),
+            title: item.title || (formattedCategory + " " + (index + 1)),
+            alt: item.alt || item.title || (formattedCategory + " photography"),
             type: item.type || 'image'
           });
         });
