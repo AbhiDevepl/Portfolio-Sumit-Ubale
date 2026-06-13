@@ -234,7 +234,7 @@ class GalleryRenderer {
   }
 
   openLightbox(index) {
-    if (!window.Core && window.Core.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -375,7 +375,7 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core && window.Core.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
@@ -385,7 +385,7 @@ class ModalViewer {
       this.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery && window.PortfolioGallery.state && window.PortfolioGallery.state.getState();
+    const state = this.state.getState();
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -400,7 +400,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core && window.Core.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -412,7 +412,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core && window.Core.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -639,7 +639,7 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio && data.portfolio.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
 
     // Flatten all category images
     for (const [category, items] of Object.entries(images)) {

@@ -224,7 +224,7 @@ class ContentLoader {
   populateEvents() {
     const eventsGrid = document.querySelector('.events-grid');
     
-    if (!eventsGrid || !this.data && this.data.recentEvents) {
+    if (!eventsGrid || !(this.data && this.data.recentEvents)) {
       console.warn('Events grid or data not found');
       return;
     }
