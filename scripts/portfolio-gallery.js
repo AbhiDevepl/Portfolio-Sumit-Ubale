@@ -667,12 +667,12 @@ class PortfolioGallery {
       const items = images[category];
       if (!Array.isArray(items)) continue;
 
-      const categoryWeight = this._categoryWeights[category] ?? 100;
+      const categoryWeight = this._categoryWeights[category] !== undefined ? this._categoryWeights[category] : 100;
       const formattedCategory = this.formatCategoryName(category);
 
       for (let j = 0; j < items.length; j++) {
         const item = items[j];
-        const order = item.order ?? j;
+        const order = item.order !== undefined ? item.order : j;
 
         allItems.push({
           ...item,
