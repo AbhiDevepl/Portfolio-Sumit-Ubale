@@ -120,7 +120,7 @@ class GalleryRenderer {
     article.dataset.category = item.category || '';
     article.setAttribute('tabindex', '0');
     article.setAttribute('role', 'listitem');
-    article.setAttribute('aria-label', `${item.title || 'Gallery item'}${isVideo ? ' (video)' : ''}`);
+    article.setAttribute('aria-label', (item.title || 'Gallery item') + (isVideo ? ' (video)' : ''));
 
     // Create media element
     const media = document.createElement(isVideo ? 'video' : 'img');
@@ -217,11 +217,7 @@ class GalleryRenderer {
     const icon = document.createElement('div');
     icon.className = 'gallery-video-play-icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.innerHTML = `
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    `;
+    icon.innerHTML = '\n      <svg width="28" height="28" viewBox="0 0 24 24" fill="white">\n        <path d="M8 5v14l11-7z"/>\n      </svg>\n    ';
     return icon;
   }
 
@@ -244,11 +240,13 @@ class GalleryRenderer {
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map((item, i) => {
+      const newItem = {};
+      for (const key in item) newItem[key] = item[key];
+      newItem.type = item.type || 'image';
+      newItem.originalIndex = i;
+      return newItem;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -277,7 +275,7 @@ class GalleryRenderer {
       items.forEach((item, index) => {
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
+        item.style.transition = 'opacity 0.5s ease ' + (index * 0.05) + 's, transform 0.5s ease ' + (index * 0.05) + 's';
 
         setTimeout(() => {
           item.style.opacity = '1';
@@ -288,28 +286,11 @@ class GalleryRenderer {
   }
 
   showLoading() {
-    this.container.innerHTML = `
-      <div class="gallery-loading-state">
-        <div class="gallery-loading-spinner"></div>
-        <p>Loading portfolio...</p>
-      </div>
-    `;
+    this.container.innerHTML = '\n      <div class="gallery-loading-state">\n        <div class="gallery-loading-spinner"></div>\n        <p>Loading portfolio...</p>\n      </div>\n    ';
   }
 
   showError(message) {
-    this.container.innerHTML = `
-      <div class="gallery-error-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 8v4m0 4h.01"/>
-        </svg>
-        <h3>Failed to load portfolio</h3>
-        <p>${message}</p>
-        <button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">
-          Try Again
-        </button>
-      </div>
-    `;
+    this.container.innerHTML = '\n      <div class="gallery-error-state">\n        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">\n          <circle cx="12" cy="12" r="10"/>\n          <path d="M12 8v4m0 4h.01"/>\n        </svg>\n        <h3>Failed to load portfolio</h3>\n        <p>' + message + '</p>\n        <button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">\n          Try Again\n        </button>\n      </div>\n    ';
   }
 }
 
@@ -498,7 +479,7 @@ class FilterController {
     } else {
       url.searchParams.set('category', category);
     }
-    window.history.pushState({ category }, '', url);
+    window.history.pushState({ category: category }, '', url);
   }
 
   initHorizontalScroll() {
@@ -544,7 +525,7 @@ class FilterController {
     const category = params.get('category');
 
     if (category) {
-      const chip = this.chipsContainer.querySelector(`[data-category="${category}"]`);
+      const chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
       if (chip) {
         this.setActiveChip(chip);
         this.filterByCategory(category);
@@ -683,19 +664,21 @@ class PortfolioGallery {
         const formattedCat = this.formatCategoryName(category);
 
         for (let j = 0; j < items.length; j++) {
-          const item = items[j];
+          const itemData = items[j];
           // Optimization: Enrichment during flattening
-          allItems[k++] = {
-            ...item,
-            category: category,
-            formattedCategory: formattedCat,
-            _weight: catWeight,
-            order: j,
-            id: item.id || (category + "-" + j),
-            title: item.title || (formattedCat + " " + (j + 1)),
-            alt: item.alt || item.title || (formattedCat + " photography"),
-            type: item.type || 'image'
-          };
+          // Avoid spread operator for deep legacy compatibility if needed, but here we just need to avoid trailing commas
+          const item = {};
+          for (const key in itemData) item[key] = itemData[key];
+          item.category = category;
+          item.formattedCategory = formattedCat;
+          item._weight = catWeight;
+          item.order = j;
+          item.id = itemData.id || (category + "-" + j);
+          item.title = itemData.title || (formattedCat + " " + (j + 1));
+          item.alt = itemData.alt || itemData.title || (formattedCat + " photography");
+          item.type = itemData.type || 'image';
+
+          allItems[k++] = item;
         }
       }
     }
