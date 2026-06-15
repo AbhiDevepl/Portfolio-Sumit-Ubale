@@ -219,11 +219,7 @@ class GalleryRenderer {
   }
 
   formatCategory(category) {
-    if (!category) return '';
-    return category
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    return PortfolioGallery.formatCategoryName(category);
   }
 
   openLightbox(index) {
@@ -626,59 +622,59 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data && data.portfolio && data.portfolio.images) ? data.portfolio.images : {};
+    const categories = Object.keys(images);
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
+    // Optimized processing with Map-based weights and memoization
+    // Uses a Schwartzian-like transform for O(N log N) sorting without O(M) lookup overhead
+    for (let i = 0; i < categories.length; i++) {
+      const category = categories[i];
+      const items = images[category];
+      if (!Array.isArray(items)) continue;
+
+      const catWeight = PortfolioGallery.categoryWeights.has(category)
+        ? PortfolioGallery.categoryWeights.get(category)
+        : 999;
+
+      const catDisplayName = PortfolioGallery.formatCategoryName(category);
+
+      for (let j = 0; j < items.length; j++) {
+        const item = items[j];
+        const order = item.order !== undefined ? item.order : j;
+
+        allItems.push({
+          ...item,
+          category,
+          order,
+          id: item.id || `${category}-${j}`,
+          title: item.title || `${catDisplayName} ${j + 1}`,
+          alt: item.alt || item.title || `${catDisplayName} photography`,
+          type: item.type || 'image',
+          // Pre-calculate sort key: (category weight * 1000000) + item order
+          _sortKey: (catWeight * 1000000) + order
         });
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
-      }
-
-      return (a.order || 0) - (b.order || 0);
-    });
+    // Single numeric comparison is significantly faster than repeated indexOf lookups
+    allItems.sort((a, b) => a._sortKey - b._sortKey);
 
     return allItems;
   }
 
-  formatCategoryName(slug) {
-    return slug
+  static formatCategoryName(slug) {
+    if (!slug) return '';
+    if (PortfolioGallery.categoryNameCache[slug]) {
+      return PortfolioGallery.categoryNameCache[slug];
+    }
+
+    const formatted = slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+
+    PortfolioGallery.categoryNameCache[slug] = formatted;
+    return formatted;
   }
 
   retry() {
@@ -686,6 +682,34 @@ class PortfolioGallery {
     this.setup();
   }
 }
+
+// ========================================
+// OPTIMIZATION DATA
+// ========================================
+// Assigned after class definition for ES6 compatibility and build stability
+PortfolioGallery.categoryOrder = [
+  'hero',
+  'weddings',
+  'pre-wedding-photos-and-videos',
+  'perwedding',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial',
+  'candid',
+  'model',
+  'video'
+];
+
+PortfolioGallery.categoryWeights = new Map(
+  PortfolioGallery.categoryOrder.map((cat, index) => [cat, index])
+);
+
+PortfolioGallery.categoryNameCache = {};
 
 // ========================================
 // INITIALIZE
