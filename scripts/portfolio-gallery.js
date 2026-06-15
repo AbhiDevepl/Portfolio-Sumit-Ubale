@@ -81,6 +81,7 @@ class GalleryRenderer {
     this.state = state;
     this.container = container;
     this.animationFrame = null;
+    this._categoryNameCache = Object.create(null);
   }
 
   render(items, category) {
@@ -182,10 +183,17 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const title = document.createElement('h3');
+    title.className = 'gallery-item-title';
+    title.textContent = item.title || '';
+
+    const catLabel = document.createElement('p');
+    catLabel.className = 'gallery-item-category';
+    catLabel.textContent = item.formattedCategory || this.formatCategory(item.category);
+
+    overlay.appendChild(title);
+    overlay.appendChild(catLabel);
     article.appendChild(overlay);
 
     // Click handler
@@ -220,10 +228,15 @@ class GalleryRenderer {
 
   formatCategory(category) {
     if (!category) return '';
-    return category
+    if (this._categoryNameCache[category]) return this._categoryNameCache[category];
+
+    const formatted = category
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+
+    this._categoryNameCache[category] = formatted;
+    return formatted;
   }
 
   openLightbox(index) {
@@ -552,6 +565,14 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+    this._categoryWeights = Object.create(null);
+    this._categoryNameCache = Object.create(null);
+
+    // Initialize category weights for O(1) lookup
+    PortfolioGallery.CATEGORY_ORDER.forEach((cat, idx) => {
+      this._categoryWeights[cat] = idx;
+    });
+
     this.init();
   }
 
@@ -575,6 +596,11 @@ class PortfolioGallery {
     // Initialize renderer
     this.renderer = new GalleryRenderer(this.state, this.container);
 
+    // Subscribe renderer to state changes
+    this.state.subscribe((state) => {
+      this.renderer.render(state.filteredList, state.activeCategory);
+    });
+
     // Show loading state
     this.renderer.showLoading();
     this.state.setLoading(true);
@@ -590,14 +616,16 @@ class PortfolioGallery {
       this.state.setMediaList(allItems);
       this.state.setLoading(false);
 
-      // Initial render
-      this.renderer.render(allItems, 'all');
-
       // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
       if (chipsContainer) {
         this.filterController = new FilterController(this.state, chipsContainer);
         this.filterController.selectFromURL();
+      }
+
+      // If no category from URL, render all
+      if (this.state.getState().activeCategory === 'all') {
+        this.renderer.render(allItems, 'all');
       }
 
       // Initialize modal viewer
@@ -625,47 +653,41 @@ class PortfolioGallery {
   }
 
   processData(data) {
-    const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
+    let totalLen = 0;
+    const entries = Object.entries(images);
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
+    // Pre-calculate total length for array pre-allocation if needed,
+    // though in JS pushes are often fast enough, let's use a flat array approach.
+    const allItems = [];
+
+    // Flatten all category images and pre-format names
+    entries.forEach(([category, items]) => {
       if (Array.isArray(items)) {
+        const formattedCat = this.formatCategoryName(category);
         items.forEach((item, index) => {
           allItems.push({
             ...item,
-            category,
+            category: category,
+            formattedCategory: formattedCat,
             order: index,
             // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            id: item.id || (category + '-' + index),
+            title: item.title || (formattedCat + ' ' + (index + 1)),
+            alt: item.alt || item.title || (formattedCat + ' photography'),
             type: item.type || 'image'
           });
         });
       }
-    }
+    });
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Sort by category order (O(1) weight lookup), then by item order
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+      const weightA = this._categoryWeights[a.category] !== undefined ? this._categoryWeights[a.category] : 999;
+      const weightB = this._categoryWeights[b.category] !== undefined ? this._categoryWeights[b.category] : 999;
 
-      if (catA !== catB) {
-        return catA - catB;
+      if (weightA !== weightB) {
+        return weightA - weightB;
       }
 
       return (a.order || 0) - (b.order || 0);
@@ -675,10 +697,16 @@ class PortfolioGallery {
   }
 
   formatCategoryName(slug) {
-    return slug
+    if (!slug) return '';
+    if (this._categoryNameCache[slug]) return this._categoryNameCache[slug];
+
+    const formatted = slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+
+    this._categoryNameCache[slug] = formatted;
+    return formatted;
   }
 
   retry() {
@@ -686,6 +714,22 @@ class PortfolioGallery {
     this.setup();
   }
 }
+
+// ========================================
+// CONSTANTS
+// ========================================
+PortfolioGallery.CATEGORY_ORDER = [
+  'weddings',
+  'pre-wedding-photos-and-videos',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial'
+];
 
 // ========================================
 // INITIALIZE
