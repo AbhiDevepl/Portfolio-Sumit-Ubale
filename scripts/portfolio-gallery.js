@@ -26,7 +26,8 @@ class GalleryState {
   }
 
   notify() {
-    this.listeners.forEach(cb => cb(this.getState()));
+    const state = this.getState();
+    this.listeners.forEach(cb => cb(state));
   }
 
   getState() {
@@ -244,8 +245,7 @@ class GalleryRenderer {
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
+    const lightboxItems = items.map((item, i) => Object.assign({}, item, {
       type: item.type || 'image',
       originalIndex: i
     }));
@@ -481,7 +481,7 @@ class FilterController {
 
     const filtered = allItems.filter(item =>
       item.category === category ||
-      (item.categories && item.categories.includes(category))
+      (item.categories && item.categories.indexOf(category) !== -1)
     );
 
     this.state.setFilteredList(filtered);
@@ -571,7 +571,7 @@ class PortfolioGallery {
     this.init();
   }
 
-  async init() {
+  init() {
     // Wait for DOM
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.setup());
@@ -673,15 +673,17 @@ class PortfolioGallery {
     const allItems = [];
 
     // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
+    const categories = Object.keys(images);
+    for (let i = 0; i < categories.length; i++) {
+      const category = categories[i];
+      const items = images[category];
       if (Array.isArray(items)) {
         const formattedName = this.formatCategoryName(category);
         const catWeight = this._categoryWeights[category] !== undefined ? this._categoryWeights[category] : 999;
 
         items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
+          allItems.push(Object.assign({}, item, {
+            category: category,
             categoryWeight: catWeight,
             order: index,
             // Ensure consistent property names
@@ -690,7 +692,7 @@ class PortfolioGallery {
             alt: item.alt || item.title || `${formattedName} photography`,
             type: item.type || 'image',
             formattedCategory: formattedName
-          });
+          }));
         });
       }
     }
