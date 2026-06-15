@@ -179,13 +179,20 @@ class GalleryRenderer {
       }
     }
 
-    // Overlay with title/category
+    // Overlay with title/category (Optimized with textContent)
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const title = document.createElement('h3');
+    title.className = 'gallery-item-title';
+    title.textContent = item.title || '';
+
+    const categoryText = document.createElement('p');
+    categoryText.className = 'gallery-item-category';
+    categoryText.textContent = item.formattedCategory || this.formatCategory(item.category);
+
+    overlay.appendChild(title);
+    overlay.appendChild(categoryText);
     article.appendChild(overlay);
 
     // Click handler
@@ -220,6 +227,10 @@ class GalleryRenderer {
 
   formatCategory(category) {
     if (!category) return '';
+    // Use cache from global instance if available
+    if (window.PortfolioGallery && window.PortfolioGallery._categoryNameCache && window.PortfolioGallery._categoryNameCache[category]) {
+      return window.PortfolioGallery._categoryNameCache[category];
+    }
     return category
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -552,6 +563,11 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+
+    // Performance Caches
+    this._categoryWeights = Object.create(null);
+    this._categoryNameCache = Object.create(null);
+
     this.init();
   }
 
@@ -625,26 +641,7 @@ class PortfolioGallery {
   }
 
   processData(data) {
-    const allItems = [];
     const images = data.portfolio?.images || {};
-
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
-      }
-    }
 
     // Sort by category order, then by item order
     const categoryOrder = [
@@ -660,14 +657,43 @@ class PortfolioGallery {
       'commercial'
     ];
 
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+    // Pre-calculate weights and names for O(1) lookup during processing
+    categoryOrder.forEach((cat, index) => {
+      this._categoryWeights[cat] = index;
+      if (!this._categoryNameCache[cat]) {
+        this._categoryNameCache[cat] = this.formatCategoryName(cat);
       }
+    });
 
+    const allItems = [];
+
+    // Flatten all category images
+    for (const [category, items] of Object.entries(images)) {
+      if (Array.isArray(items)) {
+        const formattedName = this.formatCategoryName(category);
+        const catWeight = this._categoryWeights[category] !== undefined ? this._categoryWeights[category] : 999;
+
+        items.forEach((item, index) => {
+          allItems.push({
+            ...item,
+            category,
+            categoryWeight: catWeight,
+            order: index,
+            // Ensure consistent property names
+            id: item.id || `${category}-${index}`,
+            title: item.title || `${formattedName} ${index + 1}`,
+            alt: item.alt || item.title || `${formattedName} photography`,
+            type: item.type || 'image',
+            formattedCategory: formattedName
+          });
+        });
+      }
+    }
+
+    allItems.sort((a, b) => {
+      if (a.categoryWeight !== b.categoryWeight) {
+        return a.categoryWeight - b.categoryWeight;
+      }
       return (a.order || 0) - (b.order || 0);
     });
 
@@ -675,10 +701,15 @@ class PortfolioGallery {
   }
 
   formatCategoryName(slug) {
-    return slug
+    if (this._categoryNameCache[slug]) return this._categoryNameCache[slug];
+
+    const formatted = slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+
+    this._categoryNameCache[slug] = formatted;
+    return formatted;
   }
 
   retry() {
