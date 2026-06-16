@@ -120,7 +120,7 @@ class GalleryRenderer {
     article.dataset.category = item.category || '';
     article.setAttribute('tabindex', '0');
     article.setAttribute('role', 'listitem');
-    article.setAttribute('aria-label', `${item.title || 'Gallery item'}${isVideo ? ' (video)' : ''}`);
+    article.setAttribute('aria-label', (item.title || 'Gallery item') + (isVideo ? ' (video)' : ''));
 
     // Create media element
     const media = document.createElement(isVideo ? 'video' : 'img');
@@ -143,7 +143,7 @@ class GalleryRenderer {
       }, { once: true });
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
 
@@ -174,7 +174,7 @@ class GalleryRenderer {
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
@@ -182,10 +182,18 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const h3 = document.createElement('h3');
+    h3.className = 'gallery-item-title';
+    h3.textContent = item.title || '';
+
+    const p = document.createElement('p');
+    p.className = 'gallery-item-category';
+    // Use pre-calculated formatted category for performance
+    p.textContent = item.formattedCategory || this.formatCategory(item.category);
+
+    overlay.appendChild(h3);
+    overlay.appendChild(p);
     article.appendChild(overlay);
 
     // Click handler
@@ -220,6 +228,12 @@ class GalleryRenderer {
 
   formatCategory(category) {
     if (!category) return '';
+
+    // Check global instance cache first for efficiency
+    if (window.PortfolioGallery && window.PortfolioGallery._categoryNameCache && window.PortfolioGallery._categoryNameCache[category]) {
+      return window.PortfolioGallery._categoryNameCache[category];
+    }
+
     return category
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -227,7 +241,7 @@ class GalleryRenderer {
   }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -266,7 +280,7 @@ class GalleryRenderer {
       items.forEach((item, index) => {
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
+        item.style.transition = 'opacity 0.5s ease ' + (index * 0.05) + 's, transform 0.5s ease ' + (index * 0.05) + 's';
 
         setTimeout(() => {
           item.style.opacity = '1';
@@ -318,7 +332,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
 
@@ -368,7 +382,7 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
@@ -378,7 +392,7 @@ class ModalViewer {
       this.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    const state = window.PortfolioGallery && window.PortfolioGallery.state && window.PortfolioGallery.state.getState();
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -393,7 +407,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -405,7 +419,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -533,7 +547,7 @@ class FilterController {
     const category = params.get('category');
 
     if (category) {
-      const chip = this.chipsContainer.querySelector(`[data-category="${category}"]`);
+      const chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
       if (chip) {
         this.setActiveChip(chip);
         this.filterByCategory(category);
@@ -552,6 +566,11 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+
+    // Performance optimization caches
+    this._categoryNameCache = Object.create(null);
+    this._categoryWeights = Object.create(null);
+
     this.init();
   }
 
@@ -605,7 +624,7 @@ class PortfolioGallery {
       this.modal.init();
 
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
@@ -625,44 +644,61 @@ class PortfolioGallery {
   }
 
   processData(data) {
-    const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
+    const categories = Object.keys(images);
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
+    // Pre-calculate total length for memory optimization
+    let totalLen = 0;
+    for (let i = 0; i < categories.length; i++) {
+        const cat = categories[i];
+        if (Array.isArray(images[cat])) {
+            totalLen += images[cat].length;
+        }
+    }
+
+    const allItems = new Array(totalLen);
+    let currentIdx = 0;
+
+    // Flatten all category images and enrich with metadata
+    for (let i = 0; i < categories.length; i++) {
+      const category = categories[i];
+      const items = images[category];
       if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
+        // Pre-calculate formatted category name
+        const formattedName = this.formatCategoryName(category);
+        this._categoryNameCache[category] = formattedName;
+
+        for (let j = 0; j < items.length; j++) {
+          const item = items[j];
+          allItems[currentIdx++] = {
             ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            category: category,
+            formattedCategory: formattedName,
+            order: j,
+            id: item.id || (category + '-' + j),
+            title: item.title || (formattedName + ' ' + (j + 1)),
+            alt: item.alt || item.title || (formattedName + ' photography'),
             type: item.type || 'image'
-          });
-        });
+          };
+        }
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
+    // Initialize category weights for O(1) lookup during sort
+    const categoryOrder = PortfolioGallery.CATEGORY_ORDER;
+    if (Object.keys(this._categoryWeights).length === 0) {
+        for (let i = 0; i < categoryOrder.length; i++) {
+            this._categoryWeights[categoryOrder[i]] = i;
+        }
+    }
 
+    // Schwartzian Transform or direct optimized sort
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+      const weightA = this._categoryWeights[a.category];
+      const weightB = this._categoryWeights[b.category];
+
+      const catA = weightA !== undefined ? weightA : 999;
+      const catB = weightB !== undefined ? weightB : 999;
 
       if (catA !== catB) {
         return catA - catB;
@@ -675,6 +711,7 @@ class PortfolioGallery {
   }
 
   formatCategoryName(slug) {
+    if (!slug) return '';
     return slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -686,6 +723,20 @@ class PortfolioGallery {
     this.setup();
   }
 }
+
+// Static class properties (assigned to constructor for CI compatibility)
+PortfolioGallery.CATEGORY_ORDER = [
+  'weddings',
+  'pre-wedding-photos-and-videos',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial'
+];
 
 // ========================================
 // INITIALIZE
