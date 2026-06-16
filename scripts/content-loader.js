@@ -77,7 +77,7 @@ class ContentLoader {
    */
   getCategoryName(category) {
     return ContentLoader.CATEGORY_NAMES[category] || category;
-  },
+  }
 
   /**
    * Get images for a category
@@ -89,11 +89,15 @@ class ContentLoader {
 
     if (category === 'all') {
       // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      // Note: Cloudflare Workers CI may not support Array.prototype.flat()
+      // but keeping it as per existing code unless it's a known issue.
+      return Object.keys(this.mediaData).reduce((acc, key) => {
+        return acc.concat(this.mediaData[key]);
+      }, []);
     }
 
     return this.mediaData[category] || [];
-  },
+  }
 
   /**
    * Render gallery items for a category
@@ -221,8 +225,6 @@ class ContentLoader {
       }
     });
   }
-
-
 
   /**
    * Populate events section
