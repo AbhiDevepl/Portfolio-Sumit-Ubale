@@ -17,16 +17,27 @@ class GalleryState {
     this.activeCategory = 'all';
     this.isLoading = false;
     this.hasError = false;
-    this.listeners = new Set();
+    this.listeners = [];
   }
 
   subscribe(callback) {
-    this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
+    this.listeners.push(callback);
+    var self = this;
+    return function() {
+      var index = self.listeners.indexOf(callback);
+      if (index > -1) {
+        self.listeners.splice(index, 1);
+      }
+    };
   }
 
   notify() {
-    this.listeners.forEach(cb => cb(this.getState()));
+    var state = this.getState();
+    for (var i = 0; i < this.listeners.length; i++) {
+      if (typeof this.listeners[i] === 'function') {
+        this.listeners[i](state);
+      }
+    }
   }
 
   getState() {
@@ -668,12 +679,12 @@ class PortfolioGallery {
 
   processData(data) {
     const images = (data.portfolio && data.portfolio.images) || {};
+    const categories = Object.keys(images);
 
     // Pre-calculate total length for array pre-allocation
     let totalLen = 0;
-    const entries = Object.entries(images);
-    for (let i = 0; i < entries.length; i++) {
-      const items = entries[i][1];
+    for (let i = 0; i < categories.length; i++) {
+      const items = images[categories[i]];
       if (Array.isArray(items)) {
         totalLen += items.length;
       }
@@ -683,9 +694,9 @@ class PortfolioGallery {
     let k = 0;
 
     // Flatten all category images and enrich with metadata
-    for (let i = 0; i < entries.length; i++) {
-      const category = entries[i][0];
-      const items = entries[i][1];
+    for (let i = 0; i < categories.length; i++) {
+      const category = categories[i];
+      const items = images[category];
 
       if (Array.isArray(items)) {
         const formattedCat = this.formatCategoryName(category);
