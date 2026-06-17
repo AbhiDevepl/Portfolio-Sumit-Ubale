@@ -240,11 +240,18 @@ class GalleryRenderer {
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map((item, i) => {
+      const newItem = {
+        type: item.type || 'image',
+        originalIndex: i
+      };
+      for (const key in item) {
+        if (Object.prototype.hasOwnProperty.call(item, key)) {
+          newItem[key] = item[key];
+        }
+      }
+      return newItem;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -494,7 +501,7 @@ class FilterController {
     } else {
       url.searchParams.set('category', category);
     }
-    window.history.pushState({ category }, '', url);
+    window.history.pushState({ category: category }, '', url);
   }
 
   initHorizontalScroll() {
@@ -563,7 +570,7 @@ class PortfolioGallery {
     this.init();
   }
 
-  async init() {
+  init() {
     // Wait for DOM
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.setup());
@@ -572,7 +579,7 @@ class PortfolioGallery {
     }
   }
 
-  async setup() {
+  setup() {
     // Get container
     this.container = document.getElementById('gallery-grid');
     if (!this.container) {
@@ -587,49 +594,50 @@ class PortfolioGallery {
     this.renderer.showLoading();
     this.state.setLoading(true);
 
-    try {
-      // Fetch data
-      const data = await this.fetchData();
+    // Fetch data
+    this.fetchData()
+      .then(data => {
+        // Process and flatten items
+        const allItems = this.processData(data);
 
-      // Process and flatten items
-      const allItems = this.processData(data);
+        // Update state
+        this.state.setMediaList(allItems);
+        this.state.setLoading(false);
 
-      // Update state
-      this.state.setMediaList(allItems);
-      this.state.setLoading(false);
+        // Initial render
+        this.renderer.render(allItems, 'all');
 
-      // Initial render
-      this.renderer.render(allItems, 'all');
+        // Initialize filter controller
+        const chipsContainer = document.querySelector('.filter-chips-container');
+        if (chipsContainer) {
+          this.filterController = new FilterController(this.state, chipsContainer);
+          this.filterController.selectFromURL();
+        }
 
-      // Initialize filter controller
-      const chipsContainer = document.querySelector('.filter-chips-container');
-      if (chipsContainer) {
-        this.filterController = new FilterController(this.state, chipsContainer);
-        this.filterController.selectFromURL();
-      }
+        // Initialize modal viewer
+        this.modal = new ModalViewer(this.state);
+        this.modal.init();
 
-      // Initialize modal viewer
-      this.modal = new ModalViewer(this.state);
-      this.modal.init();
-
-      // Initialize Core.Lightbox
-      if (window.Core && window.Core.Lightbox) {
-        window.Core.Lightbox.init();
-      }
-
-    } catch (error) {
-      console.error('Failed to load portfolio:', error);
-      this.state.setError(true);
-      this.renderer.showError('Unable to load portfolio. Please check your connection and try again.');
-    }
+        // Initialize Core.Lightbox
+        if (window.Core && window.Core.Lightbox) {
+          window.Core.Lightbox.init();
+        }
+      })
+      .catch(error => {
+        console.error('Failed to load portfolio:', error);
+        this.state.setError(true);
+        this.renderer.showError('Unable to load portfolio. Please check your connection and try again.');
+      });
   }
 
-  async fetchData() {
-    const response = await fetch('/data/portfolio.json');
-    if (!response.ok) {
-      throw new Error('Failed to fetch portfolio data');
-    }
-    return response.json();
+  fetchData() {
+    return fetch('/data/portfolio.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch portfolio data');
+        }
+        return response.json();
+      });
   }
 
   processData(data) {
@@ -638,26 +646,36 @@ class PortfolioGallery {
     const weights = PortfolioGallery.CATEGORY_WEIGHTS;
 
     // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        const formattedCategory = this.formatCategoryName(category);
-        const weight = weights[category] !== undefined ? weights[category] : 999;
-        const totalLen = items.length;
+    for (const category in images) {
+      if (Object.prototype.hasOwnProperty.call(images, category)) {
+        const items = images[category];
+        if (Array.isArray(items)) {
+          const formattedCategory = this.formatCategoryName(category);
+          const weight = weights[category] !== undefined ? weights[category] : 999;
+          const totalLen = items.length;
 
-        for (let i = 0; i < totalLen; i++) {
-          const item = items[i];
-          allItems.push({
-            ...item,
-            category: category,
-            formattedCategory: formattedCategory,
-            _weight: weight,
-            order: i,
-            // Ensure consistent property names
-            id: item.id || (category + '-' + i),
-            title: item.title || (formattedCategory + ' ' + (i + 1)),
-            alt: item.alt || item.title || (formattedCategory + ' photography'),
-            type: item.type || 'image'
-          });
+          for (let i = 0; i < totalLen; i++) {
+            const item = items[i];
+            const newItem = {
+              category: category,
+              formattedCategory: formattedCategory,
+              _weight: weight,
+              order: i,
+              id: item.id || (category + '-' + i),
+              title: item.title || (formattedCategory + ' ' + (i + 1)),
+              alt: item.alt || item.title || (formattedCategory + ' photography'),
+              type: item.type || 'image'
+            };
+
+            // Shallow copy properties from original item
+            for (const key in item) {
+              if (Object.prototype.hasOwnProperty.call(item, key)) {
+                newItem[key] = item[key];
+              }
+            }
+
+            allItems.push(newItem);
+          }
         }
       }
     }
