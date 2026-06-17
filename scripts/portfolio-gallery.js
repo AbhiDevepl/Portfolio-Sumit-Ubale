@@ -182,10 +182,17 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const title = document.createElement('h3');
+    title.className = 'gallery-item-title';
+    title.textContent = item.title || '';
+
+    const category = document.createElement('p');
+    category.className = 'gallery-item-category';
+    category.textContent = item.formattedCategory || this.formatCategory(item.category);
+
+    overlay.appendChild(title);
+    overlay.appendChild(category);
     article.appendChild(overlay);
 
     // Click handler
@@ -552,6 +559,7 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+    this.categoryNameCache = {};
     this.init();
   }
 
@@ -625,49 +633,40 @@ class PortfolioGallery {
   }
 
   processData(data) {
+    const images = (data.portfolio && data.portfolio.images) || {};
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const weights = PortfolioGallery.CATEGORY_WEIGHTS;
 
     // Flatten all category images
     for (const [category, items] of Object.entries(images)) {
       if (Array.isArray(items)) {
-        items.forEach((item, index) => {
+        const formattedCategory = this.formatCategoryName(category);
+        const weight = weights[category] !== undefined ? weights[category] : 999;
+        const totalLen = items.length;
+
+        for (let i = 0; i < totalLen; i++) {
+          const item = items[i];
           allItems.push({
             ...item,
             category,
-            order: index,
+            formattedCategory,
+            _weight: weight,
+            order: i,
             // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            id: item.id || (category + '-' + i),
+            title: item.title || (formattedCategory + ' ' + (i + 1)),
+            alt: item.alt || item.title || (formattedCategory + ' photography'),
             type: item.type || 'image'
           });
-        });
+        }
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Sort by category weight, then by item order
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+      if (a._weight !== b._weight) {
+        return a._weight - b._weight;
       }
-
       return (a.order || 0) - (b.order || 0);
     });
 
@@ -675,10 +674,16 @@ class PortfolioGallery {
   }
 
   formatCategoryName(slug) {
-    return slug
+    if (!slug) return '';
+    if (this.categoryNameCache[slug]) return this.categoryNameCache[slug];
+
+    const formatted = slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+
+    this.categoryNameCache[slug] = formatted;
+    return formatted;
   }
 
   retry() {
@@ -690,4 +695,24 @@ class PortfolioGallery {
 // ========================================
 // INITIALIZE
 // ========================================
+
+// Category configuration
+PortfolioGallery.CATEGORY_ORDER = [
+  'weddings',
+  'pre-wedding-photos-and-videos',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial'
+];
+
+PortfolioGallery.CATEGORY_WEIGHTS = PortfolioGallery.CATEGORY_ORDER.reduce((acc, cat, idx) => {
+  acc[cat] = idx;
+  return acc;
+}, {});
+
 window.PortfolioGallery = new PortfolioGallery();
