@@ -648,8 +648,8 @@ class PortfolioGallery {
           const item = items[i];
           allItems.push({
             ...item,
-            category,
-            formattedCategory,
+            category: category,
+            formattedCategory: formattedCategory,
             _weight: weight,
             order: i,
             // Ensure consistent property names
