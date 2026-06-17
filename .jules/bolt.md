@@ -1,0 +1,3 @@
+## 2026-06-17 - [Optimizing sorting and rendering of 1000+ gallery items]
+**Learning:** Client-side sorting of large datasets (1000+ items) is often throttled by $O(N \log N \times M)$ complexity when using $O(M)$ operations like `Array.indexOf()` inside the comparator. Similarly, repeated string formatting and `innerHTML` parsing during DOM rendering create significant overhead in high-frequency loops.
+**Action:** Pre-calculate comparison weights and formatted metadata into the data objects during the initial $O(N)$ processing pass. Replace `innerHTML` with `createElement` and `textContent` to minimize DOM parsing overhead and improve security.
