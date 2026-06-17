@@ -263,7 +263,8 @@ class GalleryRenderer {
     if (window.GSAP && window.ScrollTrigger) {
       // Use GSAP if available
       window.GSAP.fromTo(items,
-        { opacity: 0, y: 40 },
+        { opacity: 0, y: 40 }
+        ,
         {
           opacity: 1,
           y: 0,
