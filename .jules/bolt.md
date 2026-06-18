@@ -1,0 +1,3 @@
+## 2026-06-18 - [O(1) Sorting and DOM TextContent Optimization]
+**Learning:** Client-side sorting of 1,000+ items becomes a significant bottleneck when the comparator uses $O(M)$ methods like `Array.indexOf()`. Pre-calculating weights and formatted strings during the initial data pass reduces complexity to $O(N \log N)$ and minimizes rendering overhead. Additionally, using `textContent` instead of `innerHTML` for repeated item rendering provides measurable performance gains and improved security.
+**Action:** Always pre-calculate comparison weights and cache high-frequency string manipulations (e.g., category formatting) before entering sorting or rendering loops. Prefer `textContent` for data-bound UI elements in large lists.
