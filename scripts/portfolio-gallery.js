@@ -22,7 +22,8 @@ class GalleryState {
 
   subscribe(callback) {
     this.listeners.add(callback);
-    return function() { this.listeners.delete(callback); }.bind(this);
+    var self = this;
+    return function() { self.listeners.delete(callback); };
   }
 
   notify() {
@@ -227,6 +228,9 @@ class GalleryRenderer {
 
   formatCategory(category) {
     if (!category) return '';
+    if (window.PortfolioGallery && window.PortfolioGallery.formatCategoryName) {
+        return window.PortfolioGallery.formatCategoryName(category);
+    }
     return category
       .split('-')
       .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
@@ -241,10 +245,11 @@ class GalleryRenderer {
 
     // Ensure items have required properties
     var lightboxItems = items.map(function(item, i) {
-      return Object.assign({}, item, {
-        type: item.type || 'image',
-        originalIndex: i
-      });
+      var newItem = {};
+      Object.keys(item).forEach(function(key) { newItem[key] = item[key]; });
+      newItem.type = item.type || 'image';
+      newItem.originalIndex = i;
+      return newItem;
     });
 
     window.Core.Lightbox.open(index, lightboxItems);
@@ -371,7 +376,8 @@ class ModalViewer {
       self.navigationDebounce = false;
     }, this.debounceDelay);
 
-    var state = (window.PortfolioGallery && window.PortfolioGallery.state && window.PortfolioGallery.state.getState()) || null;
+    var globalPortfolio = window.PortfolioGallery;
+    var state = (globalPortfolio && globalPortfolio.state && globalPortfolio.state.getState()) || null;
     if (!state) return;
 
     var items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -587,9 +593,11 @@ class PortfolioGallery {
       // Process and flatten items
       var allItems = this.processData(data);
 
-      // Update state (triggers re-render via subscription)
+      // Update state
       this.state.setMediaList(allItems);
       this.state.setLoading(false);
+
+      // Initial render handled by subscription if setup() completes after subscribe
 
       // Initialize filter controller
       var chipsContainer = document.querySelector('.filter-chips-container');
@@ -624,51 +632,55 @@ class PortfolioGallery {
 
   processData(data) {
     var allItems = [];
-    var images = (data.portfolio && data.portfolio.images) || {};
+    var portfolio = data.portfolio || {};
+    var images = portfolio.images || {};
     var weights = PortfolioGallery.CATEGORY_WEIGHTS;
     var formatCache = {};
+    var self = this;
 
     // Flatten all category images
-    for (var category in images) {
-      if (Object.prototype.hasOwnProperty.call(images, category)) {
+    var categories = Object.keys(images);
+    for (var i = 0; i < categories.length; i++) {
+        var category = categories[i];
         var items = images[category];
         if (Array.isArray(items)) {
-          // Pre-calculate formatted category name once per category
-          var formattedCategory = formatCache[category] || (formatCache[category] = this.formatCategoryName(category));
-          var weight = weights[category] !== undefined ? weights[category] : 999;
+            // Pre-calculate formatted category name once per category
+            var formattedCategory = formatCache[category] || (formatCache[category] = self.formatCategoryName(category));
+            var weight = weights[category] !== undefined ? weights[category] : 999;
 
-          for (var i = 0, len = items.length; i < len; i++) {
-            var item = items[i];
-            var title = item.title || (formattedCategory + ' ' + (i + 1));
+            for (var j = 0; j < items.length; j++) {
+                var item = items[j];
+                var newItem = {};
+                // Manual copy for compatibility
+                Object.keys(item).forEach(function(key) { newItem[key] = item[key]; });
 
-            allItems.push(Object.assign({}, item, {
-              category: category,
-              formattedCategory: formattedCategory, // Pre-calculated for renderer
-              weight: weight, // Pre-calculated for sort
-              order: i,
-              id: item.id || (category + '-' + i),
-              title: title,
-              alt: item.alt || title || (formattedCategory + ' photography'),
-              type: item.type || 'image'
-            }));
-          }
+                newItem.category = category;
+                newItem.order = j;
+                newItem.formattedCategory = formattedCategory;
+                newItem.weight = weight;
+                newItem.id = item.id || (category + '-' + j);
+                newItem.title = item.title || (formattedCategory + ' ' + (j + 1));
+                newItem.alt = item.alt || newItem.title || (formattedCategory + ' photography');
+                newItem.type = item.type || 'image';
+
+                allItems.push(newItem);
+            }
         }
-      }
     }
 
-    // Sort by pre-calculated category weight, then by item order
-    // O(N log N) with O(1) comparison instead of O(M) indexOf in comparator
+    // Sort by category weight, then by item order
     allItems.sort(function(a, b) {
       if (a.weight !== b.weight) {
         return a.weight - b.weight;
       }
-      return a.order - b.order;
+      return (a.order || 0) - (b.order || 0);
     });
 
     return allItems;
   }
 
   formatCategoryName(slug) {
+    if (!slug) return '';
     return slug
       .split('-')
       .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
