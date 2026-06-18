@@ -182,10 +182,17 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const title = document.createElement('h3');
+    title.className = 'gallery-item-title';
+    title.textContent = item.title || '';
+
+    const category = document.createElement('p');
+    category.className = 'gallery-item-category';
+    category.textContent = item.formattedCategory || this.formatCategory(item.category);
+
+    overlay.appendChild(title);
+    overlay.appendChild(category);
     article.appendChild(overlay);
 
     // Click handler
@@ -575,6 +582,11 @@ class PortfolioGallery {
     // Initialize renderer
     this.renderer = new GalleryRenderer(this.state, this.container);
 
+    // Subscribe renderer to state changes
+    this.state.subscribe((state) => {
+      this.renderer.render(state.filteredList, state.activeCategory);
+    });
+
     // Show loading state
     this.renderer.showLoading();
     this.state.setLoading(true);
@@ -586,12 +598,9 @@ class PortfolioGallery {
       // Process and flatten items
       const allItems = this.processData(data);
 
-      // Update state
+      // Update state (triggers re-render via subscription)
       this.state.setMediaList(allItems);
       this.state.setLoading(false);
-
-      // Initial render
-      this.renderer.render(allItems, 'all');
 
       // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
@@ -626,49 +635,46 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
+    const weights = PortfolioGallery.CATEGORY_WEIGHTS;
+    const formatCache = {};
 
     // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
+    for (const category in images) {
+      if (Object.prototype.hasOwnProperty.call(images, category)) {
+        const items = images[category];
+        if (Array.isArray(items)) {
+          // Pre-calculate formatted category name once per category
+          const formattedCategory = formatCache[category] || (formatCache[category] = this.formatCategoryName(category));
+          const weight = weights[category] !== undefined ? weights[category] : 999;
+
+          for (let i = 0, len = items.length; i < len; i++) {
+            const item = items[i];
+            const title = item.title || (formattedCategory + ' ' + (i + 1));
+
+            allItems.push({
+              ...item,
+              category,
+              formattedCategory, // Pre-calculated for renderer
+              weight, // Pre-calculated for sort
+              order: i,
+              id: item.id || (category + '-' + i),
+              title: title,
+              alt: item.alt || title || (formattedCategory + ' photography'),
+              type: item.type || 'image'
+            });
+          }
+        }
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Sort by pre-calculated category weight, then by item order
+    // O(N log N) with O(1) comparison instead of O(M) indexOf in comparator
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+      if (a.weight !== b.weight) {
+        return a.weight - b.weight;
       }
-
-      return (a.order || 0) - (b.order || 0);
+      return a.order - b.order;
     });
 
     return allItems;
@@ -690,4 +696,22 @@ class PortfolioGallery {
 // ========================================
 // INITIALIZE
 // ========================================
+PortfolioGallery.CATEGORY_ORDER = [
+  'weddings',
+  'pre-wedding-photos-and-videos',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial'
+];
+
+PortfolioGallery.CATEGORY_WEIGHTS = {};
+PortfolioGallery.CATEGORY_ORDER.forEach((cat, index) => {
+  PortfolioGallery.CATEGORY_WEIGHTS[cat] = index;
+});
+
 window.PortfolioGallery = new PortfolioGallery();
