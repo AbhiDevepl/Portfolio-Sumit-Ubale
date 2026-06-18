@@ -4,19 +4,6 @@
  */
 
 class ContentLoader {
-  static CATEGORY_NAMES = {
-    'weddings': 'Weddings',
-    'portraits': 'Portraits',
-    'commercial': 'Commercial',
-    'events': 'Events',
-    'maternity': 'Maternity',
-    'kids': 'Kids',
-    'haldi': 'Haldi',
-    'engagement': 'Engagement',
-    'pre-wedding-photos-and-videos': 'Pre-Wedding',
-    'cinematics': 'Cinematics'
-  };
-
   constructor() {
     this.dataUrl = '/data/portfolio.json';
     this.data = null;
@@ -57,7 +44,7 @@ class ContentLoader {
 
       this.data = await response.json();
       // Cache media data once for filtering
-      this.mediaData = this.data.portfolio.images;
+      this.mediaData = (this.data.portfolio && this.data.portfolio.images) || {};
       return this.data;
     } catch (error) {
       throw new Error(`Failed to load portfolio data: ${error.message}`);
@@ -90,9 +77,9 @@ class ContentLoader {
     if (category === 'all') {
       // Flatten all category arrays (avoiding Array.prototype.flat for CI compatibility)
       const allItems = [];
-      const categoryValues = Object.values(this.mediaData);
-      for (let i = 0; i < categoryValues.length; i++) {
-        const catItems = categoryValues[i];
+      const keys = Object.keys(this.mediaData);
+      for (let i = 0; i < keys.length; i++) {
+        const catItems = this.mediaData[keys[i]];
         if (Array.isArray(catItems)) {
           for (let j = 0; j < catItems.length; j++) {
             allItems.push(catItems[j]);
@@ -103,7 +90,7 @@ class ContentLoader {
     }
 
     return this.mediaData[category] || [];
-  },
+  }
 
   /**
    * Render gallery items for a category
@@ -111,7 +98,7 @@ class ContentLoader {
    */
   renderCategory(category) {
     // Support both gallery-grid (portfolio.html/gallery.html) and portfolio-inline-grid (index.html)
-    let galleryGrid = document.getElementById('gallery-grid') || document.getElementById('portfolio-inline-grid');
+    const galleryGrid = document.getElementById('gallery-grid') || document.getElementById('portfolio-inline-grid');
     if (!galleryGrid) return;
 
     const items = this.getFilteredItems(category);
@@ -127,20 +114,21 @@ class ContentLoader {
     // Create gallery items with proper structure
     const fragment = document.createDocumentFragment();
 
-    items.forEach((item, index) => {
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index];
       const isVideo = item.type === 'video';
       const el = document.createElement('article');
-      el.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'} reveal-item loading`;
+      el.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image') + ' reveal-item loading';
       el.dataset.index = index;
       el.dataset.category = category === 'all' ? (item.category || 'uncategorized') : category;
       el.setAttribute('tabindex', '0');
       el.setAttribute('role', 'button');
-      el.setAttribute('aria-label', `${item.title || 'Open preview'}${item.category ? ', ' + item.category : ''}`);
+      el.setAttribute('aria-label', (item.title || 'Open preview') + (item.category ? ', ' + item.category : ''));
 
       // Click handler for lightbox
-      el.addEventListener('click', () => {
+      el.addEventListener('click', function() {
         const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData && window.GalleryManager.getVisibleData()) || items;
-        const itemIndex = visibleItems.findIndex(entry => entry.originalIndex === index);
+        const itemIndex = visibleItems.findIndex(function(entry) { return entry.originalIndex === index; });
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
         if (window.Core && window.Core.Lightbox) {
@@ -149,7 +137,7 @@ class ContentLoader {
       });
 
       // Keyboard handler
-      el.addEventListener('keydown', (e) => {
+      el.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           el.click();
@@ -190,7 +178,7 @@ class ContentLoader {
       el.appendChild(overlay);
 
       fragment.appendChild(el);
-    });
+    }
 
     galleryGrid.appendChild(fragment);
 
@@ -198,11 +186,13 @@ class ContentLoader {
     this.initLazyLoader();
 
     // Update allImages cache for lightbox (with original index for lightbox navigation)
-    this.allImages = items.map((item, idx) => ({ ...item, originalIndex: idx }));
+    this.allImages = items.map(function(item, idx) {
+      return Object.assign({}, item, { originalIndex: idx });
+    });
     if (window.GalleryManager) {
       window.GalleryManager.allImages = this.allImages;
     }
-  },
+  }
 
   /**
    * Re-run IntersectionObserver on lazy images
@@ -212,8 +202,8 @@ class ContentLoader {
 
     // Create or reuse observer
     if (!window.lazyImageObserver) {
-      window.lazyImageObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
+      window.lazyImageObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
           if (entry.isIntersecting) {
             const img = entry.target;
             img.src = img.dataset.src;
@@ -225,14 +215,12 @@ class ContentLoader {
     }
 
     // Observe new lazy images
-    lazyImages.forEach(img => {
+    lazyImages.forEach(function(img) {
       if (img.dataset.src) {
         window.lazyImageObserver.observe(img);
       }
     });
   }
-
-
 
   /**
    * Populate events section
@@ -241,22 +229,14 @@ class ContentLoader {
     const eventsGrid = document.querySelector('.events-grid');
     
     if (!eventsGrid || !(this.data && this.data.recentEvents)) {
-      console.warn('Events grid or data not found');
       return;
     }
 
     // Clear existing content
     eventsGrid.innerHTML = '';
 
-    // Create event items (reusing gallery item structure for consistency)
-    this.data.recentEvents.forEach((event, index) => {
-      // Use createGalleryItem styling/structure but appended to events grid
-      // We manually recreate it here to ensure specific event classes if needed
-      // or we can reuse createGalleryItem if we want identical behavior.
-      // User asked for "like Portfolio", so let's stick to the Project Card style 
-      // or the Gallery Item style. The HTML had .event-item structure.
-      // Let's use the .event-item structure but make it dynamic.
-      
+    // Create event items
+    this.data.recentEvents.forEach(function(event) {
       const item = document.createElement('div');
       item.className = 'event-item';
       
@@ -266,21 +246,12 @@ class ContentLoader {
       img.className = 'event-image';
       img.loading = 'lazy';
       
-      // Maintain aspect ratio via CSS or style if variable
-      // The CSS has :nth-child rules for aspect ratios, but data has valid aspect ratios.
-      // We can override via style if needed, or let CSS handle it.
-      // Let's adhere to the data if provided.
       if (event.aspectRatio) {
         img.style.aspectRatio = event.aspectRatio;
       }
       
-      // Optional: Add overlay content like portfolio if desired?
-      // The original HTML structure for events was just image.
-      // "make same as a Recent Events like Portfolio" implies showing title/category.
-      // Let's add an overlay similar to gallery items.
-      
       const overlay = document.createElement('div');
-      overlay.className = 'gallery-overlay'; // Reuse gallery overlay class
+      overlay.className = 'gallery-overlay';
       
       const title = document.createElement('h3');
       title.className = 'gallery-title';
@@ -296,10 +267,6 @@ class ContentLoader {
       item.appendChild(img);
       item.appendChild(overlay);
       
-      // Add click listener for lightbox if we want events to open there too
-      // We need to add it to the GalleryManager access if we do that.
-      // For now, let's just make it visual.
-      
       eventsGrid.appendChild(item);
     });
   }
@@ -312,7 +279,7 @@ class ContentLoader {
     const publicationsContainer = document.getElementById('publications');
     if (publicationsContainer && this.data && this.data.socialProof && this.data.socialProof.publications) {
       publicationsContainer.innerHTML = '';
-      this.data.socialProof.publications.forEach(pub => {
+      this.data.socialProof.publications.forEach(function(pub) {
         const pubItem = document.createElement('span');
         pubItem.className = 'publication-item';
         pubItem.textContent = pub;
@@ -324,7 +291,7 @@ class ContentLoader {
     const awardsContainer = document.getElementById('awards');
     if (awardsContainer && this.data && this.data.socialProof && this.data.socialProof.awards) {
       awardsContainer.innerHTML = '';
-      this.data.socialProof.awards.forEach(award => {
+      this.data.socialProof.awards.forEach(function(award) {
         const awardItem = document.createElement('li');
         awardItem.textContent = award;
         awardsContainer.appendChild(awardItem);
@@ -335,14 +302,13 @@ class ContentLoader {
     const clientsContainer = document.getElementById('clients');
     if (clientsContainer && this.data && this.data.socialProof && this.data.socialProof.clients) {
       clientsContainer.innerHTML = '';
-      this.data.socialProof.clients.forEach(client => {
+      this.data.socialProof.clients.forEach(function(client) {
         const clientItem = document.createElement('span');
         clientItem.className = 'client-item';
         clientItem.textContent = client;
         clientsContainer.appendChild(clientItem);
       });
     }
-
   }
 
   /**
@@ -354,10 +320,7 @@ class ContentLoader {
     // Show user-friendly error message
     const errorMessage = document.createElement('div');
     errorMessage.className = 'content-error';
-    errorMessage.innerHTML = `
-      <p>Unable to load portfolio content. Please try refreshing the page.</p>
-      <p class="error-details">${error.message}</p>
-    `;
+    errorMessage.innerHTML = '<p>Unable to load portfolio content. Please try refreshing the page.</p><p class="error-details">' + error.message + '</p>';
 
     // Try to insert error in gallery
     const galleryGrid = document.getElementById('gallery-grid');
@@ -368,9 +331,22 @@ class ContentLoader {
   }
 }
 
+ContentLoader.CATEGORY_NAMES = {
+  'weddings': 'Weddings',
+  'portraits': 'Portraits',
+  'commercial': 'Commercial',
+  'events': 'Events',
+  'maternity': 'Maternity',
+  'kids': 'Kids',
+  'haldi': 'Haldi',
+  'engagement': 'Engagement',
+  'pre-wedding-photos-and-videos': 'Pre-Wedding',
+  'cinematics': 'Cinematics'
+};
+
 // Initialize content loader when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', function() {
     window.contentLoader = new ContentLoader();
     window.contentLoader.init();
   });
