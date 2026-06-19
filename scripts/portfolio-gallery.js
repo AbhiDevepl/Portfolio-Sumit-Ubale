@@ -637,24 +637,30 @@ class PortfolioGallery {
     const images = (data.portfolio && data.portfolio.images) || {};
 
     // Flatten all category images
-    Object.entries(images).forEach(([category, items]) => {
+    var categories = Object.keys(images);
+    for (var i = 0; i < categories.length; i++) {
+      var category = categories[i];
+      var items = images[category];
       if (Array.isArray(items)) {
-        const formattedCategory = this.formatCategoryName(category);
-        items.forEach((item, index) => {
+        var formattedCategory = this.formatCategoryName(category);
+        for (var j = 0; j < items.length; j++) {
+          var item = items[j];
           allItems.push({
-            ...item,
-            category,
-            formattedCategory,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${formattedCategory} ${index + 1}`,
-            alt: item.alt || item.title || `${formattedCategory} photography`,
-            type: item.type || 'image'
+            id: item.id || (category + '-' + j),
+            title: item.title || (formattedCategory + ' ' + (j + 1)),
+            type: item.type || 'image',
+            src: item.src,
+            alt: item.alt || item.title || (formattedCategory + ' photography'),
+            category: category,
+            formattedCategory: formattedCategory,
+            order: j,
+            poster: item.poster,
+            thumb: item.thumb,
+            aspectRatio: item.aspectRatio
           });
-        });
+        }
       }
-    });
+    }
 
     // Sort by category order, then by item order
     const weights = PortfolioGallery.CATEGORY_WEIGHTS;
