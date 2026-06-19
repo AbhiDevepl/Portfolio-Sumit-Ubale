@@ -182,10 +182,17 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const titleEl = document.createElement('h3');
+    titleEl.className = 'gallery-item-title';
+    titleEl.textContent = item.title || '';
+
+    const categoryEl = document.createElement('p');
+    categoryEl.className = 'gallery-item-category';
+    categoryEl.textContent = item.formattedCategory || this.formatCategory(item.category);
+
+    overlay.appendChild(titleEl);
+    overlay.appendChild(categoryEl);
     article.appendChild(overlay);
 
     // Click handler
@@ -626,46 +633,37 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
 
     // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
+    Object.entries(images).forEach(([category, items]) => {
       if (Array.isArray(items)) {
+        const formattedCategory = this.formatCategoryName(category);
         items.forEach((item, index) => {
           allItems.push({
             ...item,
             category,
+            formattedCategory,
             order: index,
             // Ensure consistent property names
             id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            title: item.title || `${formattedCategory} ${index + 1}`,
+            alt: item.alt || item.title || `${formattedCategory} photography`,
             type: item.type || 'image'
           });
         });
       }
-    }
+    });
 
     // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
+    const weights = PortfolioGallery.CATEGORY_WEIGHTS;
 
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+      const weightA = weights[a.category] !== undefined ? weights[a.category] : 999;
+      const weightB = weights[b.category] !== undefined ? weights[b.category] : 999;
 
-      if (catA !== catB) {
-        return catA - catB;
+      if (weightA !== weightB) {
+        return weightA - weightB;
       }
 
       return (a.order || 0) - (b.order || 0);
@@ -690,4 +688,23 @@ class PortfolioGallery {
 // ========================================
 // INITIALIZE
 // ========================================
+
+PortfolioGallery.CATEGORY_ORDER = [
+  'weddings',
+  'pre-wedding-photos-and-videos',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial'
+];
+
+PortfolioGallery.CATEGORY_WEIGHTS = PortfolioGallery.CATEGORY_ORDER.reduce((acc, cat, index) => {
+  acc[cat] = index;
+  return acc;
+}, {});
+
 window.PortfolioGallery = new PortfolioGallery();
