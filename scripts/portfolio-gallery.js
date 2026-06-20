@@ -97,12 +97,12 @@ class GalleryRenderer {
   _renderSync(items, category) {
     const fragment = document.createDocumentFragment();
 
-    items.forEach((item, index) => {
-      const element = this.createGalleryItem(item, index);
+    for (let i = 0; i < items.length; i++) {
+      const element = this.createGalleryItem(items[i], i);
       if (element) {
         fragment.appendChild(element);
       }
-    });
+    }
 
     // Clear container and append new items
     this.container.innerHTML = '';
@@ -120,7 +120,7 @@ class GalleryRenderer {
     article.dataset.category = item.category || '';
     article.setAttribute('tabindex', '0');
     article.setAttribute('role', 'listitem');
-    article.setAttribute('aria-label', `${item.title || 'Gallery item'}${isVideo ? ' (video)' : ''}`);
+    article.setAttribute('aria-label', (item.title || 'Gallery item') + (isVideo ? ' (video)' : ''));
 
     // Create media element
     const media = document.createElement(isVideo ? 'video' : 'img');
@@ -143,7 +143,7 @@ class GalleryRenderer {
       }, { once: true });
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
 
@@ -174,7 +174,7 @@ class GalleryRenderer {
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
@@ -182,10 +182,17 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const title = document.createElement('h3');
+    title.className = 'gallery-item-title';
+    title.textContent = item.title || '';
+
+    const catLabel = document.createElement('p');
+    catLabel.className = 'gallery-item-category';
+    catLabel.textContent = item.formattedCategory || this.formatCategory(item.category);
+
+    overlay.appendChild(title);
+    overlay.appendChild(catLabel);
     article.appendChild(overlay);
 
     // Click handler
@@ -220,6 +227,11 @@ class GalleryRenderer {
 
   formatCategory(category) {
     if (!category) return '';
+    // Optimized: utilize shared cache if available
+    const pg = window.PortfolioGallery;
+    if (pg && pg.categoryCache && pg.categoryCache[category]) {
+      return pg.categoryCache[category];
+    }
     return category
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -227,17 +239,18 @@ class GalleryRenderer {
   }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
-    // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    // Preserve all metadata including alt text and custom fields
+    const lightboxItems = items.map((item, i) => {
+      const newItem = Object.assign({}, item);
+      newItem.type = item.type || 'image';
+      newItem.originalIndex = i;
+      return newItem;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -263,16 +276,19 @@ class GalleryRenderer {
       );
     } else {
       // Fallback to CSS animations
-      items.forEach((item, index) => {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
+        item.style.transition = `opacity 0.5s ease ${i * 0.05}s, transform 0.5s ease ${i * 0.05}s`;
 
-        setTimeout(() => {
-          item.style.opacity = '1';
-          item.style.transform = 'translateY(0)';
-        }, 50);
-      });
+        (function(el) {
+          setTimeout(() => {
+            el.style.opacity = '1';
+            el.style.transform = 'translateY(0)';
+          }, 50);
+        })(item);
+      }
     }
   }
 
@@ -318,7 +334,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
 
@@ -368,7 +384,7 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
@@ -378,7 +394,8 @@ class ModalViewer {
       this.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    const pg = window.PortfolioGallery;
+    const state = (pg && pg.state && pg.state.getState()) || null;
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -393,7 +410,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -405,7 +422,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -427,7 +444,8 @@ class FilterController {
 
     const chips = this.chipsContainer.querySelectorAll('.filter-chip');
 
-    chips.forEach(chip => {
+    for (let i = 0; i < chips.length; i++) {
+      const chip = chips[i];
       chip.addEventListener('click', () => {
         this.setActiveChip(chip);
         const category = chip.dataset.category;
@@ -441,7 +459,7 @@ class FilterController {
           chip.click();
         }
       });
-    });
+    }
 
     // Horizontal scroll with touch
     this.initHorizontalScroll();
@@ -449,10 +467,11 @@ class FilterController {
 
   setActiveChip(activeChip) {
     const chips = this.chipsContainer.querySelectorAll('.filter-chip');
-    chips.forEach(chip => {
+    for (let i = 0; i < chips.length; i++) {
+      const chip = chips[i];
       chip.classList.remove('active');
       chip.setAttribute('aria-selected', 'false');
-    });
+    }
 
     activeChip.classList.add('active');
     activeChip.setAttribute('aria-selected', 'true');
@@ -470,7 +489,7 @@ class FilterController {
 
     const filtered = allItems.filter(item =>
       item.category === category ||
-      (item.categories && item.categories.includes(category))
+      (item.categories && item.categories.indexOf(category) !== -1)
     );
 
     this.state.setFilteredList(filtered);
@@ -487,7 +506,7 @@ class FilterController {
     } else {
       url.searchParams.set('category', category);
     }
-    window.history.pushState({ category }, '', url);
+    window.history.pushState({ category: category }, '', url);
   }
 
   initHorizontalScroll() {
@@ -533,7 +552,7 @@ class FilterController {
     const category = params.get('category');
 
     if (category) {
-      const chip = this.chipsContainer.querySelector(`[data-category="${category}"]`);
+      const chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
       if (chip) {
         this.setActiveChip(chip);
         this.filterByCategory(category);
@@ -552,6 +571,7 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+    this.categoryCache = {};
     this.init();
   }
 
@@ -593,6 +613,11 @@ class PortfolioGallery {
       // Initial render
       this.renderer.render(allItems, 'all');
 
+      // Sync renderer with state changes
+      this.state.subscribe((state) => {
+        this.renderer.render(state.filteredList, state.activeCategory);
+      });
+
       // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
       if (chipsContainer) {
@@ -605,7 +630,7 @@ class PortfolioGallery {
       this.modal.init();
 
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
@@ -625,66 +650,90 @@ class PortfolioGallery {
   }
 
   processData(data) {
-    const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
+    const categories = Object.keys(images);
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
+    // Phase 1: Collect comparison metadata (Schwartzian Transform)
+    const entries = [];
+    for (let i = 0; i < categories.length; i++) {
+      const category = categories[i];
+      const items = images[category];
+      if (!Array.isArray(items)) continue;
+
+      const formattedCategory = this.formatCategoryName(category);
+      const weight = PortfolioGallery.CATEGORY_WEIGHTS[category] !== undefined ? PortfolioGallery.CATEGORY_WEIGHTS[category] : 999;
+
+      for (let j = 0; j < items.length; j++) {
+        entries.push({
+          item: items[j],
+          weight: weight,
+          order: j,
+          category: category,
+          formattedCategory: formattedCategory
         });
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+    // Phase 2: Sort based on pre-calculated weights (O(N log N))
+    entries.sort((a, b) => {
+      if (a.weight !== b.weight) {
+        return a.weight - b.weight;
       }
-
-      return (a.order || 0) - (b.order || 0);
+      return a.order - b.order;
     });
+
+    // Phase 3: Map back to data objects with metadata preserved
+    const allItems = new Array(entries.length);
+    for (let k = 0; k < entries.length; k++) {
+      const entry = entries[k];
+      const item = entry.item;
+      item.category = entry.category;
+      item.formattedCategory = entry.formattedCategory;
+      item.weight = entry.weight;
+      item.order = entry.order;
+      if (!item.id) item.id = entry.category + '-' + entry.order;
+      if (!item.title) item.title = entry.formattedCategory + ' ' + (entry.order + 1);
+      if (!item.alt) item.alt = item.title || (entry.formattedCategory + ' photography');
+      if (!item.type) item.type = 'image';
+      allItems[k] = item;
+    }
 
     return allItems;
   }
 
   formatCategoryName(slug) {
-    return slug
+    if (this.categoryCache[slug]) return this.categoryCache[slug];
+    const formatted = slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+    this.categoryCache[slug] = formatted;
+    return formatted;
   }
 
   retry() {
     this.state = new GalleryState();
     this.setup();
   }
+}
+
+// Static properties (ES6 compatible)
+PortfolioGallery.CATEGORY_ORDER = [
+  'weddings',
+  'pre-wedding-photos-and-videos',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial'
+];
+
+PortfolioGallery.CATEGORY_WEIGHTS = {};
+for (let m = 0; m < PortfolioGallery.CATEGORY_ORDER.length; m++) {
+  PortfolioGallery.CATEGORY_WEIGHTS[PortfolioGallery.CATEGORY_ORDER[m]] = m;
 }
 
 // ========================================
