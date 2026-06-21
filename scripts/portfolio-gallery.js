@@ -145,7 +145,7 @@ class GalleryRenderer {
       media.addEventListener('loadedmetadata', () => {
         media.style.opacity = '1';
         article.classList.remove('loading');
-      }, { once: true });
+      } , { once: true });
 
       // Register with VideoObserver for lazy loading
       if ((window.Core && window.Core.VideoObserver)) {
@@ -162,7 +162,7 @@ class GalleryRenderer {
         media.style.opacity = '1';
         article.classList.remove('loading');
         article.classList.add('loaded');
-      }, { once: true });
+      } , { once: true });
 
       if (media.complete) {
         media.style.opacity = '1';
@@ -261,7 +261,7 @@ class GalleryRenderer {
     if (window.GSAP && window.ScrollTrigger) {
       // Use GSAP if available
       window.GSAP.fromTo(items,
-        { opacity: 0, y: 40 },
+        { opacity: 0, y: 40 } ,
         {
           opacity: 1,
           y: 0,
@@ -284,7 +284,7 @@ class GalleryRenderer {
         setTimeout(() => {
           item.style.opacity = '1';
           item.style.transform = 'translateY(0)';
-        }, 50);
+        } , 50);
       });
     }
   }
@@ -351,12 +351,12 @@ class ModalViewer {
       if (e.touches.length !== 1) return;
       this.touchStartX = e.touches[0].clientX;
       this.touchCurrentX = e.touches[0].clientX;
-    }, { passive: true });
+    } , { passive: true });
 
     mediaContainer.addEventListener('touchmove', (e) => {
       if (e.touches.length !== 1) return;
       this.touchCurrentX = e.touches[0].clientX;
-    }, { passive: true });
+    } , { passive: true });
 
     mediaContainer.addEventListener('touchend', () => {
       const deltaX = this.touchCurrentX - this.touchStartX;
@@ -369,7 +369,7 @@ class ModalViewer {
       this.navigationDebounce = true;
       setTimeout(() => {
         this.navigationDebounce = false;
-      }, this.debounceDelay);
+      } , this.debounceDelay);
 
       // Swipe left (deltaX < 0) = next, Swipe right (deltaX > 0) = previous
       if (deltaX < -this.touchThreshold) {
@@ -389,7 +389,7 @@ class ModalViewer {
     this.navigationDebounce = true;
     setTimeout(() => {
       this.navigationDebounce = false;
-    }, this.debounceDelay);
+    } , this.debounceDelay);
 
     const state = (window.PortfolioGallery && window.PortfolioGallery.state && window.PortfolioGallery.state.getState());
     if (!state) return;
@@ -500,7 +500,7 @@ class FilterController {
     } else {
       url.searchParams.set('category', category);
     }
-    window.history.pushState({ category }, '', url);
+    window.history.pushState({ category } , '', url);
   }
 
   initHorizontalScroll() {
