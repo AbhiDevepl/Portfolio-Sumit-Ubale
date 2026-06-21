@@ -50,6 +50,11 @@ class GalleryState {
     this.filteredList = items;
     this.currentIndex = 0;
     this.notify();
+
+    // Explicitly trigger render as we removed automatic subscriptions to avoid memory leaks
+    if (window.PortfolioGallery && window.PortfolioGallery.renderer) {
+      window.PortfolioGallery.renderer.render(items, this.activeCategory);
+    }
   }
 
   setActiveCategory(category) {
@@ -140,10 +145,10 @@ class GalleryRenderer {
       media.addEventListener('loadedmetadata', () => {
         media.style.opacity = '1';
         article.classList.remove('loading');
-      }, { once: true });
+      } , { once: true });
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if ((window.Core && window.Core.VideoObserver)) {
         window.Core.VideoObserver.observe(media);
       }
 
@@ -157,7 +162,7 @@ class GalleryRenderer {
         media.style.opacity = '1';
         article.classList.remove('loading');
         article.classList.add('loaded');
-      }, { once: true });
+      } , { once: true });
 
       if (media.complete) {
         media.style.opacity = '1';
@@ -174,18 +179,26 @@ class GalleryRenderer {
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if ((window.Core && window.Core.VideoHover)) {
         window.Core.VideoHover.init(media);
       }
     }
 
-    // Overlay with title/category
+    // Overlay with title/category - Optimized using textContent to avoid HTML parsing
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const h3 = document.createElement('h3');
+    h3.className = 'gallery-item-title';
+    h3.textContent = item.title || '';
+
+    const p = document.createElement('p');
+    p.className = 'gallery-item-category';
+    // Use pre-calculated formattedCategory from processData
+    p.textContent = item.formattedCategory || this.formatCategory(item.category);
+
+    overlay.appendChild(h3);
+    overlay.appendChild(p);
     article.appendChild(overlay);
 
     // Click handler
@@ -227,7 +240,7 @@ class GalleryRenderer {
   }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -248,7 +261,7 @@ class GalleryRenderer {
     if (window.GSAP && window.ScrollTrigger) {
       // Use GSAP if available
       window.GSAP.fromTo(items,
-        { opacity: 0, y: 40 },
+        { opacity: 0, y: 40 } ,
         {
           opacity: 1,
           y: 0,
@@ -271,7 +284,7 @@ class GalleryRenderer {
         setTimeout(() => {
           item.style.opacity = '1';
           item.style.transform = 'translateY(0)';
-        }, 50);
+        } , 50);
       });
     }
   }
@@ -318,7 +331,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if ((window.Core && window.Core.Lightbox)) {
       window.Core.Lightbox.init();
     }
 
@@ -338,12 +351,12 @@ class ModalViewer {
       if (e.touches.length !== 1) return;
       this.touchStartX = e.touches[0].clientX;
       this.touchCurrentX = e.touches[0].clientX;
-    }, { passive: true });
+    } , { passive: true });
 
     mediaContainer.addEventListener('touchmove', (e) => {
       if (e.touches.length !== 1) return;
       this.touchCurrentX = e.touches[0].clientX;
-    }, { passive: true });
+    } , { passive: true });
 
     mediaContainer.addEventListener('touchend', () => {
       const deltaX = this.touchCurrentX - this.touchStartX;
@@ -356,7 +369,7 @@ class ModalViewer {
       this.navigationDebounce = true;
       setTimeout(() => {
         this.navigationDebounce = false;
-      }, this.debounceDelay);
+      } , this.debounceDelay);
 
       // Swipe left (deltaX < 0) = next, Swipe right (deltaX > 0) = previous
       if (deltaX < -this.touchThreshold) {
@@ -368,7 +381,7 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
@@ -376,9 +389,9 @@ class ModalViewer {
     this.navigationDebounce = true;
     setTimeout(() => {
       this.navigationDebounce = false;
-    }, this.debounceDelay);
+    } , this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    const state = (window.PortfolioGallery && window.PortfolioGallery.state && window.PortfolioGallery.state.getState());
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -393,7 +406,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -405,7 +418,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -487,7 +500,7 @@ class FilterController {
     } else {
       url.searchParams.set('category', category);
     }
-    window.history.pushState({ category }, '', url);
+    window.history.pushState({ category } , '', url);
   }
 
   initHorizontalScroll() {
@@ -605,7 +618,7 @@ class PortfolioGallery {
       this.modal.init();
 
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if ((window.Core && window.Core.Lightbox)) {
         window.Core.Lightbox.init();
       }
 
@@ -626,49 +639,61 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
+    const categories = Object.keys(images);
+    const categoryCount = categories.length;
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
+    // Cache for formatted category names to avoid redundant string manipulation
+    const formatCache = {};
+
+    // O(1) lookup for category weights instead of O(M) indexOf in sort
+    const categoryWeights = {
+      'weddings': 0,
+      'pre-wedding-photos-and-videos': 1,
+      'engagement': 2,
+      'haldi': 3,
+      'maternity': 4,
+      'portraits': 5,
+      'cinematics': 6,
+      'kids': 7,
+      'events': 8,
+      'commercial': 9
+    };
+
+    // Process items with indexed loops for maximum performance
+    for (let i = 0; i < categoryCount; i++) {
+      const category = categories[i];
+      const items = images[category];
+
       if (Array.isArray(items)) {
-        items.forEach((item, index) => {
+        const itemCount = items.length;
+        const formattedName = formatCache[category] || (formatCache[category] = this.formatCategoryName(category));
+        const weight = categoryWeights[category] !== undefined ? categoryWeights[category] : 99;
+
+        for (let j = 0; j < itemCount; j++) {
+          const item = items[j];
+          // Pre-calculate properties once to avoid repeated logic in renderer
           allItems.push({
             ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            category: category,
+            categoryWeight: weight,
+            formattedCategory: formattedName,
+            order: j,
+            id: item.id || `${category}-${j}`,
+            title: item.title || `${formattedName} ${j + 1}`,
+            alt: item.alt || item.title || `${formattedName} photography`,
             type: item.type || 'image'
           });
-        });
+        }
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Schwartzian transform-style sorting using pre-calculated weights
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+      if (a.categoryWeight !== b.categoryWeight) {
+        return a.categoryWeight - b.categoryWeight;
       }
-
-      return (a.order || 0) - (b.order || 0);
+      return a.order - b.order;
     });
 
     return allItems;
