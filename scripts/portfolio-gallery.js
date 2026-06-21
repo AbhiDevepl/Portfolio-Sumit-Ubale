@@ -675,18 +675,18 @@ class PortfolioGallery {
         const weight = (categoryWeights[category] !== undefined) ? categoryWeights[category] : 99;
 
         items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category: category,
-            formattedCategory: formattedCategory,
-            weight: weight,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || (category + "-" + index),
-            title: item.title || (formattedCategory + " " + (index + 1)),
-            alt: item.alt || item.title || (formattedCategory + " photography"),
-            type: item.type || 'image'
-          });
+          const newItem = Object.assign({}, item);
+          newItem.category = category;
+          newItem.formattedCategory = formattedCategory;
+          newItem.weight = weight;
+          newItem.order = index;
+          // Ensure consistent property names
+          newItem.id = item.id || (category + "-" + index);
+          newItem.title = item.title || (formattedCategory + " " + (index + 1));
+          newItem.alt = item.alt || item.title || (formattedCategory + " photography");
+          newItem.type = item.type || 'image';
+
+          allItems.push(newItem);
         });
       }
     }
