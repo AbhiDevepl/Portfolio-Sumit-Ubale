@@ -50,6 +50,10 @@ class GalleryState {
     this.filteredList = items;
     this.currentIndex = 0;
     this.notify();
+    // Explicitly trigger render when filtered list changes
+    if (window.PortfolioGallery && window.PortfolioGallery.renderer) {
+      window.PortfolioGallery.renderer.render(this.filteredList, this.activeCategory);
+    }
   }
 
   setActiveCategory(category) {
@@ -246,11 +250,12 @@ class GalleryRenderer {
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map((item, i) => {
+      const enriched = Object.assign({}, item);
+      enriched.type = item.type || 'image';
+      enriched.originalIndex = i;
+      return enriched;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
