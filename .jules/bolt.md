@@ -1,0 +1,3 @@
+## 2025-05-15 - Redundant Portfolio Data Fetch in index.html
+**Learning:** Legacy inline scripts can often contain redundant data-fetching logic that overlaps with newer external modules (like `content-loader.js`). In this case, `index.html` was fetching a 291KB `portfolio.json` file twice—once via an inline script and once via the external loader. This not only doubled the network payload but also increased the initial CPU overhead for parsing and rendering the same data twice.
+**Action:** Always audit `index.html` for inline scripts that might be duplicating the work of external script bundles. Consolidate data management into a single "Source of Truth" module (e.g., `content-loader.js`) and ensure it handles all necessary DOM targets across different pages.
