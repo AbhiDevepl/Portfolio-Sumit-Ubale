@@ -17,16 +17,20 @@ class GalleryState {
     this.activeCategory = 'all';
     this.isLoading = false;
     this.hasError = false;
-    this.listeners = new Set();
+    this.listeners = [];
   }
 
   subscribe(callback) {
-    this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
+    this.listeners.push(callback);
+    var self = this;
+    return function() {
+      self.listeners = self.listeners.filter(function(cb) { return cb !== callback; });
+    };
   }
 
   notify() {
-    this.listeners.forEach(cb => cb(this.getState()));
+    var state = this.getState();
+    this.listeners.forEach(function(cb) { cb(state); });
   }
 
   getState() {
@@ -234,12 +238,12 @@ class GalleryRenderer {
   formatCategory(category) {
     if (!category) return '';
     // Use the shared formatting cache if available
-    if (window.PortfolioGallery && window.PortfolioGallery.constructor.CATEGORY_FORMATTED && window.PortfolioGallery.constructor.CATEGORY_FORMATTED[category]) {
-      return window.PortfolioGallery.constructor.CATEGORY_FORMATTED[category];
+    if (window.PortfolioGallery && PortfolioGallery.CATEGORY_FORMATTED && PortfolioGallery.CATEGORY_FORMATTED[category]) {
+      return PortfolioGallery.CATEGORY_FORMATTED[category];
     }
     return category
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
       .join(' ');
   }
 
@@ -690,7 +694,7 @@ class PortfolioGallery {
   formatCategoryName(slug) {
     return slug
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
       .join(' ');
   }
 
