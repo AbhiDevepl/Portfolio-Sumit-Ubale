@@ -44,7 +44,7 @@ class ContentLoader {
     }
     this.data = await response.json();
 
-    const images = (this.data.portfolio && this.data.portfolio.images) ? this.data.portfolio.images : {};
+    const images = (this.data.portfolio && this.data.portfolio.images) this.data.portfolio.images : {};
     const temp = [];
     const seen = new Set();
 
@@ -54,7 +54,7 @@ class ContentLoader {
           if (!seen.has(item.src)) {
             seen.add(item.src);
             temp.push({
-              type: item.type === 'video' ? 'video' : 'image',
+              type: item.type === 'video' 'video' : 'image',
               category: category,
               src: item.src,
               alt: item.alt || item.title || 'Portfolio media',
@@ -210,11 +210,11 @@ class ContentLoader {
     const moreVid = this.visibleVideosCount < totalVideos;
 
     if (this.activeCategory === 'cinematics') {
-      moreBtnWrapper.style.display = moreVid ? 'block' : 'none';
+      moreBtnWrapper.style.display = moreVid 'block' : 'none';
     } else if (this.activeCategory === 'all') {
       moreBtnWrapper.style.display = 'none';
     } else {
-      moreBtnWrapper.style.display = moreImg ? 'block' : 'none';
+      moreBtnWrapper.style.display = moreImg 'block' : 'none';
     }
   }
 
