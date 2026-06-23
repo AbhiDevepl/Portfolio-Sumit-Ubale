@@ -77,7 +77,7 @@ class ContentLoader {
    */
   getCategoryName(category) {
     return ContentLoader.CATEGORY_NAMES[category] || category;
-  },
+  }
 
   /**
    * Get images for a category
@@ -89,11 +89,13 @@ class ContentLoader {
 
     if (category === 'all') {
       // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      return Object.values(this.mediaData).reduce(function(acc, val) {
+        return acc.concat(val);
+      }, []);
     }
 
     return this.mediaData[category] || [];
-  },
+  }
 
   /**
    * Render gallery items for a category
@@ -188,11 +190,15 @@ class ContentLoader {
     this.initLazyLoader();
 
     // Update allImages cache for lightbox (with original index for lightbox navigation)
-    this.allImages = items.map((item, idx) => ({ ...item, originalIndex: idx }));
+    this.allImages = items.map((item, idx) => {
+      var newItem = Object.assign({}, item);
+      newItem.originalIndex = idx;
+      return newItem;
+    });
     if (window.GalleryManager) {
       window.GalleryManager.allImages = this.allImages;
     }
-  },
+  }
 
   /**
    * Re-run IntersectionObserver on lazy images
