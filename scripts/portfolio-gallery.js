@@ -50,6 +50,10 @@ class GalleryState {
     this.filteredList = items;
     this.currentIndex = 0;
     this.notify();
+    // Explicitly trigger render if gallery instance is available
+    if (window.PortfolioGallery && window.PortfolioGallery.renderer) {
+      window.PortfolioGallery.renderer.render(items, this.activeCategory);
+    }
   }
 
   setActiveCategory(category) {
