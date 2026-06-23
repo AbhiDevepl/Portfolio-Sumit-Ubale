@@ -119,7 +119,7 @@ class GalleryRenderer {
   createGalleryItem(item, index) {
     const isVideo = item.type === 'video';
     const article = document.createElement('article');
-    article.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'}`;
+    article.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image');
     article.dataset.index = index;
     article.dataset.category = item.category || '';
     article.setAttribute('tabindex', '0');
