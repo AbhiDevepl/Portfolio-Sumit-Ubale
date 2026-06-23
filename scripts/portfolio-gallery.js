@@ -104,9 +104,13 @@ class GalleryRenderer {
       }
     });
 
-    // Clear container and append new items
-    this.container.innerHTML = '';
-    this.container.appendChild(fragment);
+    // Efficiently clear and update DOM
+    if (this.container.replaceChildren) {
+      this.container.replaceChildren(fragment);
+    } else {
+      this.container.innerHTML = '';
+      this.container.appendChild(fragment);
+    }
 
     // Trigger reveal animations
     this.triggerRevealAnimations();
@@ -143,7 +147,7 @@ class GalleryRenderer {
       }, { once: true });
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
 
@@ -174,7 +178,7 @@ class GalleryRenderer {
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
@@ -182,9 +186,10 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
+    const displayCat = item.formattedCategory || PortfolioGallery.formatCategoryName(item.category);
     overlay.innerHTML = `
       <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
+      <p class="gallery-item-category">${displayCat}</p>
     `;
     article.appendChild(overlay);
 
@@ -218,16 +223,9 @@ class GalleryRenderer {
     return icon;
   }
 
-  formatCategory(category) {
-    if (!category) return '';
-    return category
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -318,7 +316,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
 
@@ -368,7 +366,7 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
@@ -378,7 +376,8 @@ class ModalViewer {
       this.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    if (!window.PortfolioGallery || !window.PortfolioGallery.state) return;
+    const state = window.PortfolioGallery.state.getState();
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -393,7 +392,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -405,7 +404,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -470,7 +469,7 @@ class FilterController {
 
     const filtered = allItems.filter(item =>
       item.category === category ||
-      (item.categories && item.categories.includes(category))
+      (Array.isArray(item.categories) && item.categories.includes(category))
     );
 
     this.state.setFilteredList(filtered);
@@ -604,8 +603,13 @@ class PortfolioGallery {
       this.modal = new ModalViewer(this.state);
       this.modal.init();
 
+      // Subscribe to state changes for re-rendering
+      this.state.subscribe((state) => {
+        this.renderer.render(state.filteredList, state.activeCategory);
+      });
+
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
@@ -625,67 +629,93 @@ class PortfolioGallery {
   }
 
   processData(data) {
+    const images = (data && data.portfolio && data.portfolio.images) ? data.portfolio.images : {};
+    const categoryWeights = PortfolioGallery.categoryWeightMap;
     const allItems = [];
-    const images = data.portfolio?.images || {};
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
+    // Flatten and enrich items with O(1) weight lookups
+    for (const category in images) {
+      if (!Object.prototype.hasOwnProperty.call(images, category)) continue;
+
+      const items = images[category];
+      if (!Array.isArray(items)) continue;
+
+      const catWeight = categoryWeights.has(category) ? categoryWeights.get(category) : 999;
+      const formattedCat = PortfolioGallery.formatCategoryName(category);
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        allItems.push({
+          ...item,
+          category,
+          formattedCategory: formattedCat,
+          order: i,
+          id: item.id || (category + "-" + i),
+          title: item.title || (formattedCat + " " + (i + 1)),
+          alt: item.alt || item.title || (formattedCat + " photography"),
+          type: item.type || 'image',
+          _catWeight: catWeight
         });
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Sort using pre-computed weights (Schwartzian Transform pattern)
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+      if (a._catWeight !== b._catWeight) {
+        return a._catWeight - b._catWeight;
       }
-
       return (a.order || 0) - (b.order || 0);
     });
 
     return allItems;
   }
 
-  formatCategoryName(slug) {
-    return slug
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }
 
   retry() {
     this.state = new GalleryState();
     this.setup();
   }
 }
+
+// ========================================
+// STATIC CONFIGURATION
+// ========================================
+PortfolioGallery.categoryOrder = [
+  'weddings',
+  'pre-wedding-photos-and-videos',
+  'engagement',
+  'haldi',
+  'maternity',
+  'portraits',
+  'cinematics',
+  'kids',
+  'events',
+  'commercial'
+];
+
+PortfolioGallery.categoryWeightMap = new Map(
+  PortfolioGallery.categoryOrder.map(function(cat, i) { return [cat, i]; })
+);
+
+PortfolioGallery._categoryMemo = new Map();
+
+/**
+ * Format slug to title case with memoization for performance
+ */
+PortfolioGallery.formatCategoryName = function(slug) {
+  if (!slug) return '';
+  if (PortfolioGallery._categoryMemo.has(slug)) {
+    return PortfolioGallery._categoryMemo.get(slug);
+  }
+
+  const result = slug
+    .split('-')
+    .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
+    .join(' ');
+
+  PortfolioGallery._categoryMemo.set(slug, result);
+  return result;
+};
 
 // ========================================
 // INITIALIZE

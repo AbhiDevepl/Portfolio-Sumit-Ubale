@@ -4,19 +4,6 @@
  */
 
 class ContentLoader {
-  static CATEGORY_NAMES = {
-    'weddings': 'Weddings',
-    'portraits': 'Portraits',
-    'commercial': 'Commercial',
-    'events': 'Events',
-    'maternity': 'Maternity',
-    'kids': 'Kids',
-    'haldi': 'Haldi',
-    'engagement': 'Engagement',
-    'pre-wedding-photos-and-videos': 'Pre-Wedding',
-    'cinematics': 'Cinematics'
-  };
-
   constructor() {
     this.dataUrl = '/data/portfolio.json';
     this.data = null;
@@ -77,7 +64,7 @@ class ContentLoader {
    */
   getCategoryName(category) {
     return ContentLoader.CATEGORY_NAMES[category] || category;
-  },
+  }
 
   /**
    * Get images for a category
@@ -93,7 +80,7 @@ class ContentLoader {
     }
 
     return this.mediaData[category] || [];
-  },
+  }
 
   /**
    * Render gallery items for a category
@@ -128,12 +115,12 @@ class ContentLoader {
       el.setAttribute('aria-label', `${item.title || 'Open preview'}${item.category ? ', ' + item.category : ''}`);
 
       // Click handler for lightbox
-      el.addEventListener('click', () => {
-        const visibleItems = window.GalleryManager?.getVisibleData?.() || items;
-        const itemIndex = visibleItems.findIndex(entry => entry.originalIndex === index);
+      el.addEventListener('click', function() {
+        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData && window.GalleryManager.getVisibleData()) || items;
+        const itemIndex = visibleItems.findIndex(function(entry) { return entry.originalIndex === index; });
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
-        if (window.Core?.Lightbox) {
+        if (window.Core && window.Core.Lightbox) {
           window.Core.Lightbox.open(targetIndex, visibleItems);
         }
       });
@@ -192,7 +179,7 @@ class ContentLoader {
     if (window.GalleryManager) {
       window.GalleryManager.allImages = this.allImages;
     }
-  },
+  }
 
   /**
    * Re-run IntersectionObserver on lazy images
@@ -230,7 +217,7 @@ class ContentLoader {
   populateEvents() {
     const eventsGrid = document.querySelector('.events-grid');
     
-    if (!eventsGrid || !this.data?.recentEvents) {
+    if (!eventsGrid || !this.data || !this.data.recentEvents) {
       console.warn('Events grid or data not found');
       return;
     }
@@ -300,9 +287,9 @@ class ContentLoader {
   populateAbout() {
     // Populate publications
     const publicationsContainer = document.getElementById('publications');
-    if (publicationsContainer && this.data?.socialProof?.publications) {
+    if (publicationsContainer && this.data && this.data.socialProof && this.data.socialProof.publications) {
       publicationsContainer.innerHTML = '';
-      this.data.socialProof.publications.forEach(pub => {
+      this.data.socialProof.publications.forEach(function(pub) {
         const pubItem = document.createElement('span');
         pubItem.className = 'publication-item';
         pubItem.textContent = pub;
@@ -312,9 +299,9 @@ class ContentLoader {
 
     // Populate awards
     const awardsContainer = document.getElementById('awards');
-    if (awardsContainer && this.data?.socialProof?.awards) {
+    if (awardsContainer && this.data && this.data.socialProof && this.data.socialProof.awards) {
       awardsContainer.innerHTML = '';
-      this.data.socialProof.awards.forEach(award => {
+      this.data.socialProof.awards.forEach(function(award) {
         const awardItem = document.createElement('li');
         awardItem.textContent = award;
         awardsContainer.appendChild(awardItem);
@@ -323,9 +310,9 @@ class ContentLoader {
 
     // Populate clients
     const clientsContainer = document.getElementById('clients');
-    if (clientsContainer && this.data?.socialProof?.clients) {
+    if (clientsContainer && this.data && this.data.socialProof && this.data.socialProof.clients) {
       clientsContainer.innerHTML = '';
-      this.data.socialProof.clients.forEach(client => {
+      this.data.socialProof.clients.forEach(function(client) {
         const clientItem = document.createElement('span');
         clientItem.className = 'client-item';
         clientItem.textContent = client;
@@ -357,6 +344,19 @@ class ContentLoader {
     }
   }
 }
+
+ContentLoader.CATEGORY_NAMES = {
+  'weddings': 'Weddings',
+  'portraits': 'Portraits',
+  'commercial': 'Commercial',
+  'events': 'Events',
+  'maternity': 'Maternity',
+  'kids': 'Kids',
+  'haldi': 'Haldi',
+  'engagement': 'Engagement',
+  'pre-wedding-photos-and-videos': 'Pre-Wedding',
+  'cinematics': 'Cinematics'
+};
 
 // Initialize content loader when DOM is ready
 if (document.readyState === 'loading') {

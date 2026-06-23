@@ -486,18 +486,20 @@ window.Core = {
       item.setAttribute('role', 'button');
       item.setAttribute('aria-label', `${image.title || 'Open preview'}${image.category ? `, ${image.category}` : ''}`);
 
-      const openFilteredLightbox = () => {
-        const fallbackItems = allItems.map((entry, entryIndex) => ({
-          ...entry,
-          originalIndex: entryIndex,
-          type: entry.type || 'image'
-        }));
+      const openFilteredLightbox = function() {
+        const fallbackItems = allItems.map(function(entry, entryIndex) {
+          return {
+            ...entry,
+            originalIndex: entryIndex,
+            type: entry.type || 'image'
+          };
+        });
 
-        const visibleItems = window.GalleryManager?.getVisibleData?.() || fallbackItems;
-        const itemIndex = visibleItems.findIndex((entry) => entry.originalIndex === index);
+        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData && window.GalleryManager.getVisibleData()) || fallbackItems;
+        const itemIndex = visibleItems.findIndex(function(entry) { return entry.originalIndex === index; });
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
-        if (window.Core?.Lightbox) {
+        if (window.Core && window.Core.Lightbox) {
           window.Core.Lightbox.open(targetIndex, visibleItems);
         }
       };

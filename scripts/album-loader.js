@@ -30,8 +30,9 @@ class AlbumLoader {
     grid.innerHTML = '';
     
     // We only want to show categories that have images
-    const categories = this.data.portfolio.categories.filter(cat => {
-        return cat.slug !== 'all' && (this.data.portfolio.images[cat.slug]?.length > 0);
+      const portfolio = this.data.portfolio;
+      const albums = portfolio.categories.filter(function(cat) {
+        return cat.slug !== 'all' && (portfolio.images[cat.slug] && portfolio.images[cat.slug].length > 0);
     });
 
     categories.forEach((cat, index) => {
