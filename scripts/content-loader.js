@@ -14,24 +14,6 @@ class ContentLoader {
     this.activeCategory = 'all';
   }
 
-  static get CATEGORY_NAMES() {
-    return {
-      'weddings': 'Weddings',
-      'portraits': 'Portraits',
-      'commercial': 'Commercial',
-      'events': 'Events',
-      'maternity': 'Maternity',
-      'kids': 'Kids',
-      'haldi': 'Haldi',
-      'engagement': 'Engagement',
-      'pre-wedding': 'Pre-Wedding',
-      'pre-wedding-photos-and-videos': 'Pre-Wedding',
-      'perwedding': 'Pre-Wedding',
-      'cinematics': 'Cinematics',
-      'video': 'Video'
-    };
-  }
-
   /**
    * Initialize content loading
    */
@@ -242,12 +224,11 @@ class ContentLoader {
         vid.loop = true;
         vid.setAttribute('playsinline', '');
         vid.setAttribute('preload', 'metadata');
-        vid.addEventListener('mouseenter', function() { vid.play().catch(function() {}); });
-        vid.addEventListener('mouseleave', function() { vid.pause(); });
+        vid.addEventListener('mouseenter', () => { vid.play().catch(() => {}); });
+        vid.addEventListener('mouseleave', () => { vid.pause(); });
         el.appendChild(vid);
       }
 
-      // Fix: Use indexOf to find the correct index in the filtered array for Lightbox
       el.addEventListener('click', () => {
         if (window.Core && window.Core.Lightbox) {
           const actualIndex = allFiltered.indexOf(item);
@@ -474,9 +455,25 @@ class ContentLoader {
   }
 }
 
+ContentLoader.CATEGORY_NAMES = {
+  'weddings': 'Weddings',
+  'portraits': 'Portraits',
+  'commercial': 'Commercial',
+  'events': 'Events',
+  'maternity': 'Maternity',
+  'kids': 'Kids',
+  'haldi': 'Haldi',
+  'engagement': 'Engagement',
+  'pre-wedding': 'Pre-Wedding',
+  'pre-wedding-photos-and-videos': 'Pre-Wedding',
+  'perwedding': 'Pre-Wedding',
+  'cinematics': 'Cinematics',
+  'video': 'Video'
+};
+
 // Initialize content loader when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', () => {
     window.contentLoader = new ContentLoader();
     window.contentLoader.init();
   });
