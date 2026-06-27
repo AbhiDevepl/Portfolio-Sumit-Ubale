@@ -41,7 +41,11 @@ class ContentLoader {
   async loadData() {
     try {
       const responses = await Promise.all(
-        this.dataUrls.map(url => fetch(url).then(res => res.ok ? res.json() : null).catch(() => null))
+        this.dataUrls.map((url) => {
+          return fetch(url)
+            .then((res) => { return res.ok ? res.json() : null; })
+            .catch(() => { return null; });
+        })
       );
 
       // Main data object for non-gallery content (recentEvents, socialProof)
@@ -49,11 +53,11 @@ class ContentLoader {
 
       // Merge images from all sources
       this.mediaData = {};
-      responses.forEach(resp => {
+      responses.forEach((resp) => {
         if (!resp) return;
         const images = (resp.portfolio && resp.portfolio.images) ? resp.portfolio.images : resp;
 
-        Object.keys(images).forEach(cat => {
+        Object.keys(images).forEach((cat) => {
           if (Array.isArray(images[cat])) {
             if (!this.mediaData[cat]) this.mediaData[cat] = [];
             this.mediaData[cat] = this.mediaData[cat].concat(images[cat]);
@@ -63,12 +67,12 @@ class ContentLoader {
 
       // Flatten and process into identity-consistent objects
       this.allImages = [];
-      const seenSrc = new Set();
+      const seenSrc = {};
 
-      Object.keys(this.mediaData).forEach(category => {
-        this.mediaData[category].forEach(item => {
-          if (seenSrc.has(item.src)) return;
-          seenSrc.add(item.src);
+      Object.keys(this.mediaData).forEach((category) => {
+        this.mediaData[category].forEach((item) => {
+          if (seenSrc[item.src]) return;
+          seenSrc[item.src] = true;
 
           this.allImages.push({
             type: item.type === 'video' ? 'video' : 'image',
@@ -126,7 +130,9 @@ class ContentLoader {
     if (category === 'all') {
       return this.allImages;
     }
-    return this.allImages.filter(item => item.category === category);
+    return this.allImages.filter((item) => {
+      return item.category === category;
+    });
   }
 
   /**
@@ -183,8 +189,8 @@ class ContentLoader {
     if (!galleryGrid) return;
 
     const allFiltered = this.getFilteredItems(this.activeCategory);
-    const images = allFiltered.filter(item => item.type === 'image');
-    const videos = allFiltered.filter(item => item.type === 'video');
+    const images = allFiltered.filter((item) => { return item.type === 'image'; });
+    const videos = allFiltered.filter((item) => { return item.type === 'video'; });
 
     const toAppend = [];
     for (let i = 0; i < imgCount; i++) {
@@ -193,7 +199,7 @@ class ContentLoader {
         this.visibleImagesCount++;
       }
     }
-    for (let i = 0; i < vidCount; i++) {
+    for (let j = 0; j < vidCount; j++) {
       if (this.visibleVideosCount < videos.length) {
         toAppend.push(videos[this.visibleVideosCount]);
         this.visibleVideosCount++;
