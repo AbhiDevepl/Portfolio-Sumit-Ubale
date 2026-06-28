@@ -247,11 +247,13 @@ class GalleryRenderer {
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    // Optimized: Use Object.assign for CI compatibility (no spread)
+    const lightboxItems = items.map((item, i) => {
+      const clone = Object.assign({}, item);
+      clone.type = item.type || 'image';
+      clone.originalIndex = i;
+      return clone;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -663,17 +665,17 @@ class PortfolioGallery {
           for (let i = 0; i < items.length; i++) {
             const item = items[i];
             // Schwartzian Transform-like: attach weight for O(1) sort comparison
-            allItems.push({
-              ...item,
-              category,
-              categoryWeight: weight,
-              order: i,
-              // Ensure consistent property names
-              id: item.id || (category + "-" + i),
-              title: item.title || (formattedName + " " + (i + 1)),
-              alt: item.alt || item.title || (formattedName + " photography"),
-              type: item.type || 'image'
-            });
+            // Optimized: Use Object.assign for CI compatibility (no spread)
+            const processedItem = Object.assign({}, item);
+            processedItem.category = category;
+            processedItem.categoryWeight = weight;
+            processedItem.order = i;
+            processedItem.id = item.id || (category + "-" + i);
+            processedItem.title = item.title || (formattedName + " " + (i + 1));
+            processedItem.alt = item.alt || item.title || (formattedName + " photography");
+            processedItem.type = item.type || 'image';
+
+            allItems.push(processedItem);
           }
         }
       }
