@@ -14,14 +14,23 @@ class ContentLoader {
     'haldi': 'Haldi',
     'engagement': 'Engagement',
     'pre-wedding-photos-and-videos': 'Pre-Wedding',
-    'cinematics': 'Cinematics'
+    'cinematics': 'Cinematics',
+    'perwedding': 'Pre-Wedding'
   };
 
   constructor() {
     this.dataUrl = '/data/portfolio.json';
+    this.newPortfolioUrl = '/data/new_portfolio.json';
     this.data = null;
     this.allImages = []; // Cache for processed items
     this.mediaData = null; // Cache portfolio.images from JSON
+
+    // Homepage specific state
+    this.homepageData = [];
+    this.shuffledAll = [];
+    this.visibleImagesCount = 0;
+    this.visibleVideosCount = 0;
+    this.activeCategory = 'all';
   }
 
   /**
@@ -30,7 +39,13 @@ class ContentLoader {
   async init() {
     try {
       await this.loadData();
-      this.populateGallery();
+
+      const homepageGrid = document.getElementById('portfolio-inline-grid');
+      if (homepageGrid) {
+        this.initHomepageGallery();
+      } else {
+        this.populateGallery();
+      }
       
       // Initialize Gallery Interactions (after content is loaded)
       if (window.GalleryManager) {
@@ -49,15 +64,58 @@ class ContentLoader {
    */
   async loadData() {
     try {
-      const response = await fetch(this.dataUrl);
+      const [oldDataRes, newDataRes] = await Promise.all([
+        fetch(this.dataUrl).then(res => res.ok ? res.json() : null).catch(() => null),
+        fetch(this.newPortfolioUrl).then(res => res.ok ? res.json() : null).catch(() => null)
+      ]);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!oldDataRes && !newDataRes) {
+        throw new Error('Failed to load portfolio data from all sources');
       }
 
-      this.data = await response.json();
-      // Cache media data once for filtering
-      this.mediaData = this.data.portfolio.images;
+      this.data = oldDataRes || newDataRes;
+
+      // Merge media data from both sources
+      this.mediaData = {};
+      const integrate = (data) => {
+        if (!data) return;
+        const categoriesObj = (data.portfolio && data.portfolio.images) ? data.portfolio.images : data;
+        Object.keys(categoriesObj).forEach(category => {
+          if (Array.isArray(categoriesObj[category])) {
+            if (!this.mediaData[category]) this.mediaData[category] = [];
+            this.mediaData[category] = this.mediaData[category].concat(categoriesObj[category]);
+          }
+        });
+      };
+
+      integrate(oldDataRes);
+      integrate(newDataRes);
+
+      // Process for homepage logic
+      this.homepageData = [];
+      const seen = new Set();
+      Object.keys(this.mediaData).forEach(category => {
+        this.mediaData[category].forEach(item => {
+          if (!seen.has(item.src)) {
+            seen.add(item.src);
+            this.homepageData.push({
+              type: item.type === 'video' ? 'video' : 'image',
+              category: category,
+              src: item.src,
+              alt: item.alt || item.title || 'Portfolio media',
+              poster: item.poster || item.thumb || ''
+            });
+          }
+        });
+      });
+
+      // Prepare shuffled version for 'all'
+      this.shuffledAll = [...this.homepageData];
+      for (let i = this.shuffledAll.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [this.shuffledAll[i], this.shuffledAll[j]] = [this.shuffledAll[j], this.shuffledAll[i]];
+      }
+
       return this.data;
     } catch (error) {
       throw new Error(`Failed to load portfolio data: ${error.message}`);
@@ -65,10 +123,155 @@ class ContentLoader {
   }
 
   /**
-   * Populate gallery grid with images
+   * Homepage Gallery Initialization
+   */
+  initHomepageGallery() {
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    const loadMoreBtn = document.getElementById('inline-load-more-btn');
+
+    categoryBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        categoryBtns.forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+
+        const newCategory = btn.getAttribute('data-category');
+        if (this.activeCategory !== newCategory) {
+          this.activeCategory = newCategory;
+          this.renderHomepageInitial();
+        }
+      });
+    });
+
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', () => {
+        if (this.activeCategory === 'cinematics') {
+          const grid = document.getElementById('portfolio-inline-grid');
+          if (grid) grid.innerHTML = '';
+          this.appendHomepageItems(0, 1);
+        } else {
+          this.appendHomepageItems(3, 0);
+        }
+      });
+    }
+
+    this.renderHomepageInitial();
+  }
+
+  renderHomepageInitial() {
+    const grid = document.getElementById('portfolio-inline-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    this.visibleImagesCount = 0;
+    this.visibleVideosCount = 0;
+
+    if (this.activeCategory === 'cinematics') {
+      grid.classList.add('cinematics-mode');
+    } else {
+      grid.classList.remove('cinematics-mode');
+    }
+
+    let iAdd = 0, vAdd = 0;
+    if (this.activeCategory === 'cinematics') {
+      vAdd = 1;
+    } else if (this.activeCategory === 'all') {
+      iAdd = 3;
+      vAdd = 0;
+    } else {
+      iAdd = 3;
+      vAdd = 1;
+    }
+    this.appendHomepageItems(iAdd, vAdd);
+  }
+
+  getHomepageFilteredItems(type) {
+    const source = this.activeCategory === 'all' ? this.shuffledAll : this.homepageData;
+    return source.filter(item =>
+      (this.activeCategory === 'all' || item.category === this.activeCategory) && item.type === type
+    );
+  }
+
+  appendHomepageItems(imgCount, vidCount) {
+    const grid = document.getElementById('portfolio-inline-grid');
+    const moreBtnWrapper = document.getElementById('portfolio-inline-more');
+    if (!grid) return;
+
+    const images = this.getHomepageFilteredItems('image');
+    const videos = this.getHomepageFilteredItems('video');
+
+    const toAppend = [];
+
+    for (let i = 0; i < imgCount; i++) {
+      if (this.visibleImagesCount < images.length) {
+        toAppend.push(images[this.visibleImagesCount]);
+        this.visibleImagesCount++;
+      }
+    }
+
+    for (let i = 0; i < vidCount; i++) {
+      if (this.visibleVideosCount < videos.length) {
+        toAppend.push(videos[this.visibleVideosCount]);
+        this.visibleVideosCount++;
+      }
+    }
+
+    if (toAppend.length === 0) return;
+
+    const frag = document.createDocumentFragment();
+
+    toAppend.forEach((item, idx) => {
+      const el = document.createElement('div');
+      el.className = 'portfolio-item fade-in-up';
+      el.dataset.type = item.type;
+      el.style.animationDelay = (idx * 60) + 'ms';
+
+      if (item.type === 'image') {
+        const img = document.createElement('img');
+        img.src = item.src;
+        img.alt = item.alt || 'Portfolio image';
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        el.appendChild(img);
+      } else {
+        const vid = document.createElement('video');
+        vid.src = item.src;
+        if (item.poster) vid.poster = item.poster;
+        vid.muted = true;
+        vid.loop = true;
+        vid.setAttribute('playsinline', '');
+        vid.preload = 'metadata';
+        vid.addEventListener('mouseenter', function() { vid.play().catch(function() {}); });
+        vid.addEventListener('mouseleave', function() { vid.pause(); });
+        el.appendChild(vid);
+      }
+
+      frag.appendChild(el);
+    });
+
+    grid.appendChild(frag);
+
+    if (moreBtnWrapper) {
+      const moreImg = this.visibleImagesCount < images.length;
+      const moreVid = this.visibleVideosCount < videos.length;
+
+      if (this.activeCategory === 'cinematics') {
+        moreBtnWrapper.style.display = moreVid ? 'block' : 'none';
+      } else if (this.activeCategory === 'all') {
+        moreBtnWrapper.style.display = 'none';
+      } else {
+        moreBtnWrapper.style.display = moreImg ? 'block' : 'none';
+      }
+    }
+  }
+
+  /**
+   * Populate gallery grid with images (Full Gallery Page)
    */
   populateGallery() {
-    // Use renderCategory for initial load to ensure consistent behavior
     this.renderCategory('all');
   }
 
@@ -77,7 +280,7 @@ class ContentLoader {
    */
   getCategoryName(category) {
     return ContentLoader.CATEGORY_NAMES[category] || category;
-  },
+  }
 
   /**
    * Get images for a category
@@ -88,25 +291,20 @@ class ContentLoader {
     if (!this.mediaData) return [];
 
     if (category === 'all') {
-      // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      return Object.values(this.mediaData).reduce((acc, val) => acc.concat(val), []);
     }
 
     return this.mediaData[category] || [];
-  },
+  }
 
   /**
    * Render gallery items for a category
-   * @param {string} category - Category slug
    */
   renderCategory(category) {
-    // Support both gallery-grid (portfolio.html/gallery.html) and portfolio-inline-grid (index.html)
-    let galleryGrid = document.getElementById('gallery-grid') || document.getElementById('portfolio-inline-grid');
+    let galleryGrid = document.getElementById('gallery-grid');
     if (!galleryGrid) return;
 
     const items = this.getFilteredItems(category);
-
-    // Clear existing
     galleryGrid.innerHTML = '';
 
     if (items.length === 0) {
@@ -114,31 +312,28 @@ class ContentLoader {
       return;
     }
 
-    // Create gallery items with proper structure
     const fragment = document.createDocumentFragment();
 
     items.forEach((item, index) => {
       const isVideo = item.type === 'video';
       const el = document.createElement('article');
-      el.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'} reveal-item loading`;
+      el.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image') + ' reveal-item loading';
       el.dataset.index = index;
       el.dataset.category = category === 'all' ? (item.category || 'uncategorized') : category;
       el.setAttribute('tabindex', '0');
       el.setAttribute('role', 'button');
-      el.setAttribute('aria-label', `${item.title || 'Open preview'}${item.category ? ', ' + item.category : ''}`);
+      el.setAttribute('aria-label', (item.title || 'Open preview') + (item.category ? ', ' + item.category : ''));
 
-      // Click handler for lightbox
       el.addEventListener('click', () => {
-        const visibleItems = window.GalleryManager?.getVisibleData?.() || items;
+        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : items;
         const itemIndex = visibleItems.findIndex(entry => entry.originalIndex === index);
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
-        if (window.Core?.Lightbox) {
+        if (window.Core && window.Core.Lightbox) {
           window.Core.Lightbox.open(targetIndex, visibleItems);
         }
       });
 
-      // Keyboard handler
       el.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -156,14 +351,13 @@ class ContentLoader {
         el.appendChild(video);
       } else {
         const img = document.createElement('img');
-        img.dataset.src = item.src; // Lazy load
+        img.dataset.src = item.src;
         img.alt = item.alt || item.title || '';
         img.className = 'gallery-image';
         if (item.aspectRatio) img.style.aspectRatio = item.aspectRatio;
         el.appendChild(img);
       }
 
-      // Add overlay
       const overlay = document.createElement('div');
       overlay.className = 'gallery-overlay';
 
@@ -183,24 +377,22 @@ class ContentLoader {
     });
 
     galleryGrid.appendChild(fragment);
-
-    // Re-init lazy loader for new images
     this.initLazyLoader();
 
-    // Update allImages cache for lightbox (with original index for lightbox navigation)
-    this.allImages = items.map((item, idx) => ({ ...item, originalIndex: idx }));
+    this.allImages = items.map((item, idx) => {
+        const newItem = {};
+        for (const key in item) newItem[key] = item[key];
+        newItem.originalIndex = idx;
+        return newItem;
+    });
     if (window.GalleryManager) {
       window.GalleryManager.allImages = this.allImages;
     }
-  },
+  }
 
-  /**
-   * Re-run IntersectionObserver on lazy images
-   */
   initLazyLoader() {
     const lazyImages = document.querySelectorAll('#gallery-grid img[data-src]');
 
-    // Create or reuse observer
     if (!window.lazyImageObserver) {
       window.lazyImageObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -214,7 +406,6 @@ class ContentLoader {
       }, { rootMargin: '200px' });
     }
 
-    // Observe new lazy images
     lazyImages.forEach(img => {
       if (img.dataset.src) {
         window.lazyImageObserver.observe(img);
@@ -222,31 +413,16 @@ class ContentLoader {
     });
   }
 
-
-
-  /**
-   * Populate events section
-   */
   populateEvents() {
     const eventsGrid = document.querySelector('.events-grid');
     
-    if (!eventsGrid || !this.data?.recentEvents) {
-      console.warn('Events grid or data not found');
+    if (!eventsGrid || !this.data || !this.data.recentEvents) {
       return;
     }
 
-    // Clear existing content
     eventsGrid.innerHTML = '';
 
-    // Create event items (reusing gallery item structure for consistency)
-    this.data.recentEvents.forEach((event, index) => {
-      // Use createGalleryItem styling/structure but appended to events grid
-      // We manually recreate it here to ensure specific event classes if needed
-      // or we can reuse createGalleryItem if we want identical behavior.
-      // User asked for "like Portfolio", so let's stick to the Project Card style 
-      // or the Gallery Item style. The HTML had .event-item structure.
-      // Let's use the .event-item structure but make it dynamic.
-      
+    this.data.recentEvents.forEach((event) => {
       const item = document.createElement('div');
       item.className = 'event-item';
       
@@ -256,21 +432,12 @@ class ContentLoader {
       img.className = 'event-image';
       img.loading = 'lazy';
       
-      // Maintain aspect ratio via CSS or style if variable
-      // The CSS has :nth-child rules for aspect ratios, but data has valid aspect ratios.
-      // We can override via style if needed, or let CSS handle it.
-      // Let's adhere to the data if provided.
       if (event.aspectRatio) {
         img.style.aspectRatio = event.aspectRatio;
       }
       
-      // Optional: Add overlay content like portfolio if desired?
-      // The original HTML structure for events was just image.
-      // "make same as a Recent Events like Portfolio" implies showing title/category.
-      // Let's add an overlay similar to gallery items.
-      
       const overlay = document.createElement('div');
-      overlay.className = 'gallery-overlay'; // Reuse gallery overlay class
+      overlay.className = 'gallery-overlay';
       
       const title = document.createElement('h3');
       title.className = 'gallery-title';
@@ -285,22 +452,13 @@ class ContentLoader {
       
       item.appendChild(img);
       item.appendChild(overlay);
-      
-      // Add click listener for lightbox if we want events to open there too
-      // We need to add it to the GalleryManager access if we do that.
-      // For now, let's just make it visual.
-      
       eventsGrid.appendChild(item);
     });
   }
 
-  /**
-   * Populate about section with social proof
-   */
   populateAbout() {
-    // Populate publications
     const publicationsContainer = document.getElementById('publications');
-    if (publicationsContainer && this.data?.socialProof?.publications) {
+    if (publicationsContainer && this.data && this.data.socialProof && this.data.socialProof.publications) {
       publicationsContainer.innerHTML = '';
       this.data.socialProof.publications.forEach(pub => {
         const pubItem = document.createElement('span');
@@ -310,9 +468,8 @@ class ContentLoader {
       });
     }
 
-    // Populate awards
     const awardsContainer = document.getElementById('awards');
-    if (awardsContainer && this.data?.socialProof?.awards) {
+    if (awardsContainer && this.data && this.data.socialProof && this.data.socialProof.awards) {
       awardsContainer.innerHTML = '';
       this.data.socialProof.awards.forEach(award => {
         const awardItem = document.createElement('li');
@@ -321,9 +478,8 @@ class ContentLoader {
       });
     }
 
-    // Populate clients
     const clientsContainer = document.getElementById('clients');
-    if (clientsContainer && this.data?.socialProof?.clients) {
+    if (clientsContainer && this.data && this.data.socialProof && this.data.socialProof.clients) {
       clientsContainer.innerHTML = '';
       this.data.socialProof.clients.forEach(client => {
         const clientItem = document.createElement('span');
@@ -332,25 +488,15 @@ class ContentLoader {
         clientsContainer.appendChild(clientItem);
       });
     }
-
   }
 
-  /**
-   * Handle errors
-   */
   handleError(error) {
     console.error('❌ Content loading error:', error);
-
-    // Show user-friendly error message
     const errorMessage = document.createElement('div');
     errorMessage.className = 'content-error';
-    errorMessage.innerHTML = `
-      <p>Unable to load portfolio content. Please try refreshing the page.</p>
-      <p class="error-details">${error.message}</p>
-    `;
+    errorMessage.innerHTML = '<p>Unable to load portfolio content. Please try refreshing the page.</p><p class="error-details">' + error.message + '</p>';
 
-    // Try to insert error in gallery
-    const galleryGrid = document.getElementById('gallery-grid');
+    const galleryGrid = document.getElementById('gallery-grid') || document.getElementById('portfolio-inline-grid');
     if (galleryGrid) {
       galleryGrid.innerHTML = '';
       galleryGrid.appendChild(errorMessage);
@@ -358,7 +504,6 @@ class ContentLoader {
   }
 }
 
-// Initialize content loader when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     window.contentLoader = new ContentLoader();
