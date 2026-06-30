@@ -96,10 +96,12 @@ class ContentLoader {
       });
 
       // Prepare shuffled version for 'all'
-      this.shuffledAll = [...this.homepageData];
+      this.shuffledAll = this.homepageData.slice();
       for (let i = this.shuffledAll.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [this.shuffledAll[i], this.shuffledAll[j]] = [this.shuffledAll[j], this.shuffledAll[i]];
+        const temp = this.shuffledAll[i];
+        this.shuffledAll[i] = this.shuffledAll[j];
+        this.shuffledAll[j] = temp;
       }
 
       return this.data;
@@ -277,7 +279,17 @@ class ContentLoader {
     if (!this.mediaData) return [];
 
     if (category === 'all') {
-      return Object.values(this.mediaData).reduce((acc, val) => acc.concat(val), []);
+      const allItems = [];
+      const keys = Object.keys(this.mediaData);
+      for (let i = 0; i < keys.length; i++) {
+        const catItems = this.mediaData[keys[i]];
+        if (Array.isArray(catItems)) {
+          for (let j = 0; j < catItems.length; j++) {
+            allItems.push(catItems[j]);
+          }
+        }
+      }
+      return allItems;
     }
 
     return this.mediaData[category] || [];

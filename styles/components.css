@@ -421,8 +421,7 @@
   padding: var(--space-2) 0 var(--space-4);
   display: flex;
   justify-content: center;
-  background:
-    linear-gradient(to bottom, color-mix(in srgb, var(--bg-primary) 92%, transparent), transparent);
+  background: linear-gradient(to bottom, rgba(245, 245, 242, 0.92), transparent);
 }
 
 .portfolio-categories {
@@ -458,8 +457,8 @@
   text-transform: none;
   font-weight: 600;
   color: var(--text-secondary);
-  background: color-mix(in srgb, var(--bg-surface) 80%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: var(--radius-full);
   box-shadow: 0 10px 24px -18px var(--shadow-dark);
   backdrop-filter: blur(10px);
@@ -475,7 +474,7 @@
 
 .category-btn:hover {
   color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--text-primary) 28%, var(--border-color));
+  border-color: rgba(0, 0, 0, 0.2);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
