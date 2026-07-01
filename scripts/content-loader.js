@@ -197,7 +197,7 @@ class ContentLoader {
     this.initLazyLoader();
 
     // Update allImages cache for lightbox (with original index for lightbox navigation)
-    this.allImages = items.map((item, idx) => ({ ...item, originalIndex: idx }));
+    this.allImages = items.map((item, idx) => Object.assign({}, item, { originalIndex: idx }));
     if (window.GalleryManager) {
       window.GalleryManager.allImages = this.allImages;
     }
