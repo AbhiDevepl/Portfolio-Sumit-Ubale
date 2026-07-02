@@ -88,8 +88,18 @@ class ContentLoader {
     if (!this.mediaData) return [];
 
     if (category === 'all') {
-      // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      // Flatten all category arrays manually for CI compatibility
+      const flattened = [];
+      const keys = Object.keys(this.mediaData);
+      for (var i = 0; i < keys.length; i++) {
+        const items = this.mediaData[keys[i]];
+        if (Array.isArray(items)) {
+          for (var j = 0; j < items.length; j++) {
+            flattened.push(items[j]);
+          }
+        }
+      }
+      return flattened;
     }
 
     return this.mediaData[category] || [];
@@ -188,7 +198,7 @@ class ContentLoader {
     this.initLazyLoader();
 
     // Update allImages cache for lightbox (with original index for lightbox navigation)
-    this.allImages = items.map((item, idx) => ({ ...item, originalIndex: idx }));
+    this.allImages = items.map((item, idx) => Object.assign({}, item, { originalIndex: idx }));
     if (window.GalleryManager) {
       window.GalleryManager.allImages = this.allImages;
     }
