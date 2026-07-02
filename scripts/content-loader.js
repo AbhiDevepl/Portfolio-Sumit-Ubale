@@ -5,8 +5,8 @@
 
 class ContentLoader {
   constructor() {
-    this.dataUrl = 'data/portfolio.json';
-    this.newDataUrl = 'data/new_portfolio.json';
+    this.dataUrl = '/data/portfolio.json';
+    this.newDataUrl = '/data/new_portfolio.json';
     this.data = null;
     this.allImages = []; // Cache for processed items
     this.mediaData = null; // Cache portfolio.images from JSON
