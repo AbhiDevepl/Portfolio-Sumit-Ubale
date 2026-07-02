@@ -143,7 +143,7 @@ class GalleryRenderer {
       }, { once: true });
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
 
@@ -174,7 +174,7 @@ class GalleryRenderer {
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
@@ -182,10 +182,17 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const h3 = document.createElement('h3');
+    h3.className = 'gallery-item-title';
+    h3.textContent = item.title || '';
+
+    const p = document.createElement('p');
+    p.className = 'gallery-item-category';
+    p.textContent = item.formattedCategory || '';
+
+    overlay.appendChild(h3);
+    overlay.appendChild(p);
     article.appendChild(overlay);
 
     // Click handler
@@ -218,26 +225,20 @@ class GalleryRenderer {
     return icon;
   }
 
-  formatCategory(category) {
-    if (!category) return '';
-    return category
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }
 
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map((item, i) => {
+      return Object.assign({}, item, {
+        type: item.type || 'image',
+        originalIndex: i
+      });
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -318,7 +319,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
 
@@ -368,7 +369,7 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
@@ -378,7 +379,7 @@ class ModalViewer {
       this.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    const state = window.PortfolioGallery && window.PortfolioGallery.state && window.PortfolioGallery.state.getState();
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -393,7 +394,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -405,7 +406,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -605,7 +606,7 @@ class PortfolioGallery {
       this.modal.init();
 
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
@@ -626,48 +627,41 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
+    const formattedCategories = {};
 
     // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
+    for (const category in images) {
+      if (!Object.prototype.hasOwnProperty.call(images, category)) continue;
+      const items = images[category];
       if (Array.isArray(items)) {
+        if (!formattedCategories[category]) {
+          formattedCategories[category] = this.formatCategoryName(category);
+        }
+        const catName = formattedCategories[category];
+        const catWeight = PortfolioGallery.CATEGORY_WEIGHTS[category] !== undefined ? PortfolioGallery.CATEGORY_WEIGHTS[category] : 999;
+
         items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
+          allItems.push(Object.assign({}, item, {
+            category: category,
+            formattedCategory: catName,
+            catWeight: catWeight,
             order: index,
             // Ensure consistent property names
             id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            title: item.title || `${catName} ${index + 1}`,
+            alt: item.alt || item.title || `${catName} photography`,
             type: item.type || 'image'
-          });
+          }));
         });
       }
     }
 
-    // Sort by category order, then by item order
-    const categoryOrder = [
-      'weddings',
-      'pre-wedding-photos-and-videos',
-      'engagement',
-      'haldi',
-      'maternity',
-      'portraits',
-      'cinematics',
-      'kids',
-      'events',
-      'commercial'
-    ];
-
+    // Sort by pre-calculated category weight, then by item order
     allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
-
-      if (catA !== catB) {
-        return catA - catB;
+      if (a.catWeight !== b.catWeight) {
+        return a.catWeight - b.catWeight;
       }
-
       return (a.order || 0) - (b.order || 0);
     });
 
@@ -675,6 +669,7 @@ class PortfolioGallery {
   }
 
   formatCategoryName(slug) {
+    if (!slug) return '';
     return slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -686,6 +681,20 @@ class PortfolioGallery {
     this.setup();
   }
 }
+
+// Define weights immediately after class to avoid race conditions during init
+PortfolioGallery.CATEGORY_WEIGHTS = {
+  'weddings': 0,
+  'pre-wedding-photos-and-videos': 1,
+  'engagement': 2,
+  'haldi': 3,
+  'maternity': 4,
+  'portraits': 5,
+  'cinematics': 6,
+  'kids': 7,
+  'events': 8,
+  'commercial': 9
+};
 
 // ========================================
 // INITIALIZE
