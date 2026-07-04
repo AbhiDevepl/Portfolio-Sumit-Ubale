@@ -143,7 +143,7 @@ class GalleryRenderer {
       }, { once: true });
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
 
@@ -174,7 +174,7 @@ class GalleryRenderer {
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
@@ -184,7 +184,7 @@ class GalleryRenderer {
     overlay.className = 'gallery-overlay';
     overlay.innerHTML = `
       <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
+      <p class="gallery-item-category">${item.formattedCategory || this.formatCategoryName(item.category)}</p>
     `;
     article.appendChild(overlay);
 
@@ -218,26 +218,19 @@ class GalleryRenderer {
     return icon;
   }
 
-  formatCategory(category) {
-    if (!category) return '';
-    return category
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }
-
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
     // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    const lightboxItems = items.map((item, i) => {
+      return Object.assign({}, item, {
+        type: item.type || 'image',
+        originalIndex: i
+      });
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -318,7 +311,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
 
@@ -368,7 +361,7 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
@@ -378,7 +371,7 @@ class ModalViewer {
       this.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    const state = (window.PortfolioGallery && window.PortfolioGallery.state) ? window.PortfolioGallery.state.getState() : null;
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -393,7 +386,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -405,7 +398,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!(window.Core && window.Core.Lightbox)) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -605,7 +598,7 @@ class PortfolioGallery {
       this.modal.init();
 
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
@@ -626,27 +619,8 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
-      }
-    }
-
-    // Sort by category order, then by item order
     const categoryOrder = [
       'weddings',
       'pre-wedding-photos-and-videos',
@@ -660,15 +634,51 @@ class PortfolioGallery {
       'commercial'
     ];
 
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+    // Pre-calculate weights for O(1) lookup
+    const categoryWeights = {};
+    categoryOrder.forEach((cat, index) => {
+      categoryWeights[cat] = index;
+    });
 
-      if (catA !== catB) {
-        return catA - catB;
+    // Process and flatten with pre-calculated sort keys (Schwartzian Transform)
+    // NOTE: Object.assign and manual logical checks used for Cloudflare CI compatibility
+    const categories = Object.keys(images);
+    for (let i = 0; i < categories.length; i++) {
+      const category = categories[i];
+      const items = images[category];
+
+      if (Array.isArray(items)) {
+        // Unknown categories get weight -1 to match original indexOf behavior
+        const weight = categoryWeights[category] !== undefined ? categoryWeights[category] : -1;
+        const formattedCat = this.formatCategoryName(category);
+
+        for (let j = 0; j < items.length; j++) {
+          const item = items[j];
+          const title = item.title || (formattedCat + ' ' + (j + 1));
+
+          // Store weight and order directly on the item for O(1) comparison
+          const processedItem = Object.assign({}, item, {
+            category: category,
+            formattedCategory: formattedCat,
+            order: j,
+            weight: weight,
+            id: item.id || (category + '-' + j),
+            title: title,
+            alt: item.alt || title || (formattedCat + ' photography'),
+            type: item.type || 'image'
+          });
+
+          allItems.push(processedItem);
+        }
       }
+    }
 
-      return (a.order || 0) - (b.order || 0);
+    // Sort using pre-calculated weights and orders
+    allItems.sort((a, b) => {
+      if (a.weight !== b.weight) {
+        return a.weight - b.weight;
+      }
+      return a.order - b.order;
     });
 
     return allItems;
