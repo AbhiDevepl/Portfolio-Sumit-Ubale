@@ -52,10 +52,10 @@ window.GalleryManager = {
         const media = item.querySelector('img, video');
         return {
           src: ((media && media.src) || null) || ((media && media.dataset && media.dataset.src) || null) || '',
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
+          title: ((item.querySelector(".gallery-title") && item.querySelector(".gallery-title").textContent) || null),
+          category: ((item.querySelector(".gallery-category") && item.querySelector(".gallery-category").textContent) || null) || item.dataset.category,
           type: item.querySelector('video') ? 'video' : 'image',
-          poster: item.querySelector('video')?.poster || '',
+          poster: ((item.querySelector("video") && item.querySelector("video").poster) || null) || '',
           originalIndex: idx
         };
       });
