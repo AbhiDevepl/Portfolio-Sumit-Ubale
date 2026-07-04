@@ -30,7 +30,7 @@ window.GalleryManager = {
     });
     
     window.addEventListener('popstate', (e) => {
-      this.filterGallery(e.state?.category || 'all');
+      this.filterGallery(((e.state && e.state.category) || null) || 'all');
     });
   },
 
@@ -40,7 +40,7 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    const all = this.allImages || window.contentLoader?.allImages || [];
+    const all = this.allImages || ((window.contentLoader && window.contentLoader.allImages) || null) || [];
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => !item.classList.contains('is-hidden'))
       .map(item => {
@@ -51,11 +51,11 @@ window.GalleryManager = {
         // Fallback if data is not yet loaded (should not happen after init)
         const media = item.querySelector('img, video');
         return {
-          src: media?.src || media?.dataset?.src || '',
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
+          src: ((media && media.src) || null) || ((media && media.dataset && media.dataset.src) || null) || '',
+          title: ((item.querySelector(".gallery-title") && item.querySelector(".gallery-title").textContent) || null),
+          category: ((item.querySelector(".gallery-category") && item.querySelector(".gallery-category").textContent) || null) || item.dataset.category,
           type: item.querySelector('video') ? 'video' : 'image',
-          poster: item.querySelector('video')?.poster || '',
+          poster: ((item.querySelector("video") && item.querySelector("video").poster) || null) || '',
           originalIndex: idx
         };
       });
