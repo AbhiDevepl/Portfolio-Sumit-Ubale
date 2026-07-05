@@ -629,7 +629,7 @@ class PortfolioGallery {
     const images = (data.portfolio && data.portfolio.images) || {};
 
     // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
+    for (let key in images) { let category = key; let items = ; {
       if (Array.isArray(items)) {
         items.forEach((item, index) => {
           allItems.push({

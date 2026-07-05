@@ -46,7 +46,7 @@ window.GalleryManager = {
       .map(item => {
         const idx = parseInt(item.dataset.index, 10);
         // Use cached data for O(1) metadata retrieval, avoiding expensive DOM queries
-        if (all[idx]) return Object.assign({}, , { originalIndex: idx });
+        if (all[idx]) return Object.assign({}, all[idx], { originalIndex: idx });
 
         // Fallback if data is not yet loaded (should not happen after init)
         const media = item.querySelector('img, video');
