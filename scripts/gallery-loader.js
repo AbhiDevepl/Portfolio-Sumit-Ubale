@@ -63,7 +63,7 @@ class GalleryLoader {
     // Aggregate images
     let images = [];
     if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => images.push(...catImages));
+      Object.values(this.data.portfolio.images).forEach(catImages => Array.prototype.push.apply(images, catImages));
     } else {
       const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
       images = this.data.portfolio.images[key] || [];
@@ -101,14 +101,14 @@ class GalleryLoader {
     // Helper to get raw data for lightbox with injected category
     if (this.category === 'all') {
       let all = [];
-      Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
-        const enriched = imgs.map(img => ({ ...img, category: catSlug }));
-        all.push(...enriched);
+      for (let catSlug in this.data.portfolio.images) { let imgs = this.data.portfolio.images[catSlug]; {
+        const enriched = imgs.map(img => (Object.assign({}, img, { category: catSlug })));
+        Array.prototype.push.apply(all, enriched);
       });
       return all;
     }
     const imgs = this.data.portfolio.images[this.category] || [];
-    return imgs.map(img => ({ ...img, category: this.category }));
+    return imgs.map(img => (Object.assign({}, img, { category: this.category })));
   }
 
   initAnimations() {
