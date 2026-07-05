@@ -488,7 +488,7 @@ window.Core = {
 
       const openFilteredLightbox = () => {
         const fallbackItems = allItems.map((entry, entryIndex) => ({
-          ...entry,
+          Object.assign({}, entry),
           originalIndex: entryIndex,
           type: entry.type || 'image'
         }));

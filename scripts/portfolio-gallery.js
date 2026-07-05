@@ -234,7 +234,7 @@ class GalleryRenderer {
 
     // Ensure items have required properties
     const lightboxItems = items.map((item, i) => ({
-      ...item,
+      Object.assign({}, item),
       type: item.type || 'image',
       originalIndex: i
     }));
@@ -633,7 +633,7 @@ class PortfolioGallery {
       if (Array.isArray(items)) {
         items.forEach((item, index) => {
           allItems.push({
-            ...item,
+            Object.assign({}, item),
             category,
             order: index,
             // Ensure consistent property names
