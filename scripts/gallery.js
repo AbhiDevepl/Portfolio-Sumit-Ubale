@@ -30,7 +30,7 @@ window.GalleryManager = {
     });
     
     window.addEventListener('popstate', (e) => {
-      this.filterGallery(e.state?.category || 'all');
+      this.filterGallery(e.(state && state.category || 'all');
     });
   },
 
@@ -40,7 +40,7 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    const all = this.allImages || window.contentLoader?.allImages || [];
+    const all = this.allImages || window.(contentLoader && contentLoader.allImages || [];
     return Array.from(document.querySelectorAll('.gallery-item'))
       .filter(item => !item.classList.contains('is-hidden'))
       .map(item => {
@@ -51,11 +51,11 @@ window.GalleryManager = {
         // Fallback if data is not yet loaded (should not happen after init)
         const media = item.querySelector('img, video');
         return {
-          src: media?.src || media?.dataset?.src || '',
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
+          src: (media && media.src || (media && media.(dataset && dataset.src || '',
+          title: item.querySelector('') && document.querySelector('').textContent,
+          category: item.querySelector('') && document.querySelector('').textContent || item.dataset.category,
           type: item.querySelector('video') ? 'video' : 'image',
-          poster: item.querySelector('video')?.poster || '',
+          poster: item.querySelector('') && document.querySelector('').poster || '',
           originalIndex: idx
         };
       });
