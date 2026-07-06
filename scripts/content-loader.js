@@ -4,26 +4,13 @@
  */
 
 class ContentLoader {
-  static CATEGORY_NAMES = {
-    'weddings': 'Weddings',
-    'portraits': 'Portraits',
-    'commercial': 'Commercial',
-    'events': 'Events',
-    'maternity': 'Maternity',
-    'kids': 'Kids',
-    'haldi': 'Haldi',
-    'engagement': 'Engagement',
-    'pre-wedding-photos-and-videos': 'Pre-Wedding',
-    'cinematics': 'Cinematics'
-  };
-
   constructor() {
-    this.dataUrl = 'data/portfolio.json';
-    this.newDataUrl = 'data/new_portfolio.json';
+    this.dataUrl = '/data/portfolio.json';
+    this.newDataUrl = '/data/new_portfolio.json';
     this.data = null;
     this.allImages = []; // Cache for processed items
     this.mediaData = {}; // Cache portfolio.images from JSON
-    this.shuffledAll = []; // globally randomized items
+    this.shuffledAll = []; // globally randomized items for 'all'
     this.visibleImagesCount = 0;
     this.visibleVideosCount = 0;
     this.activeCategory = 'all';
@@ -37,10 +24,10 @@ class ContentLoader {
       await this.loadData();
       
       // Initialize Gallery Interactions (after content is loaded)
-      // GalleryManager.init() will trigger the first render via checkURLState
       if (window.GalleryManager) {
         window.GalleryManager.init();
       } else {
+        // Fallback for homepage if GalleryManager isn't used
         this.renderCategory('all');
       }
       
@@ -52,7 +39,7 @@ class ContentLoader {
   }
 
   /**
-   * Fetch JSON data
+   * Fetch JSON data from multiple sources and merge
    */
   async loadData() {
     try {
@@ -75,7 +62,6 @@ class ContentLoader {
 
         Object.keys(imagesObj).forEach(cat => {
           if (Array.isArray(imagesObj[cat])) {
-            // Ensure mediaData has the category array
             if (!this.mediaData[cat]) this.mediaData[cat] = [];
 
             imagesObj[cat].forEach(item => {
@@ -101,7 +87,7 @@ class ContentLoader {
       integrate(oldData);
       integrate(newData);
 
-      // Globally randomize the array for 'all' view
+      // Globally randomize for 'all' view once
       for (let i = portfolioData.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         const temp = portfolioData[i];
@@ -125,23 +111,19 @@ class ContentLoader {
 
   /**
    * Get images for a category
-   * @param {string} category - Category slug (or 'all')
-   * @returns {Array} Array of image/video items
    */
   getFilteredItems(category) {
     if (!this.mediaData) return [];
 
     if (category === 'all') {
-      // Return cached shuffled items instead of flattening on the fly
       if (this.shuffledAll && this.shuffledAll.length > 0) {
         return this.shuffledAll;
       }
-
-      // Fallback: Manual flatten if shuffledAll is empty
+      // Fallback manual flatten
       const all = [];
-      const categories = Object.keys(this.mediaData);
-      for (let i = 0; i < categories.length; i++) {
-        const catItems = this.mediaData[categories[i]];
+      const cats = Object.keys(this.mediaData);
+      for (let i = 0; i < cats.length; i++) {
+        const catItems = this.mediaData[cats[i]];
         for (let j = 0; j < catItems.length; j++) {
           all.push(catItems[j]);
         }
@@ -153,13 +135,11 @@ class ContentLoader {
   }
 
   /**
-   * Render gallery items for a category
-   * @param {string} category - Category slug
+   * Render gallery items
    */
   renderCategory(category) {
-    let grid = document.getElementById('portfolio-inline-grid');
+    const grid = document.getElementById('portfolio-inline-grid');
     if (!grid) {
-      // Fallback for full gallery pages if they use this class
       this.renderFullGallery(category);
       return;
     }
@@ -169,7 +149,6 @@ class ContentLoader {
     this.visibleVideosCount = 0;
     grid.innerHTML = '';
 
-    // Toggle cinematics layout mode
     if (category === 'cinematics' || category === 'video') {
       grid.classList.add('cinematics-mode');
     } else {
@@ -191,7 +170,7 @@ class ContentLoader {
   }
 
   /**
-   * Append items to the grid
+   * Append items to grid (DocumentFragment for performance)
    */
   appendItems(imgCount, vidCount) {
     const grid = document.getElementById('portfolio-inline-grid');
@@ -238,11 +217,8 @@ class ContentLoader {
       el.setAttribute('role', 'button');
       el.setAttribute('aria-label', (item.title || 'Open preview') + (item.category ? ', ' + item.category : ''));
 
-      // Lightbox interaction
       el.onclick = () => {
         if (window.Core && window.Core.Lightbox) {
-          // In 'all' view, we want to browse everything filtered.
-          // For simplicity on homepage, we'll pass the current filtered items.
           const targetIndex = allFiltered.indexOf(item);
           window.Core.Lightbox.open(targetIndex >= 0 ? targetIndex : 0, allFiltered);
         }
@@ -285,9 +261,6 @@ class ContentLoader {
     this.updateLoadMoreButton(hasMoreImg, hasMoreVid);
   }
 
-  /**
-   * Load more action
-   */
   loadMore() {
     const grid = document.getElementById('portfolio-inline-grid');
     if (this.activeCategory === 'cinematics' || this.activeCategory === 'video') {
@@ -298,9 +271,6 @@ class ContentLoader {
     }
   }
 
-  /**
-   * Update visibility of Load More button
-   */
   updateLoadMoreButton(hasMoreImg, hasMoreVid) {
     const moreBtnWrapper = document.getElementById('portfolio-inline-more');
     if (!moreBtnWrapper) return;
@@ -309,7 +279,7 @@ class ContentLoader {
     if (this.activeCategory === 'cinematics' || this.activeCategory === 'video') {
       show = hasMoreVid;
     } else if (this.activeCategory === 'all') {
-      show = false; // Homepage design: 'All' doesn't have load more
+      show = false;
     } else {
       show = hasMoreImg;
     }
@@ -318,10 +288,10 @@ class ContentLoader {
   }
 
   /**
-   * Full gallery rendering (legacy support for pages/gallery.html)
+   * Full gallery rendering for pages/gallery.html
    */
   renderFullGallery(category) {
-    let grid = document.getElementById('gallery-grid');
+    const grid = document.getElementById('gallery-grid');
     if (!grid) return;
 
     const items = this.getFilteredItems(category);
@@ -334,17 +304,17 @@ class ContentLoader {
 
     const fragment = document.createDocumentFragment();
     items.forEach((item, index) => {
-      const el = Core.Media.createItem(item, index, items, (cat) => this.getCategoryName(cat));
-      fragment.appendChild(el);
+      if (window.Core && window.Core.Media) {
+        const el = window.Core.Media.createItem(item, index, items, (cat) => this.getCategoryName(cat));
+        fragment.appendChild(el);
+      }
     });
     grid.appendChild(fragment);
 
-    // Ensure lazy loader picks up new items
     this.initLazyLoader();
 
     this.allImages = items.map((item, idx) => {
-      const newItem = {};
-      Object.keys(item).forEach(key => newItem[key] = item[key]);
+      const newItem = Object.assign({}, item);
       newItem.originalIndex = idx;
       return newItem;
     });
@@ -354,13 +324,8 @@ class ContentLoader {
     }
   }
 
-  /**
-   * Re-run IntersectionObserver on lazy images
-   */
   initLazyLoader() {
     const lazyImages = document.querySelectorAll('#gallery-grid img[data-src]');
-
-    // Create or reuse observer
     if (!window.lazyImageObserver) {
       window.lazyImageObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -373,40 +338,17 @@ class ContentLoader {
         });
       }, { rootMargin: '200px' });
     }
-
-    // Observe new lazy images
     lazyImages.forEach(img => {
-      if (img.dataset.src) {
-        window.lazyImageObserver.observe(img);
-      }
+      if (img.dataset.src) window.lazyImageObserver.observe(img);
     });
   }
 
-
-
-  /**
-   * Populate events section
-   */
   populateEvents() {
     const eventsGrid = document.querySelector('.events-grid');
-    
-    if (!eventsGrid || !this.data?.recentEvents) {
-      console.warn('Events grid or data not found');
-      return;
-    }
+    if (!eventsGrid || !(this.data && this.data.recentEvents)) return;
 
-    // Clear existing content
     eventsGrid.innerHTML = '';
-
-    // Create event items (reusing gallery item structure for consistency)
-    this.data.recentEvents.forEach((event, index) => {
-      // Use createGalleryItem styling/structure but appended to events grid
-      // We manually recreate it here to ensure specific event classes if needed
-      // or we can reuse createGalleryItem if we want identical behavior.
-      // User asked for "like Portfolio", so let's stick to the Project Card style 
-      // or the Gallery Item style. The HTML had .event-item structure.
-      // Let's use the .event-item structure but make it dynamic.
-      
+    this.data.recentEvents.forEach(event => {
       const item = document.createElement('div');
       item.className = 'event-item';
       
@@ -415,22 +357,10 @@ class ContentLoader {
       img.alt = event.alt || event.title;
       img.className = 'event-image';
       img.loading = 'lazy';
-      
-      // Maintain aspect ratio via CSS or style if variable
-      // The CSS has :nth-child rules for aspect ratios, but data has valid aspect ratios.
-      // We can override via style if needed, or let CSS handle it.
-      // Let's adhere to the data if provided.
-      if (event.aspectRatio) {
-        img.style.aspectRatio = event.aspectRatio;
-      }
-      
-      // Optional: Add overlay content like portfolio if desired?
-      // The original HTML structure for events was just image.
-      // "make same as a Recent Events like Portfolio" implies showing title/category.
-      // Let's add an overlay similar to gallery items.
+      if (event.aspectRatio) img.style.aspectRatio = event.aspectRatio;
       
       const overlay = document.createElement('div');
-      overlay.className = 'gallery-overlay'; // Reuse gallery overlay class
+      overlay.className = 'gallery-overlay';
       
       const title = document.createElement('h3');
       title.className = 'gallery-title';
@@ -442,83 +372,56 @@ class ContentLoader {
       
       overlay.appendChild(title);
       overlay.appendChild(category);
-      
       item.appendChild(img);
       item.appendChild(overlay);
-      
-      // Add click listener for lightbox if we want events to open there too
-      // We need to add it to the GalleryManager access if we do that.
-      // For now, let's just make it visual.
-      
       eventsGrid.appendChild(item);
     });
   }
 
-  /**
-   * Populate about section with social proof
-   */
   populateAbout() {
-    // Populate publications
-    const publicationsContainer = document.getElementById('publications');
-    if (publicationsContainer && this.data?.socialProof?.publications) {
-      publicationsContainer.innerHTML = '';
-      this.data.socialProof.publications.forEach(pub => {
-        const pubItem = document.createElement('span');
-        pubItem.className = 'publication-item';
-        pubItem.textContent = pub;
-        publicationsContainer.appendChild(pubItem);
-      });
-    }
+    const data = this.data;
+    if (!data || !data.socialProof) return;
 
-    // Populate awards
-    const awardsContainer = document.getElementById('awards');
-    if (awardsContainer && this.data?.socialProof?.awards) {
-      awardsContainer.innerHTML = '';
-      this.data.socialProof.awards.forEach(award => {
-        const awardItem = document.createElement('li');
-        awardItem.textContent = award;
-        awardsContainer.appendChild(awardItem);
-      });
-    }
+    const fill = (id, items, className) => {
+      const container = document.getElementById(id);
+      if (container && items) {
+        container.innerHTML = '';
+        items.forEach(text => {
+          const el = document.createElement(className === 'li' ? 'li' : 'span');
+          if (className !== 'li') el.className = className;
+          el.textContent = text;
+          container.appendChild(el);
+        });
+      }
+    };
 
-    // Populate clients
-    const clientsContainer = document.getElementById('clients');
-    if (clientsContainer && this.data?.socialProof?.clients) {
-      clientsContainer.innerHTML = '';
-      this.data.socialProof.clients.forEach(client => {
-        const clientItem = document.createElement('span');
-        clientItem.className = 'client-item';
-        clientItem.textContent = client;
-        clientsContainer.appendChild(clientItem);
-      });
-    }
-
+    fill('publications', data.socialProof.publications, 'publication-item');
+    fill('awards', data.socialProof.awards, 'li');
+    fill('clients', data.socialProof.clients, 'client-item');
   }
 
-  /**
-   * Handle errors
-   */
   handleError(error) {
     console.error('❌ Content loading error:', error);
-
-    // Show user-friendly error message
-    const errorMessage = document.createElement('div');
-    errorMessage.className = 'content-error';
-    errorMessage.innerHTML = `
-      <p>Unable to load portfolio content. Please try refreshing the page.</p>
-      <p class="error-details">${error.message}</p>
-    `;
-
-    // Try to insert error in gallery
-    const galleryGrid = document.getElementById('gallery-grid');
-    if (galleryGrid) {
-      galleryGrid.innerHTML = '';
-      galleryGrid.appendChild(errorMessage);
+    const grid = document.getElementById('gallery-grid') || document.getElementById('portfolio-inline-grid');
+    if (grid) {
+      grid.innerHTML = `<div class="content-error"><p>Unable to load content. Please refresh.</p><p class="error-details">${error.message}</p></div>`;
     }
   }
 }
 
-// Initialize content loader when DOM is ready
+ContentLoader.CATEGORY_NAMES = {
+  'weddings': 'Weddings',
+  'portraits': 'Portraits',
+  'commercial': 'Commercial',
+  'events': 'Events',
+  'maternity': 'Maternity',
+  'kids': 'Kids',
+  'haldi': 'Haldi',
+  'engagement': 'Engagement',
+  'pre-wedding-photos-and-videos': 'Pre-Wedding',
+  'cinematics': 'Cinematics'
+};
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     window.contentLoader = new ContentLoader();
