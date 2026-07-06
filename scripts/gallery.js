@@ -35,8 +35,18 @@ window.GalleryManager = {
   },
 
   initGalleryInteractions() {
-    const grid = document.getElementById('gallery-grid');
+    const grid = document.getElementById('gallery-grid') || document.getElementById('portfolio-inline-grid');
     if (!grid) return;
+
+    // Bind Load More button if it exists
+    const loadMoreBtn = document.getElementById('inline-load-more-btn');
+    if (loadMoreBtn) {
+      loadMoreBtn.onclick = () => {
+        if (window.contentLoader && window.contentLoader.loadMore) {
+          window.contentLoader.loadMore();
+        }
+      };
+    }
   },
 
   getVisibleData() {
