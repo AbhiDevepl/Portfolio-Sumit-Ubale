@@ -101,56 +101,59 @@ window.Core = {
     },
 
     bindEvents() {
+      const self = this;
       const { container } = this.state;
-      container.querySelector('.lightbox-close').onclick = () => this.close();
-      container.querySelector('.lightbox-overlay').onclick = () => this.close();
-      container.querySelector('.lightbox-prev').onclick = () => this.nav(-1);
-      container.querySelector('.lightbox-next').onclick = () => this.nav(1);
+      container.querySelector('.lightbox-close').onclick = function() { self.close(); };
+      container.querySelector('.lightbox-overlay').onclick = function() { self.close(); };
+      container.querySelector('.lightbox-prev').onclick = function() { self.nav(-1); };
+      container.querySelector('.lightbox-next').onclick = function() { self.nav(1); };
       this.bindTouch();
 
       // Video controls
       this.bindVideoControls();
 
-      document.addEventListener('keydown', (e) => {
-        if (!this.state.active) return;
-        if (e.key === 'Escape') this.close();
-        if (e.key === 'ArrowLeft') this.nav(-1);
-        if (e.key === 'ArrowRight') this.nav(1);
+      document.addEventListener('keydown', function(e) {
+        if (!self.state.active) return;
+        if (e.key === 'Escape') self.close();
+        if (e.key === 'ArrowLeft') self.nav(-1);
+        if (e.key === 'ArrowRight') self.nav(1);
         if (e.key === ' ') {
           e.preventDefault();
-          this.togglePlayPause();
+          self.togglePlayPause();
         }
       });
     },
 
     bindTouch() {
+      const self = this;
       const mediaContainer = this.state.container.querySelector('.lightbox-media-container');
       if (!mediaContainer) return;
 
-      mediaContainer.addEventListener('touchstart', (e) => {
-        if (!this.state.active || e.touches.length !== 1) return;
-        this.state.touchActive = true;
-        this.state.touchStartX = e.touches[0].clientX;
-        this.state.touchCurrentX = e.touches[0].clientX;
+      mediaContainer.addEventListener('touchstart', function(e) {
+        if (!self.state.active || e.touches.length !== 1) return;
+        self.state.touchActive = true;
+        self.state.touchStartX = e.touches[0].clientX;
+        self.state.touchCurrentX = e.touches[0].clientX;
       }, { passive: true });
 
-      mediaContainer.addEventListener('touchmove', (e) => {
-        if (!this.state.touchActive || e.touches.length !== 1) return;
-        this.state.touchCurrentX = e.touches[0].clientX;
+      mediaContainer.addEventListener('touchmove', function(e) {
+        if (!self.state.touchActive || e.touches.length !== 1) return;
+        self.state.touchCurrentX = e.touches[0].clientX;
       }, { passive: true });
 
-      mediaContainer.addEventListener('touchend', () => {
-        if (!this.state.touchActive) return;
+      mediaContainer.addEventListener('touchend', function() {
+        if (!self.state.touchActive) return;
 
-        const deltaX = this.state.touchCurrentX - this.state.touchStartX;
-        this.state.touchActive = false;
+        const deltaX = self.state.touchCurrentX - self.state.touchStartX;
+        self.state.touchActive = false;
 
         if (Math.abs(deltaX) < 48) return;
-        this.nav(deltaX < 0 ? 1 : -1);
+        self.nav(deltaX < 0 ? 1 : -1);
       });
     },
 
     bindVideoControls() {
+      const self = this;
       const { container } = this.state;
       const video = container.querySelector('.lightbox-video');
       const wrapper = container.querySelector('.lightbox-video-wrapper');
@@ -165,45 +168,45 @@ window.Core = {
       const fullscreenBtn = container.querySelector('.fullscreen-btn');
 
       // Play/Pause overlay (center button)
-      playPauseOverlay.onclick = () => this.togglePlayPause();
-      playPauseSmall.onclick = () => this.togglePlayPause();
+      playPauseOverlay.onclick = function() { self.togglePlayPause(); };
+      playPauseSmall.onclick = function() { self.togglePlayPause(); };
       
       // Click video to play/pause
-      video.onclick = () => this.togglePlayPause();
+      video.onclick = function() { self.togglePlayPause(); };
 
       // Progress bar
-      video.addEventListener('timeupdate', () => {
+      video.addEventListener('timeupdate', function() {
         const percent = (video.currentTime / video.duration) * 100;
         progress.value = percent;
-        progressFilled.style.width = `${percent}%`;
-        timeDisplay.textContent = `${this.formatTime(video.currentTime)} / ${this.formatTime(video.duration)}`;
+        progressFilled.style.width = percent + '%';
+        timeDisplay.textContent = self.formatTime(video.currentTime) + ' / ' + self.formatTime(video.duration);
       });
 
-      progress.addEventListener('input', (e) => {
+      progress.addEventListener('input', function(e) {
         const time = (e.target.value / 100) * video.duration;
         video.currentTime = time;
       });
 
       // Mute/Unmute
-      muteBtn.onclick = () => {
+      muteBtn.onclick = function() {
         video.muted = !video.muted;
-        this.updateMuteButton();
+        self.updateMuteButton();
       };
 
       // Volume
-      volumeSlider.addEventListener('input', (e) => {
+      volumeSlider.addEventListener('input', function(e) {
         video.volume = e.target.value / 100;
         video.muted = video.volume === 0;
-        this.updateMuteButton();
+        self.updateMuteButton();
       });
 
       // Playback speed
-      speedSelect.addEventListener('change', (e) => {
+      speedSelect.addEventListener('change', function(e) {
         video.playbackRate = parseFloat(e.target.value);
       });
 
       // Fullscreen
-      fullscreenBtn.onclick = () => {
+      fullscreenBtn.onclick = function() {
         if (wrapper.requestFullscreen) {
           wrapper.requestFullscreen();
         } else if (wrapper.webkitRequestFullscreen) {
@@ -214,15 +217,15 @@ window.Core = {
       };
 
       // Update play/pause icons
-      video.addEventListener('play', () => this.updatePlayPauseIcons(true));
-      video.addEventListener('pause', () => this.updatePlayPauseIcons(false));
+      video.addEventListener('play', function() { self.updatePlayPauseIcons(true); });
+      video.addEventListener('pause', function() { self.updatePlayPauseIcons(false); });
 
       // Show/hide controls
       let controlsTimeout;
-      const showControls = () => {
+      const showControls = function() {
         container.querySelector('.video-controls-bar').style.opacity = '1';
         clearTimeout(controlsTimeout);
-        controlsTimeout = setTimeout(() => {
+        controlsTimeout = setTimeout(function() {
           if (!video.paused) {
             container.querySelector('.video-controls-bar').style.opacity = '0';
           }
@@ -247,8 +250,8 @@ window.Core = {
       const playIcons = container.querySelectorAll('.play-icon, .play-icon-small');
       const pauseIcons = container.querySelectorAll('.pause-icon, .pause-icon-small');
       
-      playIcons.forEach(icon => icon.style.display = isPlaying ? 'none' : 'block');
-      pauseIcons.forEach(icon => icon.style.display = isPlaying ? 'block' : 'none');
+      playIcons.forEach(function(icon) { icon.style.display = isPlaying ? 'none' : 'block'; });
+      pauseIcons.forEach(function(icon) { icon.style.display = isPlaying ? 'block' : 'none'; });
       
       // Hide overlay controls when playing
       const overlay = container.querySelector('.video-overlay-controls');
@@ -270,7 +273,7 @@ window.Core = {
       if (isNaN(seconds)) return '0:00';
       const mins = Math.floor(seconds / 60);
       const secs = Math.floor(seconds % 60);
-      return `${mins}:${secs.toString().padStart(2, '0')}`;
+      return mins + ':' + secs.toString().padStart(2, '0');
     },
 
     open(index, items) {
@@ -281,20 +284,22 @@ window.Core = {
       
       this.state.container.style.display = 'flex';
       this.state.container.setAttribute('aria-hidden', 'false');
-      requestAnimationFrame(() => this.state.container.classList.add('active'));
+      const self = this;
+      requestAnimationFrame(function() { self.state.container.classList.add('active'); });
       document.body.classList.add('no-scroll');
       if (window.lenis) window.lenis.stop();
     },
 
     close() {
+      const self = this;
       this.state.active = false;
       this.state.container.classList.remove('active');
       this.state.container.setAttribute('aria-hidden', 'true');
       const video = this.state.container.querySelector('.lightbox-video');
       if (video) { video.pause(); video.src = ''; }
       
-      setTimeout(() => {
-        this.state.container.style.display = 'none';
+      setTimeout(function() {
+        self.state.container.style.display = 'none';
         document.body.classList.remove('no-scroll');
         if (window.lenis) window.lenis.start();
       }, 300);
@@ -326,6 +331,7 @@ window.Core = {
       const counterEl = this.state.container.querySelector('.lightbox-counter');
 
       const isVid = item.type === 'video';
+      const self = this;
       
       // Reset states
       imgEl.style.opacity = '0';
@@ -334,7 +340,7 @@ window.Core = {
       vidEl.pause();
 
       // Slight delay to allow transition visibility
-      requestAnimationFrame(() => {
+      requestAnimationFrame(function() {
         if (isVid) {
           loadingEl.style.display = 'flex';
           imgEl.style.display = 'none';
@@ -347,18 +353,16 @@ window.Core = {
           vidEl.controls = true;
           if (item.poster) vidEl.poster = item.poster;
 
-          // Event listeners with cleanup would be ideal, but for simplicity:
-          const onCanPlay = () => {
+          const onCanPlay = function() {
              loadingEl.style.display = 'none';
              vidWrapper.style.opacity = '1';
-             vidEl.play().catch(() => {});
+             vidEl.play().catch(function() {});
           };
           
           vidEl.oncanplay = onCanPlay;
-          // If already ready (cached)
           if (vidEl.readyState >= 3) onCanPlay();
 
-          vidEl.onerror = () => {
+          vidEl.onerror = function() {
              loadingEl.style.display = 'none';
              console.error('Error loading video');
           };
@@ -366,19 +370,19 @@ window.Core = {
         } else {
           vidWrapper.style.display = 'none';
           vidEl.pause();
-          vidEl.src = ''; // Unload video
+          vidEl.src = '';
           
           imgEl.style.display = 'block';
           imgEl.src = item.src;
           imgEl.alt = item.title || item.category || 'Gallery preview';
           
-          imgEl.onload = () => { imgEl.style.opacity = '1'; };
+          imgEl.onload = function() { imgEl.style.opacity = '1'; };
           if (imgEl.complete) imgEl.style.opacity = '1';
         }
         
         captionTitle.textContent = item.title || (isVid ? 'Video preview' : 'Image preview');
         captionCategory.textContent = item.category || '';
-        counterEl.textContent = `${this.state.currentIndex + 1} / ${this.state.items.length}`;
+        counterEl.textContent = (self.state.currentIndex + 1) + ' / ' + self.state.items.length;
       });
     }
   },
@@ -393,11 +397,10 @@ window.Core = {
     init() {
       if (this.observer) return;
       
-      this.observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
+      this.observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
           const video = entry.target;
           
-          // Lazy Load
           if (entry.isIntersecting) {
             if (video.dataset.src && !video.src) {
               video.src = video.dataset.src;
@@ -405,7 +408,6 @@ window.Core = {
             }
           }
           
-          // Auto Pause when out of view
           if (!entry.isIntersecting && !video.paused) {
             video.pause();
           }
@@ -429,32 +431,30 @@ window.Core = {
       const parent = videoElement.closest('.gallery-item');
       if (!parent) return;
       
-      // Register with Observer for lazy loading/auto-pause
-      if (window.Core.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
          window.Core.VideoObserver.observe(videoElement);
       }
 
-      const play = () => {
-        this.stopAllVideos(videoElement);
+      const self = this;
+      const play = function() {
+        self.stopAllVideos(videoElement);
         
         if (videoElement.dataset.src && !videoElement.src) {
           videoElement.src = videoElement.dataset.src;
         }
-        videoElement.play().catch(() => {});
+        videoElement.play().catch(function() {});
       };
 
-      const stop = () => {
+      const stop = function() {
         videoElement.pause();
         videoElement.currentTime = 0;
       };
       
-      // Touch/Click interaction
-      parent.addEventListener('click', (e) => {
+      parent.addEventListener('click', function(e) {
         if (e.target.closest('.gallery-overlay')) return;
         videoElement.paused ? play() : stop();
       });
       
-      // Desktop Hover
       const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
       if (!isTouch) {
           parent.addEventListener('mouseenter', play);
@@ -463,7 +463,7 @@ window.Core = {
     },
     
     stopAllVideos(currentVideo) {
-      document.querySelectorAll('video').forEach(video => {
+      document.querySelectorAll('video').forEach(function(video) {
         if (video !== currentVideo && !video.paused && !video.closest('#lightbox')) {
           video.pause();
         }
@@ -475,29 +475,30 @@ window.Core = {
    * MEDIA FACTORY
    */
   Media: {
-    createItem(image, index, allItems, categoryFormatter = null) {
+    createItem(image, index, allItems, categoryFormatter) {
       const item = document.createElement('article');
       const isVideo = image.type === 'video';
-      item.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'} reveal-item loading`;
+      item.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image') + ' reveal-item loading';
       item.dataset.index = index;
       if (image.category) item.dataset.category = image.category;
       if (image.order !== undefined) item.dataset.order = image.order;
       item.setAttribute('tabindex', '0');
       item.setAttribute('role', 'button');
-      item.setAttribute('aria-label', `${image.title || 'Open preview'}${image.category ? `, ${image.category}` : ''}`);
+      item.setAttribute('aria-label', (image.title || 'Open preview') + (image.category ? ', ' + image.category : ''));
 
-      const openFilteredLightbox = () => {
-        const fallbackItems = allItems.map((entry, entryIndex) => ({
-          ...entry,
-          originalIndex: entryIndex,
-          type: entry.type || 'image'
-        }));
+      const openFilteredLightbox = function() {
+        const fallbackItems = allItems.map(function(entry, entryIndex) {
+          return Object.assign({}, entry, {
+            originalIndex: entryIndex,
+            type: entry.type || 'image'
+          });
+        });
 
-        const visibleItems = window.GalleryManager?.getVisibleData?.() || fallbackItems;
-        const itemIndex = visibleItems.findIndex((entry) => entry.originalIndex === index);
+        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : fallbackItems;
+        const itemIndex = visibleItems.findIndex(function(entry) { return entry.originalIndex === index; });
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
-        if (window.Core?.Lightbox) {
+        if (window.Core && window.Core.Lightbox) {
           window.Core.Lightbox.open(targetIndex, visibleItems);
         }
       };
@@ -505,22 +506,20 @@ window.Core = {
       const media = document.createElement(isVideo ? 'video' : 'img');
       media.className = 'gallery-image';
       
-      // Add explicit opacity transition support
       media.style.opacity = '0';
       media.style.transition = 'opacity 0.6s ease-out';
 
       if (isVideo) {
         media.dataset.src = image.src;
-        media.removeAttribute('src'); // Ensure lazy load
-        media.preload = 'none'; // Requirement
+        media.removeAttribute('src');
+        media.preload = 'none';
         media.muted = true;
         media.loop = true;
         media.playsInline = true;
         
         if (image.poster) media.poster = image.poster;
         
-        // Show poster immediately as "loaded" state
-        requestAnimationFrame(() => {
+        requestAnimationFrame(function() {
           media.style.opacity = '1';
           item.classList.remove('loading');
         });
@@ -530,10 +529,10 @@ window.Core = {
         media.loading = 'lazy';
         media.alt = image.title || '';
         
-        media.onload = () => {
+        media.onload = function() {
            media.style.opacity = '1';
            item.classList.remove('loading');
-           media.classList.add('loaded'); // Keep class for CSS hooks
+           media.classList.add('loaded');
         };
         
         if (media.complete) {
@@ -564,29 +563,26 @@ window.Core = {
       const overlay = document.createElement('div');
       overlay.className = 'gallery-overlay';
       const displayCategory = categoryFormatter ? categoryFormatter(image.category) : (image.category || '');
-      overlay.innerHTML = `<h3 class="gallery-title">${image.title || ''}</h3><p class="gallery-category">${displayCategory}</p>`;
+      overlay.innerHTML = '<h3 class="gallery-title">' + (image.title || '') + '</h3><p class="gallery-category">' + displayCategory + '</p>';
       item.appendChild(overlay);
 
-      const openItem = (e) => {
-        if (!e.target.closest('video')) { // If not clicking video directly (which toggles play)
+      const openItem = function(e) {
+        if (!e.target.closest('video')) {
              openFilteredLightbox();
         }
       };
       
-      // For video items, we want custom behavior: 
-      // Clicking the video toggles play (handled in VideoHover).
-      // Clicking the OVERLAY opens lightbox.
       if (isVideo) {
           item.onclick = openItem;
-          overlay.onclick = (e) => {
-              e.stopPropagation(); // Stop video toggle
+          overlay.onclick = function(e) {
+              e.stopPropagation();
               openFilteredLightbox();
           };
       } else {
-           item.onclick = () => openFilteredLightbox();
+           item.onclick = function() { openFilteredLightbox(); };
       }
 
-      item.addEventListener('keydown', (e) => {
+      item.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           openFilteredLightbox();
@@ -603,17 +599,13 @@ window.Core = {
   DOM: {
     createFragment(items, renderer) {
       const fragment = document.createDocumentFragment();
-      items.forEach((item, idx) => {
+      items.forEach(function(item, idx) {
         const rendered = renderer(item, idx);
         if (rendered) fragment.appendChild(rendered);
       });
       return fragment;
     },
 
-    /**
-     * Injects shared nav and footer into sub-pages (gallery, albums, service).
-     * Called from page-specific loaders to avoid duplicating markup.
-     */
     injectGlobalComponents() {
       const nav = document.getElementById('main-nav');
       if (nav) {
