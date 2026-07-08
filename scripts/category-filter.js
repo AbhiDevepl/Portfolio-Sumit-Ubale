@@ -23,7 +23,9 @@ class CategoryFilter {
         { id: 'engagement', label: 'Engagement' },
         { id: 'haldi', label: 'Haldi' },
         { id: 'mehndi', label: 'Mehndi' },
-        { id: 'reception', label: 'Reception' }]};
+        { id: 'reception', label: 'Reception' },
+      ],
+    };
 
     this.activeCategory = this.options.initialCategory;
     this.chipRefs = {};
@@ -183,7 +185,8 @@ class CategoryFilter {
       chip.scrollIntoView({
         behavior: 'smooth',
         inline: 'center',
-        block: 'nearest'});
+        block: 'nearest',
+      });
     }
   }
 

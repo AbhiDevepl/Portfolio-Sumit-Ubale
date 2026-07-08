@@ -70,7 +70,8 @@
       editorial_olive: '#1C1C1B',
       editorial_rose: '#A3A199',
       editorial_gray: '#66645E',
-      editorial_light_gray: '#FBFBFA'}
+      editorial_light_gray: '#FBFBFA',
+    }
   };
 
   /**
@@ -118,7 +119,8 @@
     '--editorial-olive': Palette.legacy.editorial_olive,
     '--editorial-rose': Palette.legacy.editorial_rose,
     '--editorial-gray': Palette.legacy.editorial_gray,
-    '--editorial-light-gray': Palette.legacy.editorial_light_gray};
+    '--editorial-light-gray': Palette.legacy.editorial_light_gray,
+  };
 
   /**
    * Injects CSS variables into the :root
