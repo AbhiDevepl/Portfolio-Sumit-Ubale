@@ -30,7 +30,8 @@ window.GalleryManager = {
     });
     
     window.addEventListener('popstate', (e) => {
-      this.filterGallery(e.state?.category || 'all');
+      const category = (e.state && e.state.category) || 'all';
+      this.filterGallery(category);
     });
   },
 
@@ -40,22 +41,37 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    const all = this.allImages || window.contentLoader?.allImages || [];
-    return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(item => !item.classList.contains('is-hidden'))
+    const all = this.allImages || (window.contentLoader && window.contentLoader.allImages) || [];
+    const items = Array.from(document.querySelectorAll('.gallery-item'));
+    const visible = [];
+    for (let i = 0; i < items.length; i++) {
+      if (!items[i].classList.contains('is-hidden')) {
+        visible.push(items[i]);
+      }
+    }
+
+    return visible
       .map(item => {
         const idx = parseInt(item.dataset.index, 10);
         // Use cached data for O(1) metadata retrieval, avoiding expensive DOM queries
-        if (all[idx]) return { ...all[idx], originalIndex: idx };
+        if (all[idx]) {
+          const result = Object.assign({}, all[idx]);
+          result.originalIndex = idx;
+          return result;
+        }
 
         // Fallback if data is not yet loaded (should not happen after init)
         const media = item.querySelector('img, video');
+        const titleEl = item.querySelector('.gallery-title');
+        const catEl = item.querySelector('.gallery-category');
+        const videoEl = item.querySelector('video');
+
         return {
-          src: media?.src || media?.dataset?.src || '',
-          title: item.querySelector('.gallery-title')?.textContent,
-          category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
-          type: item.querySelector('video') ? 'video' : 'image',
-          poster: item.querySelector('video')?.poster || '',
+          src: (media && (media.src || media.dataset.src)) || '',
+          title: titleEl ? titleEl.textContent : '',
+          category: (catEl ? catEl.textContent : '') || item.dataset.category,
+          type: videoEl ? 'video' : 'image',
+          poster: videoEl ? videoEl.poster : '',
           originalIndex: idx
         };
       });
