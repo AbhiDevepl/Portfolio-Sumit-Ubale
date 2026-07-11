@@ -75,8 +75,18 @@ class ContentLoader {
     if (!this.mediaData) return [];
 
     if (category === 'all') {
-      // Flatten all category arrays
-      return Object.values(this.mediaData).flat();
+      // Flatten all category arrays manually for CI compatibility
+      const allItems = [];
+      const categories = Object.keys(this.mediaData);
+      for (let i = 0; i < categories.length; i++) {
+        const catItems = this.mediaData[categories[i]];
+        if (Array.isArray(catItems)) {
+          for (let j = 0; j < catItems.length; j++) {
+            allItems.push(catItems[j]);
+          }
+        }
+      }
+      return allItems;
     }
 
     return this.mediaData[category] || [];
