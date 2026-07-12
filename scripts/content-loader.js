@@ -395,7 +395,7 @@ class ContentLoader {
   populateEvents() {
     const eventsGrid = document.querySelector('.events-grid');
     
-    if (!eventsGrid || !this.data?.recentEvents) {
+    if (!eventsGrid || !(this.data && this.data.recentEvents)) {
       return;
     }
 
@@ -440,7 +440,7 @@ class ContentLoader {
    * Populate about section with social proof
    */
   populateAbout() {
-    if (!this.data?.socialProof) return;
+    if (!(this.data && this.data.socialProof)) return;
 
     const sections = {
       'publications': 'publications',
