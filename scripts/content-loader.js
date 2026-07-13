@@ -4,19 +4,20 @@
  */
 
 class ContentLoader {
+  static CATEGORY_NAMES = {
+    'weddings': 'Weddings',
+    'portraits': 'Portraits',
+    'commercial': 'Commercial',
+    'events': 'Events',
+    'maternity': 'Maternity',
+    'kids': 'Kids',
+    'haldi': 'Haldi',
+    'engagement': 'Engagement',
+    'pre-wedding-photos-and-videos': 'Pre-Wedding',
+    'cinematics': 'Cinematics'
+  };
+
   constructor() {
-    this.CATEGORY_NAMES = {
-      'weddings': 'Weddings',
-      'portraits': 'Portraits',
-      'commercial': 'Commercial',
-      'events': 'Events',
-      'maternity': 'Maternity',
-      'kids': 'Kids',
-      'haldi': 'Haldi',
-      'engagement': 'Engagement',
-      'pre-wedding-photos-and-videos': 'Pre-Wedding',
-      'cinematics': 'Cinematics'
-    };
     this.dataUrl = '/data/portfolio.json';
     this.data = null;
     this.allImages = []; // Cache for processed items
@@ -51,7 +52,7 @@ class ContentLoader {
       const response = await fetch(this.dataUrl);
 
       if (!response.ok) {
-        throw new Error('HTTP error! status: ' + response.status);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       this.data = await response.json();
@@ -59,7 +60,7 @@ class ContentLoader {
       this.mediaData = this.data.portfolio.images;
       return this.data;
     } catch (error) {
-      throw new Error('Failed to load portfolio data: ' + error.message);
+      throw new Error(`Failed to load portfolio data: ${error.message}`);
     }
   }
 
@@ -75,8 +76,8 @@ class ContentLoader {
    * Helper to get category name from slug
    */
   getCategoryName(category) {
-    return this.CATEGORY_NAMES[category] || category;
-  }
+    return ContentLoader.CATEGORY_NAMES[category] || category;
+  },
 
   /**
    * Get images for a category
@@ -87,20 +88,12 @@ class ContentLoader {
     if (!this.mediaData) return [];
 
     if (category === 'all') {
-      // Flatten all category arrays manually for CI compatibility
-      const allItems = [];
-      const self = this;
-      Object.keys(this.mediaData).forEach(function(cat) {
-        const items = self.mediaData[cat];
-        if (Array.isArray(items)) {
-          Array.prototype.push.apply(allItems, items);
-        }
-      });
-      return allItems;
+      // Flatten all category arrays
+      return Object.values(this.mediaData).flat();
     }
 
     return this.mediaData[category] || [];
-  }
+  },
 
   /**
    * Render gallery items for a category
@@ -127,20 +120,20 @@ class ContentLoader {
     items.forEach((item, index) => {
       const isVideo = item.type === 'video';
       const el = document.createElement('article');
-      el.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image') + ' reveal-item loading';
+      el.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'} reveal-item loading`;
       el.dataset.index = index;
       el.dataset.category = category === 'all' ? (item.category || 'uncategorized') : category;
       el.setAttribute('tabindex', '0');
       el.setAttribute('role', 'button');
-      el.setAttribute('aria-label', (item.title || 'Open preview') + (item.category ? ', ' + item.category : ''));
+      el.setAttribute('aria-label', `${item.title || 'Open preview'}${item.category ? ', ' + item.category : ''}`);
 
       // Click handler for lightbox
       el.addEventListener('click', () => {
-        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : items;
+        const visibleItems = window.GalleryManager?.getVisibleData?.() || items;
         const itemIndex = visibleItems.findIndex(entry => entry.originalIndex === index);
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
-        if (window.Core && window.Core.Lightbox) {
+        if (window.Core?.Lightbox) {
           window.Core.Lightbox.open(targetIndex, visibleItems);
         }
       });
@@ -195,15 +188,11 @@ class ContentLoader {
     this.initLazyLoader();
 
     // Update allImages cache for lightbox (with original index for lightbox navigation)
-    this.allImages = items.map((item, idx) => {
-        const newItem = Object.assign({}, item);
-        newItem.originalIndex = idx;
-        return newItem;
-    });
+    this.allImages = items.map((item, idx) => ({ ...item, originalIndex: idx }));
     if (window.GalleryManager) {
       window.GalleryManager.allImages = this.allImages;
     }
-  }
+  },
 
   /**
    * Re-run IntersectionObserver on lazy images
@@ -241,7 +230,7 @@ class ContentLoader {
   populateEvents() {
     const eventsGrid = document.querySelector('.events-grid');
     
-    if (!eventsGrid || !this.data || !this.data.recentEvents) {
+    if (!eventsGrid || !this.data?.recentEvents) {
       console.warn('Events grid or data not found');
       return;
     }
@@ -250,7 +239,14 @@ class ContentLoader {
     eventsGrid.innerHTML = '';
 
     // Create event items (reusing gallery item structure for consistency)
-    this.data.recentEvents.forEach((event) => {
+    this.data.recentEvents.forEach((event, index) => {
+      // Use createGalleryItem styling/structure but appended to events grid
+      // We manually recreate it here to ensure specific event classes if needed
+      // or we can reuse createGalleryItem if we want identical behavior.
+      // User asked for "like Portfolio", so let's stick to the Project Card style
+      // or the Gallery Item style. The HTML had .event-item structure.
+      // Let's use the .event-item structure but make it dynamic.
+
       const item = document.createElement('div');
       item.className = 'event-item';
       
@@ -260,10 +256,19 @@ class ContentLoader {
       img.className = 'event-image';
       img.loading = 'lazy';
       
+      // Maintain aspect ratio via CSS or style if variable
+      // The CSS has :nth-child rules for aspect ratios, but data has valid aspect ratios.
+      // We can override via style if needed, or let CSS handle it.
+      // Let's adhere to the data if provided.
       if (event.aspectRatio) {
         img.style.aspectRatio = event.aspectRatio;
       }
       
+      // Optional: Add overlay content like portfolio if desired?
+      // The original HTML structure for events was just image.
+      // "make same as a Recent Events like Portfolio" implies showing title/category.
+      // Let's add an overlay similar to gallery items.
+
       const overlay = document.createElement('div');
       overlay.className = 'gallery-overlay'; // Reuse gallery overlay class
       
@@ -281,6 +286,10 @@ class ContentLoader {
       item.appendChild(img);
       item.appendChild(overlay);
       
+      // Add click listener for lightbox if we want events to open there too
+      // We need to add it to the GalleryManager access if we do that.
+      // For now, let's just make it visual.
+
       eventsGrid.appendChild(item);
     });
   }
@@ -289,14 +298,11 @@ class ContentLoader {
    * Populate about section with social proof
    */
   populateAbout() {
-    const socialProof = this.data ? this.data.socialProof : null;
-    if (!socialProof) return;
-
     // Populate publications
     const publicationsContainer = document.getElementById('publications');
-    if (publicationsContainer && socialProof.publications) {
+    if (publicationsContainer && this.data?.socialProof?.publications) {
       publicationsContainer.innerHTML = '';
-      socialProof.publications.forEach(pub => {
+      this.data.socialProof.publications.forEach(pub => {
         const pubItem = document.createElement('span');
         pubItem.className = 'publication-item';
         pubItem.textContent = pub;
@@ -306,9 +312,9 @@ class ContentLoader {
 
     // Populate awards
     const awardsContainer = document.getElementById('awards');
-    if (awardsContainer && socialProof.awards) {
+    if (awardsContainer && this.data?.socialProof?.awards) {
       awardsContainer.innerHTML = '';
-      socialProof.awards.forEach(award => {
+      this.data.socialProof.awards.forEach(award => {
         const awardItem = document.createElement('li');
         awardItem.textContent = award;
         awardsContainer.appendChild(awardItem);
@@ -317,9 +323,9 @@ class ContentLoader {
 
     // Populate clients
     const clientsContainer = document.getElementById('clients');
-    if (clientsContainer && socialProof.clients) {
+    if (clientsContainer && this.data?.socialProof?.clients) {
       clientsContainer.innerHTML = '';
-      socialProof.clients.forEach(client => {
+      this.data.socialProof.clients.forEach(client => {
         const clientItem = document.createElement('span');
         clientItem.className = 'client-item';
         clientItem.textContent = client;
@@ -338,7 +344,10 @@ class ContentLoader {
     // Show user-friendly error message
     const errorMessage = document.createElement('div');
     errorMessage.className = 'content-error';
-    errorMessage.innerHTML = '<p>Unable to load portfolio content. Please try refreshing the page.</p><p class="error-details">' + error.message + '</p>';
+    errorMessage.innerHTML = `
+      <p>Unable to load portfolio content. Please try refreshing the page.</p>
+      <p class="error-details">${error.message}</p>
+    `;
 
     // Try to insert error in gallery
     const galleryGrid = document.getElementById('gallery-grid');
