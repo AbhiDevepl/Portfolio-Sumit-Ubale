@@ -51,7 +51,7 @@ class ContentLoader {
       const response = await fetch(this.dataUrl);
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error('HTTP error! status: ' + response.status);
       }
 
       this.data = await response.json();
@@ -59,7 +59,7 @@ class ContentLoader {
       this.mediaData = this.data.portfolio.images;
       return this.data;
     } catch (error) {
-      throw new Error(`Failed to load portfolio data: ${error.message}`);
+      throw new Error('Failed to load portfolio data: ' + error.message);
     }
   }
 
