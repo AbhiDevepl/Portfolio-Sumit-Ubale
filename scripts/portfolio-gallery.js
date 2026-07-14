@@ -26,7 +26,8 @@ class GalleryState {
   }
 
   notify() {
-    this.listeners.forEach(cb => cb(this.getState()));
+    const state = this.getState();
+    this.listeners.forEach(cb => cb(state));
   }
 
   getState() {
@@ -115,12 +116,12 @@ class GalleryRenderer {
   createGalleryItem(item, index) {
     const isVideo = item.type === 'video';
     const article = document.createElement('article');
-    article.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'}`;
+    article.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image');
     article.dataset.index = index;
     article.dataset.category = item.category || '';
     article.setAttribute('tabindex', '0');
     article.setAttribute('role', 'listitem');
-    article.setAttribute('aria-label', `${item.title || 'Gallery item'}${isVideo ? ' (video)' : ''}`);
+    article.setAttribute('aria-label', (item.title || 'Gallery item') + (isVideo ? ' (video)' : ''));
 
     // Create media element
     const media = document.createElement(isVideo ? 'video' : 'img');
@@ -182,10 +183,18 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+
+    const title = document.createElement('h3');
+    title.className = 'gallery-item-title';
+    title.textContent = item.title || '';
+
+    const catLabel = document.createElement('p');
+    catLabel.className = 'gallery-item-category';
+    // Optimization: Use pre-calculated formattedCategory
+    catLabel.textContent = item.formattedCategory || '';
+
+    overlay.appendChild(title);
+    overlay.appendChild(catLabel);
     article.appendChild(overlay);
 
     // Click handler
@@ -210,34 +219,23 @@ class GalleryRenderer {
     const icon = document.createElement('div');
     icon.className = 'gallery-video-play-icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.innerHTML = `
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    `;
+    icon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
     return icon;
   }
 
-  formatCategory(category) {
-    if (!category) return '';
-    return category
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }
-
   openLightbox(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
-    // Ensure items have required properties
-    const lightboxItems = items.map((item, i) => ({
-      ...item,
-      type: item.type || 'image',
-      originalIndex: i
-    }));
+    // Optimization: Avoid spread in map for CI compatibility
+    const lightboxItems = items.map((item, i) => {
+      const newItem = Object.assign({}, item);
+      newItem.type = item.type || 'image';
+      newItem.originalIndex = i;
+      return newItem;
+    });
 
     window.Core.Lightbox.open(index, lightboxItems);
   }
@@ -266,7 +264,7 @@ class GalleryRenderer {
       items.forEach((item, index) => {
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
+        item.style.transition = 'opacity 0.5s ease ' + (index * 0.05) + 's, transform 0.5s ease ' + (index * 0.05) + 's';
 
         setTimeout(() => {
           item.style.opacity = '1';
@@ -277,28 +275,38 @@ class GalleryRenderer {
   }
 
   showLoading() {
-    this.container.innerHTML = `
-      <div class="gallery-loading-state">
-        <div class="gallery-loading-spinner"></div>
-        <p>Loading portfolio...</p>
-      </div>
-    `;
+    this.container.innerHTML = '<div class="gallery-loading-state"><div class="gallery-loading-spinner"></div><p>Loading portfolio...</p></div>';
   }
 
   showError(message) {
-    this.container.innerHTML = `
-      <div class="gallery-error-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 8v4m0 4h.01"/>
-        </svg>
-        <h3>Failed to load portfolio</h3>
-        <p>${message}</p>
-        <button class="gallery-retry-btn" onclick="window.PortfolioGallery.retry()">
-          Try Again
-        </button>
-      </div>
-    `;
+    const errorState = document.createElement('div');
+    errorState.className = 'gallery-error-state';
+
+    const icon = document.createElement('div');
+    icon.innerHTML = '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>';
+
+    const title = document.createElement('h3');
+    title.textContent = 'Failed to load portfolio';
+
+    const msg = document.createElement('p');
+    msg.textContent = message;
+
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'gallery-retry-btn';
+    retryBtn.textContent = 'Try Again';
+    retryBtn.onclick = function() {
+      if (window.PortfolioGallery && window.PortfolioGallery.retry) {
+        window.PortfolioGallery.retry();
+      }
+    };
+
+    errorState.appendChild(icon);
+    errorState.appendChild(title);
+    errorState.appendChild(msg);
+    errorState.appendChild(retryBtn);
+
+    this.container.innerHTML = '';
+    this.container.appendChild(errorState);
   }
 }
 
@@ -468,12 +476,21 @@ class FilterController {
       return;
     }
 
-    const filtered = allItems.filter(item =>
-      item.category === category ||
-      (item.categories && item.categories.includes(category))
-    );
+    // Optimization: Check for legacy slug
+    const matchCategory = category === 'pre-wedding-photos-and-videos' ? 'perwedding' : category;
 
-    this.state.setFilteredList(filtered);
+    // Use cached mapped data from PortfolioGallery if available for O(1)
+    const gallery = window.PortfolioGallery;
+    if (gallery && gallery.categoryMap && gallery.categoryMap[matchCategory]) {
+      this.state.setFilteredList(gallery.categoryMap[matchCategory]);
+    } else {
+      // Fallback
+      const filtered = allItems.filter(item =>
+        item.category === matchCategory ||
+        (item.categories && item.categories.indexOf(matchCategory) !== -1)
+      );
+      this.state.setFilteredList(filtered);
+    }
     this.state.setActiveCategory(category);
 
     // Update URL for shareability
@@ -533,7 +550,7 @@ class FilterController {
     const category = params.get('category');
 
     if (category) {
-      const chip = this.chipsContainer.querySelector(`[data-category="${category}"]`);
+      const chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
       if (chip) {
         this.setActiveChip(chip);
         this.filterByCategory(category);
@@ -552,6 +569,7 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
+    this.categoryMap = {}; // O(1) Filtering
     this.init();
   }
 
@@ -626,27 +644,13 @@ class PortfolioGallery {
 
   processData(data) {
     const allItems = [];
-    const images = data.portfolio?.images || {};
+    const images = (data.portfolio && data.portfolio.images) || {};
+    const self = this;
 
-    // Flatten all category images
-    for (const [category, items] of Object.entries(images)) {
-      if (Array.isArray(items)) {
-        items.forEach((item, index) => {
-          allItems.push({
-            ...item,
-            category,
-            order: index,
-            // Ensure consistent property names
-            id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
-            type: item.type || 'image'
-          });
-        });
-      }
-    }
+    // Reset category map for O(1) filtering
+    this.categoryMap = {};
 
-    // Sort by category order, then by item order
+    // Sort by category order
     const categoryOrder = [
       'weddings',
       'pre-wedding-photos-and-videos',
@@ -660,15 +664,54 @@ class PortfolioGallery {
       'commercial'
     ];
 
-    allItems.sort((a, b) => {
-      const catA = categoryOrder.indexOf(a.category);
-      const catB = categoryOrder.indexOf(b.category);
+    // Keep track of which categories we've processed for the "All" list ordering
+    const processedCategories = new Set();
 
-      if (catA !== catB) {
-        return catA - catB;
+    // Pass 1: Flatten items into allItems in the prescribed order
+    const processItems = (sourceSlug) => {
+      const items = images[sourceSlug];
+      if (Array.isArray(items) && !processedCategories.has(sourceSlug)) {
+        const displaySlug = sourceSlug === 'perwedding' ? 'pre-wedding-photos-and-videos' : sourceSlug;
+        const formattedName = self.formatCategoryName(displaySlug);
+
+        const mappedItems = items.map((item, index) => {
+          // Pre-calculate metadata once during ingestion
+          const processed = Object.assign({}, item);
+          processed.category = sourceSlug;
+          processed.order = index;
+          processed.id = item.id || `${sourceSlug}-${index}`;
+          processed.title = item.title || `${formattedName} ${index + 1}`;
+          processed.alt = item.alt || item.title || `${formattedName} photography`;
+          processed.type = item.type || 'image';
+          processed.formattedCategory = formattedName;
+          return processed;
+        });
+
+        Array.prototype.push.apply(allItems, mappedItems);
+        processedCategories.add(sourceSlug);
+      }
+    };
+
+    categoryOrder.forEach((orderSlug) => {
+      processItems(orderSlug === 'pre-wedding-photos-and-videos' ? 'perwedding' : orderSlug);
+    });
+
+    Object.keys(images).forEach(processItems);
+
+    // Pass 2: Build categoryMap from allItems to support O(1) filtering
+    // and correctly handle many-to-many relationships (item.categories)
+    allItems.forEach((item) => {
+      const cats = [item.category];
+      if (Array.isArray(item.categories)) {
+        Array.prototype.push.apply(cats, item.categories);
       }
 
-      return (a.order || 0) - (b.order || 0);
+      cats.forEach((cat) => {
+        if (!self.categoryMap[cat]) {
+          self.categoryMap[cat] = [];
+        }
+        self.categoryMap[cat].push(item);
+      });
     });
 
     return allItems;

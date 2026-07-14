@@ -243,10 +243,10 @@ class ContentLoader {
       // Use createGalleryItem styling/structure but appended to events grid
       // We manually recreate it here to ensure specific event classes if needed
       // or we can reuse createGalleryItem if we want identical behavior.
-      // User asked for "like Portfolio", so let's stick to the Project Card style 
+      // User asked for "like Portfolio", so let's stick to the Project Card style
       // or the Gallery Item style. The HTML had .event-item structure.
       // Let's use the .event-item structure but make it dynamic.
-      
+
       const item = document.createElement('div');
       item.className = 'event-item';
       
@@ -268,7 +268,7 @@ class ContentLoader {
       // The original HTML structure for events was just image.
       // "make same as a Recent Events like Portfolio" implies showing title/category.
       // Let's add an overlay similar to gallery items.
-      
+
       const overlay = document.createElement('div');
       overlay.className = 'gallery-overlay'; // Reuse gallery overlay class
       
@@ -289,7 +289,7 @@ class ContentLoader {
       // Add click listener for lightbox if we want events to open there too
       // We need to add it to the GalleryManager access if we do that.
       // For now, let's just make it visual.
-      
+
       eventsGrid.appendChild(item);
     });
   }
