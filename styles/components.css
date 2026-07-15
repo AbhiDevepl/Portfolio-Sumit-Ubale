@@ -1153,3 +1153,41 @@
     display: none; /* Hide tooltip on mobile to avoid clutter */
   }
 }
+
+/* ========================================
+   Portfolio Inline Grid (Homepage)
+   ======================================== */
+#portfolio-inline-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0;
+  align-items: start;
+  justify-content: center;
+  justify-items: center;
+}
+
+#portfolio-inline-grid.cinematics-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+#portfolio-inline-grid.cinematics-mode .gallery-item {
+  width: min(100%, 860px);
+  aspect-ratio: 16 / 9;
+}
+
+.gallery-item[data-type="image"] {
+  aspect-ratio: 4 / 5;
+}
+
+.gallery-item[data-type="video"] {
+  aspect-ratio: 16 / 9;
+}
+
+.portfolio-more {
+  text-align: center;
+  margin-top: 2rem;
+}
