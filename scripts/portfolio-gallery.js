@@ -1,14 +1,3 @@
-/**
- * PORTFOLIO GALLERY SYSTEM
- * Premium, mobile-first gallery with advanced state management
- * and Instagram-like media viewer experience
- *
- * Integrates with existing Core.Lightbox, Core.VideoHover, and Core.VideoObserver
- */
-
-// ========================================
-// GALLERY STATE MANAGEMENT
-// ========================================
 class GalleryState {
   constructor() {
     this.currentIndex = 0;
@@ -22,12 +11,13 @@ class GalleryState {
 
   subscribe(callback) {
     this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
+    var self = this;
+    return function() { self.listeners.delete(callback); };
   }
 
   notify() {
-    const state = this.getState();
-    this.listeners.forEach(cb => cb(state));
+    var state = this.getState();
+    this.listeners.forEach(function(cb) { cb(state); });
   }
 
   getState() {
@@ -74,9 +64,6 @@ class GalleryState {
   }
 }
 
-// ========================================
-// GALLERY RENDERER
-// ========================================
 class GalleryRenderer {
   constructor(state, container) {
     this.state = state;
@@ -85,37 +72,37 @@ class GalleryRenderer {
   }
 
   render(items, category) {
-    // Cancel pending animation frame
+    var self = this;
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
     }
 
-    this.animationFrame = requestAnimationFrame(() => {
-      this._renderSync(items, category);
+    this.animationFrame = requestAnimationFrame(function() {
+      self._renderSync(items, category);
     });
   }
 
   _renderSync(items, category) {
-    const fragment = document.createDocumentFragment();
+    var self = this;
+    var fragment = document.createDocumentFragment();
 
-    items.forEach((item, index) => {
-      const element = this.createGalleryItem(item, index);
+    items.forEach(function(item, index) {
+      var element = self.createGalleryItem(item, index);
       if (element) {
         fragment.appendChild(element);
       }
     });
 
-    // Clear container and append new items
     this.container.innerHTML = '';
     this.container.appendChild(fragment);
 
-    // Trigger reveal animations
     this.triggerRevealAnimations();
   }
 
   createGalleryItem(item, index) {
-    const isVideo = item.type === 'video';
-    const article = document.createElement('article');
+    var self = this;
+    var isVideo = item.type === 'video';
+    var article = document.createElement('article');
     article.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image');
     article.dataset.index = index;
     article.dataset.category = item.category || '';
@@ -123,8 +110,7 @@ class GalleryRenderer {
     article.setAttribute('role', 'listitem');
     article.setAttribute('aria-label', (item.title || 'Gallery item') + (isVideo ? ' (video)' : ''));
 
-    // Create media element
-    const media = document.createElement(isVideo ? 'video' : 'img');
+    var media = document.createElement(isVideo ? 'video' : 'img');
     media.className = 'gallery-media';
     media.style.opacity = '0';
     media.style.transition = 'opacity 0.6s ease-out';
@@ -137,13 +123,11 @@ class GalleryRenderer {
       media.playsInline = true;
       if (item.poster) media.poster = item.poster;
 
-      // Show when metadata loaded
-      media.addEventListener('loadedmetadata', () => {
+      media.addEventListener('loadedmetadata', function() {
         media.style.opacity = '1';
         article.classList.remove('loading');
       }, { once: true });
 
-      // Register with VideoObserver for lazy loading
       if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
@@ -154,7 +138,7 @@ class GalleryRenderer {
       media.alt = item.alt || item.title || 'Portfolio image';
       media.decoding = 'async';
 
-      media.addEventListener('load', () => {
+      media.addEventListener('load', function() {
         media.style.opacity = '1';
         article.classList.remove('loading');
         article.classList.add('loaded');
@@ -169,46 +153,39 @@ class GalleryRenderer {
 
     article.appendChild(media);
 
-    // Video play icon overlay
     if (isVideo) {
-      const playIcon = this.createPlayIcon();
+      var playIcon = this.createPlayIcon();
       article.appendChild(playIcon);
 
-      // Initialize video hover behavior
       if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
 
-    // Overlay with title/category
-    const overlay = document.createElement('div');
+    var overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
 
-    const title = document.createElement('h3');
+    var title = document.createElement('h3');
     title.className = 'gallery-item-title';
     title.textContent = item.title || '';
 
-    const catLabel = document.createElement('p');
+    var catLabel = document.createElement('p');
     catLabel.className = 'gallery-item-category';
-    // Optimization: Use pre-calculated formattedCategory
     catLabel.textContent = item.formattedCategory || '';
 
     overlay.appendChild(title);
     overlay.appendChild(catLabel);
     article.appendChild(overlay);
 
-    // Click handler
-    article.addEventListener('click', (e) => {
-      // If clicking video directly, let VideoHover handle play/pause
+    article.addEventListener('click', function(e) {
       if (e.target.closest('video') && e.target !== media) return;
-      this.openLightbox(index);
+      self.openLightbox(index);
     });
 
-    // Keyboard handler
-    article.addEventListener('keydown', (e) => {
+    article.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        this.openLightbox(index);
+        self.openLightbox(index);
       }
     });
 
@@ -216,7 +193,7 @@ class GalleryRenderer {
   }
 
   createPlayIcon() {
-    const icon = document.createElement('div');
+    var icon = document.createElement('div');
     icon.className = 'gallery-video-play-icon';
     icon.setAttribute('aria-hidden', 'true');
     icon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>';
@@ -226,12 +203,11 @@ class GalleryRenderer {
   openLightbox(index) {
     if (!window.Core || !window.Core.Lightbox) return;
 
-    const state = this.state.getState();
-    const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
+    var state = this.state.getState();
+    var items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
 
-    // Optimization: Avoid spread in map for CI compatibility
-    const lightboxItems = items.map((item, i) => {
-      const newItem = Object.assign({}, item);
+    var lightboxItems = items.map(function(item, i) {
+      var newItem = Object.assign({}, item);
       newItem.type = item.type || 'image';
       newItem.originalIndex = i;
       return newItem;
@@ -241,11 +217,8 @@ class GalleryRenderer {
   }
 
   triggerRevealAnimations() {
-    const items = this.container.querySelectorAll('.gallery-item');
-
     if (window.GSAP && window.ScrollTrigger) {
-      // Use GSAP if available
-      window.GSAP.fromTo(items,
+      window.GSAP.fromTo(this.container.querySelectorAll('.gallery-item'),
         { opacity: 0, y: 40 },
         {
           opacity: 1,
@@ -260,38 +233,40 @@ class GalleryRenderer {
         }
       );
     } else {
-      // Fallback to CSS animations
-      items.forEach((item, index) => {
-        item.style.opacity = '0';
-        item.style.transform = 'translateY(20px)';
-        item.style.transition = 'opacity 0.5s ease ' + (index * 0.05) + 's, transform 0.5s ease ' + (index * 0.05) + 's';
+      var items = this.container.querySelectorAll('.gallery-item');
+      for (var i = 0; i < items.length; i++) {
+        (function(item, idx) {
+          item.style.opacity = '0';
+          item.style.transform = 'translateY(20px)';
+          item.style.transition = 'opacity 0.5s ease ' + (idx * 0.05) + 's, transform 0.5s ease ' + (idx * 0.05) + 's';
 
-        setTimeout(() => {
-          item.style.opacity = '1';
-          item.style.transform = 'translateY(0)';
-        }, 50);
-      });
+          setTimeout(function() {
+            item.style.opacity = '1';
+            item.style.transform = 'translateY(0)';
+          }, 50);
+        })(items[i], i);
+      }
     }
   }
 
   showLoading() {
-    this.container.innerHTML = '<div class="gallery-loading-state"><div class="gallery-loading-spinner"></div><p>Loading portfolio...</p></div>';
+    this.container.innerHTML = '<div class="gallery-loading-state"><div class="gallery-loading-spinner"></div><p>Loading portfolio</p></div>';
   }
 
   showError(message) {
-    const errorState = document.createElement('div');
+    var errorState = document.createElement('div');
     errorState.className = 'gallery-error-state';
 
-    const icon = document.createElement('div');
+    var icon = document.createElement('div');
     icon.innerHTML = '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>';
 
-    const title = document.createElement('h3');
+    var title = document.createElement('h3');
     title.textContent = 'Failed to load portfolio';
 
-    const msg = document.createElement('p');
+    var msg = document.createElement('p');
     msg.textContent = message;
 
-    const retryBtn = document.createElement('button');
+    var retryBtn = document.createElement('button');
     retryBtn.className = 'gallery-retry-btn';
     retryBtn.textContent = 'Try Again';
     retryBtn.onclick = function() {
@@ -310,120 +285,100 @@ class GalleryRenderer {
   }
 }
 
-// ========================================
-// MODAL VIEWER (Enhanced)
-// ========================================
 class ModalViewer {
   constructor(state) {
     this.state = state;
     this.isOpen = false;
     this.touchStartX = 0;
     this.touchCurrentX = 0;
-    this.touchThreshold = 48; // Minimum swipe distance
+    this.touchThreshold = 48;
     this.navigationDebounce = false;
-    this.debounceDelay = 150; // ms
+    this.debounceDelay = 150;
   }
 
   init() {
-    // Initialize Core.Lightbox if not already done
     if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
-
-    // Enhance with additional gesture support
     this.bindEnhancedGestures();
   }
 
   bindEnhancedGestures() {
-    const lightbox = document.getElementById('lightbox');
+    var self = this;
+    var lightbox = document.getElementById('lightbox');
     if (!lightbox) return;
 
-    const mediaContainer = lightbox.querySelector('.lightbox-media-container');
+    var mediaContainer = lightbox.querySelector('.lightbox-media-container');
     if (!mediaContainer) return;
 
-    // Enhanced touch handling
-    mediaContainer.addEventListener('touchstart', (e) => {
+    mediaContainer.addEventListener('touchstart', function(e) {
       if (e.touches.length !== 1) return;
-      this.touchStartX = e.touches[0].clientX;
-      this.touchCurrentX = e.touches[0].clientX;
+      self.touchStartX = e.touches[0].clientX;
+      self.touchCurrentX = e.touches[0].clientX;
     }, { passive: true });
 
-    mediaContainer.addEventListener('touchmove', (e) => {
+    mediaContainer.addEventListener('touchmove', function(e) {
       if (e.touches.length !== 1) return;
-      this.touchCurrentX = e.touches[0].clientX;
+      self.touchCurrentX = e.touches[0].clientX;
     }, { passive: true });
 
-    mediaContainer.addEventListener('touchend', () => {
-      const deltaX = this.touchCurrentX - this.touchStartX;
+    mediaContainer.addEventListener('touchend', function() {
+      var deltaX = self.touchCurrentX - self.touchStartX;
+      if (Math.abs(deltaX) < self.touchThreshold) return;
+      if (self.navigationDebounce) return;
 
-      if (Math.abs(deltaX) < this.touchThreshold) return;
+      self.navigationDebounce = true;
+      setTimeout(function() {
+        self.navigationDebounce = false;
+      }, self.debounceDelay);
 
-      // Debounce navigation
-      if (this.navigationDebounce) return;
-
-      this.navigationDebounce = true;
-      setTimeout(() => {
-        this.navigationDebounce = false;
-      }, this.debounceDelay);
-
-      // Swipe left (deltaX < 0) = next, Swipe right (deltaX > 0) = previous
-      if (deltaX < -this.touchThreshold) {
-        this.navigate(1);
-      } else if (deltaX > this.touchThreshold) {
-        this.navigate(-1);
+      if (deltaX < -self.touchThreshold) {
+        self.navigate(1);
+      } else if (deltaX > self.touchThreshold) {
+        self.navigate(-1);
       }
     });
   }
 
   navigate(direction) {
+    var self = this;
     if (!window.Core || !window.Core.Lightbox) return;
-
-    // Debounce rapid navigation
     if (this.navigationDebounce) return;
 
     this.navigationDebounce = true;
-    setTimeout(() => {
-      this.navigationDebounce = false;
+    setTimeout(function() {
+      self.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const gallery = window.PortfolioGallery;
-    const state = (gallery && gallery.state) ? gallery.state.getState() : null;
+    var gallery = window.PortfolioGallery;
+    var state = (gallery && gallery.state) ? gallery.state.getState() : null;
     if (!state) return;
 
-    const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
-    const len = items.length;
-
+    var items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
+    var len = items.length;
     if (len === 0) return;
 
-    const currentIndex = window.Core.Lightbox.state.currentIndex;
-    const newIndex = (currentIndex + direction + len) % len;
-
+    var currentIndex = window.Core.Lightbox.state.currentIndex;
+    var newIndex = (currentIndex + direction + len) % len;
     window.Core.Lightbox.open(newIndex, items);
   }
 
   open(index) {
     if (!window.Core || !window.Core.Lightbox) return;
-
-    const state = this.state.getState();
-    const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
-
+    var state = this.state.getState();
+    var items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
     if (items.length === 0) return;
-
     window.Core.Lightbox.open(index, items);
     this.isOpen = true;
   }
 
   close() {
     if (!window.Core || !window.Core.Lightbox) return;
-
     window.Core.Lightbox.close();
     this.isOpen = false;
   }
 }
 
-// ========================================
-// FILTER CONTROLLER
-// ========================================
 class FilterController {
   constructor(state, chipsContainer) {
     this.state = state;
@@ -432,126 +387,105 @@ class FilterController {
   }
 
   init() {
+    var self = this;
     if (!this.chipsContainer) return;
-
-    const chips = this.chipsContainer.querySelectorAll('.filter-chip');
-
-    chips.forEach(chip => {
-      chip.addEventListener('click', () => {
-        this.setActiveChip(chip);
-        const category = chip.dataset.category;
-        this.filterByCategory(category);
+    var chips = this.chipsContainer.querySelectorAll('.filter-chip');
+    chips.forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        self.setActiveChip(chip);
+        var category = chip.dataset.category;
+        self.filterByCategory(category);
       });
-
-      // Keyboard support
-      chip.addEventListener('keydown', (e) => {
+      chip.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           chip.click();
         }
       });
     });
-
-    // Horizontal scroll with touch
     this.initHorizontalScroll();
   }
 
   setActiveChip(activeChip) {
-    const chips = this.chipsContainer.querySelectorAll('.filter-chip');
-    chips.forEach(chip => {
+    var chips = this.chipsContainer.querySelectorAll('.filter-chip');
+    chips.forEach(function(chip) {
       chip.classList.remove('active');
       chip.setAttribute('aria-selected', 'false');
     });
-
     activeChip.classList.add('active');
     activeChip.setAttribute('aria-selected', 'true');
   }
 
   filterByCategory(category) {
-    const state = this.state.getState();
-    const allItems = state.mediaList;
-
+    var state = this.state.getState();
+    var allItems = state.mediaList;
     if (category === 'all') {
       this.state.setFilteredList(allItems);
       this.state.setActiveCategory('all');
       return;
     }
-
-    // Optimization: Check for legacy slug
-    const matchCategory = category === 'pre-wedding-photos-and-videos' ? 'perwedding' : category;
-
-    // Use cached mapped data from PortfolioGallery if available for O(1)
-    const gallery = window.PortfolioGallery;
+    var matchCategory = category === 'pre-wedding-photos-and-videos' ? 'perwedding' : category;
+    var gallery = window.PortfolioGallery;
     if (gallery && gallery.categoryMap && gallery.categoryMap[matchCategory]) {
       this.state.setFilteredList(gallery.categoryMap[matchCategory]);
     } else {
-      // Fallback
-      const filtered = allItems.filter(item =>
-        item.category === matchCategory ||
-        (item.categories && item.categories.indexOf(matchCategory) !== -1)
-      );
+      var filtered = allItems.filter(function(item) {
+        return item.category === matchCategory || (item.categories && item.categories.indexOf(matchCategory) !== -1);
+      });
       this.state.setFilteredList(filtered);
     }
     this.state.setActiveCategory(category);
-
-    // Update URL for shareability
     this.updateURL(category);
   }
 
   updateURL(category) {
-    const url = new URL(window.location);
+    var url = new URL(window.location);
     if (category === 'all') {
       url.searchParams.delete('category');
     } else {
       url.searchParams.set('category', category);
     }
-    window.history.pushState({ category }, '', url);
+    window.history.pushState({ category: category }, '', url);
   }
 
   initHorizontalScroll() {
-    let isDown = false;
-    let startX;
-    let scrollLeft;
-
-    this.chipsContainer.addEventListener('mousedown', (e) => {
+    var self = this;
+    var isDown = false;
+    var startX;
+    var scrollLeft;
+    this.chipsContainer.addEventListener('mousedown', function(e) {
       isDown = true;
-      startX = e.pageX - this.chipsContainer.offsetLeft;
-      scrollLeft = this.chipsContainer.scrollLeft;
-      this.chipsContainer.style.cursor = 'grabbing';
+      startX = e.pageX - self.chipsContainer.offsetLeft;
+      scrollLeft = self.chipsContainer.scrollLeft;
+      self.chipsContainer.style.cursor = 'grabbing';
     });
-
-    this.chipsContainer.addEventListener('mouseleave', () => {
+    this.chipsContainer.addEventListener('mouseleave', function() {
       isDown = false;
-      this.chipsContainer.style.cursor = 'grab';
+      self.chipsContainer.style.cursor = 'grab';
     });
-
-    this.chipsContainer.addEventListener('mouseup', () => {
+    this.chipsContainer.addEventListener('mouseup', function() {
       isDown = false;
-      this.chipsContainer.style.cursor = 'grab';
+      self.chipsContainer.style.cursor = 'grab';
     });
-
-    this.chipsContainer.addEventListener('mousemove', (e) => {
+    this.chipsContainer.addEventListener('mousemove', function(e) {
       if (!isDown) return;
       e.preventDefault();
-      const x = e.pageX - this.chipsContainer.offsetLeft;
-      const walk = (x - startX) * 2;
-      this.chipsContainer.scrollLeft = scrollLeft - walk;
+      var x = e.pageX - self.chipsContainer.offsetLeft;
+      var walk = (x - startX) * 2;
+      self.chipsContainer.scrollLeft = scrollLeft - walk;
     });
-
-    // Touch scroll indicator
     this.chipsContainer.style.scrollbarWidth = 'none';
     this.chipsContainer.style.msOverflowStyle = 'none';
-    const style = document.createElement('style');
+    var style = document.createElement('style');
     style.textContent = '.filter-chips-container::-webkit-scrollbar { display: none; }';
     document.head.appendChild(style);
   }
 
   selectFromURL() {
-    const params = new URLSearchParams(window.location.search);
-    const category = params.get('category');
-
+    var params = new URLSearchParams(window.location.search);
+    var category = params.get('category');
     if (category) {
-      const chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
+      var chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
       if (chip) {
         this.setActiveChip(chip);
         this.filterByCategory(category);
@@ -560,9 +494,6 @@ class FilterController {
   }
 }
 
-// ========================================
-// MAIN GALLERY CONTROLLER
-// ========================================
 class PortfolioGallery {
   constructor() {
     this.state = new GalleryState();
@@ -570,64 +501,44 @@ class PortfolioGallery {
     this.renderer = null;
     this.modal = null;
     this.filterController = null;
-    this.categoryMap = {}; // O(1) Filtering
+    this.categoryMap = {};
     this.init();
   }
 
   async init() {
-    // Wait for DOM
+    var self = this;
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => this.setup());
+      document.addEventListener('DOMContentLoaded', function() { self.setup(); });
     } else {
       this.setup();
     }
   }
 
   async setup() {
-    // Get container
     this.container = document.getElementById('gallery-grid');
     if (!this.container) {
       console.error('Gallery container not found');
       return;
     }
-
-    // Initialize renderer
     this.renderer = new GalleryRenderer(this.state, this.container);
-
-    // Show loading state
     this.renderer.showLoading();
     this.state.setLoading(true);
-
     try {
-      // Fetch data
-      const data = await this.fetchData();
-
-      // Process and flatten items
-      const allItems = this.processData(data);
-
-      // Update state
+      var data = await this.fetchData();
+      var allItems = this.processData(data);
       this.state.setMediaList(allItems);
       this.state.setLoading(false);
-
-      // Initial render
       this.renderer.render(allItems, 'all');
-
-      // Initialize filter controller
-      const chipsContainer = document.querySelector('.filter-chips-container');
+      var chipsContainer = document.querySelector('.filter-chips-container');
       if (chipsContainer) {
         this.filterController = new FilterController(this.state, chipsContainer);
         this.filterController.selectFromURL();
       }
-
-      // Initialize modal viewer
       this.modal = new ModalViewer(this.state);
       this.modal.init();
-
-      // Initialize Core.Lightbox
       if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
-
     } catch (error) {
       console.error('Failed to load portfolio:', error);
       this.state.setError(true);
@@ -636,7 +547,7 @@ class PortfolioGallery {
   }
 
   async fetchData() {
-    const response = await fetch('/data/portfolio.json');
+    var response = await fetch('/data/portfolio.json');
     if (!response.ok) {
       throw new Error('Failed to fetch portfolio data');
     }
@@ -644,15 +555,11 @@ class PortfolioGallery {
   }
 
   processData(data) {
-    const allItems = [];
-    const images = (data.portfolio && data.portfolio.images) || {};
-    const self = this;
-
-    // Reset category map for O(1) filtering
+    var allItems = [];
+    var images = (data.portfolio && data.portfolio.images) || {};
+    var self = this;
     this.categoryMap = {};
-
-    // Sort by category order
-    const categoryOrder = [
+    var categoryOrder = [
       'weddings',
       'pre-wedding-photos-and-videos',
       'engagement',
@@ -664,20 +571,14 @@ class PortfolioGallery {
       'events',
       'commercial'
     ];
-
-    // Keep track of which categories we've processed for the "All" list ordering
-    const processedCategories = new Set();
-
-    // Pass 1: Flatten items into allItems in the prescribed order
-    const processItems = (sourceSlug) => {
-      const items = images[sourceSlug];
+    var processedCategories = new Set();
+    var processItems = function(sourceSlug) {
+      var items = images[sourceSlug];
       if (Array.isArray(items) && !processedCategories.has(sourceSlug)) {
-        const displaySlug = sourceSlug === 'perwedding' ? 'pre-wedding-photos-and-videos' : sourceSlug;
-        const formattedName = self.formatCategoryName(displaySlug);
-
-        const mappedItems = items.map((item, index) => {
-          // Pre-calculate metadata once during ingestion
-          const processed = Object.assign({}, item);
+        var displaySlug = sourceSlug === 'perwedding' ? 'pre-wedding-photos-and-videos' : sourceSlug;
+        var formattedName = self.formatCategoryName(displaySlug);
+        var mappedItems = items.map(function(item, index) {
+          var processed = Object.assign({}, item);
           processed.category = sourceSlug;
           processed.order = index;
           processed.id = item.id || (sourceSlug + "-" + index);
@@ -687,41 +588,33 @@ class PortfolioGallery {
           processed.formattedCategory = formattedName;
           return processed;
         });
-
         Array.prototype.push.apply(allItems, mappedItems);
         processedCategories.add(sourceSlug);
       }
     };
-
-    categoryOrder.forEach((orderSlug) => {
+    categoryOrder.forEach(function(orderSlug) {
       processItems(orderSlug === 'pre-wedding-photos-and-videos' ? 'perwedding' : orderSlug);
     });
-
     Object.keys(images).forEach(processItems);
-
-    // Pass 2: Build categoryMap from allItems to support O(1) filtering
-    // and correctly handle many-to-many relationships (item.categories)
-    allItems.forEach((item) => {
-      const cats = [item.category];
+    allItems.forEach(function(item) {
+      var cats = [item.category];
       if (Array.isArray(item.categories)) {
         Array.prototype.push.apply(cats, item.categories);
       }
-
-      cats.forEach((cat) => {
+      cats.forEach(function(cat) {
         if (!self.categoryMap[cat]) {
           self.categoryMap[cat] = [];
         }
         self.categoryMap[cat].push(item);
       });
     });
-
     return allItems;
   }
 
   formatCategoryName(slug) {
     return slug
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1); })
       .join(' ');
   }
 
@@ -731,7 +624,4 @@ class PortfolioGallery {
   }
 }
 
-// ========================================
-// INITIALIZE
-// ========================================
 window.PortfolioGallery = new PortfolioGallery();
