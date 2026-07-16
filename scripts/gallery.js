@@ -10,28 +10,27 @@ window.GalleryManager = {
   },
   
   initFiltering() {
-    var self = this;
     const container = document.querySelector('.portfolio-categories');
     if (container) {
-      container.addEventListener('click', function(e) {
+      container.addEventListener('click', (e) => {
         const btn = e.target.closest('.category-btn');
         if (btn) {
           const cat = btn.dataset.category;
-          self.filterGallery(cat);
-          self.updateURL(cat);
+          this.filterGallery(cat);
+          this.updateURL(cat);
         }
       });
     }
 
-    document.querySelectorAll('.category-btn').forEach(function(btn) {
-      btn.addEventListener('pointerdown', function() { btn.classList.add('is-pressing'); });
-      btn.addEventListener('pointerup', function() { btn.classList.remove('is-pressing'); });
-      btn.addEventListener('pointercancel', function() { btn.classList.remove('is-pressing'); });
-      btn.addEventListener('pointerleave', function() { btn.classList.remove('is-pressing'); });
+    document.querySelectorAll('.category-btn').forEach((btn) => {
+      btn.addEventListener('pointerdown', () => btn.classList.add('is-pressing'));
+      btn.addEventListener('pointerup', () => btn.classList.remove('is-pressing'));
+      btn.addEventListener('pointercancel', () => btn.classList.remove('is-pressing'));
+      btn.addEventListener('pointerleave', () => btn.classList.remove('is-pressing'));
     });
     
-    window.addEventListener('popstate', function(e) {
-      self.filterGallery(e.state && e.state.category || 'all');
+    window.addEventListener('popstate', (e) => {
+      this.filterGallery(e.state?.category || 'all');
     });
   },
 
@@ -41,22 +40,22 @@ window.GalleryManager = {
   },
 
   getVisibleData() {
-    const all = this.allImages || window.contentLoader && window.contentLoader.allImages || [];
+    const all = this.allImages || window.contentLoader?.allImages || [];
     return Array.from(document.querySelectorAll('.gallery-item'))
-      .filter(function(item) { return !item.classList.contains('is-hidden'); })
-      .map(function(item) {
+      .filter(item => !item.classList.contains('is-hidden'))
+      .map(item => {
         const idx = parseInt(item.dataset.index, 10);
         // Use cached data for O(1) metadata retrieval, avoiding expensive DOM queries
-        if (all[idx]) return Object.assign({}, all[idx], { originalIndex: idx });
+        if (all[idx]) return { ...all[idx], originalIndex: idx };
 
         // Fallback if data is not yet loaded (should not happen after init)
         const media = item.querySelector('img, video');
         return {
-          src: (media && media.src) || (media && media.dataset && media.dataset.src) || '',
-          title: item.querySelector('.gallery-title') && item.querySelector('.gallery-title').textContent,
-          category: (item.querySelector('.gallery-category') && item.querySelector('.gallery-category').textContent) || item.dataset.category,
+          src: media?.src || media?.dataset?.src || '',
+          title: item.querySelector('.gallery-title')?.textContent,
+          category: item.querySelector('.gallery-category')?.textContent || item.dataset.category,
           type: item.querySelector('video') ? 'video' : 'image',
-          poster: item.querySelector('video') && item.querySelector('video').poster || '',
+          poster: item.querySelector('video')?.poster || '',
           originalIndex: idx
         };
       });
@@ -66,7 +65,7 @@ window.GalleryManager = {
     this.activeCategory = category;
 
     // Update button active state
-    document.querySelectorAll('.category-btn').forEach(function(btn) {
+    document.querySelectorAll('.category-btn').forEach(btn => {
       const isActive = btn.dataset.category === category;
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-selected', isActive);
@@ -82,18 +81,14 @@ window.GalleryManager = {
 
     // Refresh ScrollTrigger if available
     if (window.ScrollTrigger) {
-      setTimeout(function() { ScrollTrigger.refresh(); }, 200);
+      setTimeout(() => ScrollTrigger.refresh(), 200);
     }
   },
   
   updateURL(category) {
     const url = new URL(window.location);
-    if (category === 'all') {
-      url.searchParams.delete('category');
-    } else {
-      url.searchParams.set('category', category);
-    }
-    window.history.pushState({ category: category }, '', url);
+    category === 'all' ? url.searchParams.delete('category') : url.searchParams.set('category', category);
+    window.history.pushState({ category }, '', url);
   },
   
   checkURLState() {
