@@ -7,10 +7,11 @@
 
 class ContentLoader {
   constructor() {
-    this.dataUrl = 'data/portfolio.json';
+    this.dataUrl = '/data/portfolio.json';
     this.data = null;
+    this.allImages = []; // Cache for processed items
+    this.mediaData = null; // Cache portfolio.images from JSON
     this.portfolioData = []; // Flattened and randomized for homepage
-    this.mediaData = {};     // Categorized data (merged)
 
     // Pagination state for homepage
     this.visibleImagesCount = 0;
@@ -25,7 +26,7 @@ class ContentLoader {
     try {
       await this.loadData();
 
-      var isHomepage = !!document.getElementById('portfolio-inline-grid');
+      const isHomepage = !!document.getElementById('portfolio-inline-grid');
 
       if (isHomepage) {
         this.setupHomepageGallery();
@@ -49,48 +50,37 @@ class ContentLoader {
    * Fetch and process JSON data
    */
   async loadData() {
-    var self = this;
     try {
-      var promises = [
-        fetch('data/portfolio.json').catch(function() { return null; }),
-        fetch('data/new_portfolio.json').catch(function() { return null; })
-      ];
+      const [res1, res2] = await Promise.all([
+        fetch('/data/portfolio.json').catch(() => null),
+        fetch('/data/new_portfolio.json').catch(() => null)
+      ]);
 
-      var responses = await Promise.all(promises);
-      var res1 = responses[0];
-      var res2 = responses[1];
-
-      var data1 = null;
-      if (res1 && res1.ok) data1 = await res1.json();
-
-      var data2 = null;
-      if (res2 && res2.ok) data2 = await res2.json();
+      const data1 = res1 && res1.ok ? await res1.json() : null;
+      const data2 = res2 && res2.ok ? await res2.json() : null;
 
       if (!data1 && !data2) {
         throw new Error("Failed to load portfolio data");
       }
 
-      // Main data source for metadata
       this.data = data1 || data2;
+      this.mediaData = this.data.portfolio.images;
 
-      // Optimization: Cache flattened categories once during ingestion
-      this.flatAll = [];
+      // Flatten categories for homepage
+      this.portfolioData = [];
+      const globalSeen = new Set();
 
-      var globalSeen = new Set();
-      var integrate = function(data) {
+      const integrate = (data) => {
         if (!data) return;
-        var categoriesObj = (data.portfolio && data.portfolio.images) ? data.portfolio.images : data;
-        Object.keys(categoriesObj).forEach(function(cat) {
+        const categoriesObj = (data.portfolio && data.portfolio.images) ? data.portfolio.images : data;
+        Object.keys(categoriesObj).forEach(cat => {
           if (Array.isArray(categoriesObj[cat])) {
-            if (!self.mediaData[cat]) self.mediaData[cat] = [];
-
-            var formattedCat = self.getCategoryName(cat);
-
-            categoriesObj[cat].forEach(function(item) {
+            categoriesObj[cat].forEach(item => {
               if (globalSeen.has(item.src)) return;
               globalSeen.add(item.src);
 
-              var processed = {
+              const formattedCat = this.getCategoryName(cat);
+              this.portfolioData.push({
                 type: item.type === 'video' ? 'video' : 'image',
                 category: cat,
                 formattedCategory: formattedCat,
@@ -99,9 +89,7 @@ class ContentLoader {
                 poster: item.poster || item.thumb || '',
                 title: item.title || '',
                 aspectRatio: item.aspectRatio || ''
-              };
-              self.mediaData[cat].push(processed);
-              self.portfolioData.push(processed);
+              });
             });
           }
         });
@@ -110,20 +98,15 @@ class ContentLoader {
       integrate(data1);
       integrate(data2);
 
-      // Cache the full flattened list for the "All" category in Full Gallery mode
-      this.flatAll = this.portfolioData.slice();
-
       // Randomize for homepage variety
-      for (var i = this.portfolioData.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var temp = this.portfolioData[i];
-        this.portfolioData[i] = this.portfolioData[j];
-        this.portfolioData[j] = temp;
+      for (let i = this.portfolioData.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [this.portfolioData[i], this.portfolioData[j]] = [this.portfolioData[j], this.portfolioData[i]];
       }
 
       return this.data;
     } catch (error) {
-      throw new Error("Failed to load portfolio data: " + error.message);
+      throw new Error(`Failed to load portfolio data: ${error.message}`);
     }
   }
 
@@ -131,25 +114,43 @@ class ContentLoader {
    * Setup homepage-specific gallery logic (Pagination + Load More)
    */
   setupHomepageGallery() {
-    var self = this;
-    var loadMoreBtn = document.getElementById('inline-load-more-btn');
+    const loadMoreBtn = document.getElementById('inline-load-more-btn');
     if (loadMoreBtn) {
-      loadMoreBtn.addEventListener('click', function() {
-        if (self.activeCategory === 'cinematics' || self.activeCategory === 'video') {
-          var grid = document.getElementById('portfolio-inline-grid');
+      loadMoreBtn.addEventListener('click', () => {
+        if (this.activeCategory === 'cinematics' || this.activeCategory === 'video') {
+          const grid = document.getElementById('portfolio-inline-grid');
           if (grid) grid.innerHTML = '';
-          self.appendItems(0, 1);
+          this.appendItems(0, 1);
         } else {
-          self.appendItems(3, 0);
+          this.appendItems(3, 0);
         }
       });
     }
+
+    // Set up category button click event listeners
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    categoryBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        categoryBtns.forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+
+        const newCategory = btn.getAttribute('data-category');
+        if (this.activeCategory !== newCategory) {
+          this.activeCategory = newCategory;
+          this.renderInlineInitial();
+        }
+      });
+    });
 
     this.renderInlineInitial();
   }
 
   renderInlineInitial() {
-    var grid = document.getElementById('portfolio-inline-grid');
+    const grid = document.getElementById('portfolio-inline-grid');
     if (!grid) return;
 
     grid.innerHTML = '';
@@ -163,7 +164,8 @@ class ContentLoader {
       grid.classList.remove('cinematics-mode');
     }
 
-    var iAdd = 0, vAdd = 0;
+    let iAdd = 0;
+    let vAdd = 0;
     if (this.activeCategory === 'cinematics' || this.activeCategory === 'video') {
       vAdd = 1;
     } else if (this.activeCategory === 'all') {
@@ -177,27 +179,26 @@ class ContentLoader {
   }
 
   appendItems(imgCount, vidCount) {
-    var self = this;
-    var grid = document.getElementById('portfolio-inline-grid');
+    const grid = document.getElementById('portfolio-inline-grid');
     if (!grid) return;
 
-    var images = this.portfolioData.filter(function(item) {
-      return (self.activeCategory === 'all' || item.category === self.activeCategory) && item.type === 'image';
-    });
-    var videos = this.portfolioData.filter(function(item) {
-      return (self.activeCategory === 'all' || item.category === self.activeCategory) && item.type === 'video';
-    });
+    const images = this.portfolioData.filter(item =>
+      (this.activeCategory === 'all' || item.category === this.activeCategory) && item.type === 'image'
+    );
+    const videos = this.portfolioData.filter(item =>
+      (this.activeCategory === 'all' || item.category === this.activeCategory) && item.type === 'video'
+    );
 
-    var toAppend = [];
+    const toAppend = [];
 
-    for (var i = 0; i < imgCount; i++) {
+    for (let i = 0; i < imgCount; i++) {
       if (this.visibleImagesCount < images.length) {
         toAppend.push(images[this.visibleImagesCount]);
         this.visibleImagesCount++;
       }
     }
 
-    for (var i = 0; i < vidCount; i++) {
+    for (let i = 0; i < vidCount; i++) {
       if (this.visibleVideosCount < videos.length) {
         toAppend.push(videos[this.visibleVideosCount]);
         this.visibleVideosCount++;
@@ -206,23 +207,23 @@ class ContentLoader {
 
     if (toAppend.length === 0) return;
 
-    var frag = document.createDocumentFragment();
+    const frag = document.createDocumentFragment();
 
-    toAppend.forEach(function(item, idx) {
-      var el = document.createElement('div');
+    toAppend.forEach((item, idx) => {
+      const el = document.createElement('div');
       el.className = 'portfolio-item fade-in-up';
       el.dataset.type = item.type;
       el.style.animationDelay = (idx * 60) + 'ms';
 
       if (item.type === 'image') {
-        var img = document.createElement('img');
+        const img = document.createElement('img');
         img.src = item.src;
         img.alt = item.alt;
         img.loading = 'lazy';
         img.decoding = 'async';
         el.appendChild(img);
       } else {
-        var vid = document.createElement('video');
+        const vid = document.createElement('video');
         vid.src = item.src;
         if (item.poster) vid.poster = item.poster;
         vid.muted = true;
@@ -233,23 +234,17 @@ class ContentLoader {
         if (window.Core && window.Core.VideoHover) {
           window.Core.VideoHover.init(vid);
         } else {
-          vid.addEventListener('mouseenter', function() { vid.play().catch(function() {}); });
-          vid.addEventListener('mouseleave', function() { vid.pause(); });
+          vid.addEventListener('mouseenter', () => vid.play().catch(() => {}));
+          vid.addEventListener('mouseleave', () => vid.pause());
         }
         el.appendChild(vid);
       }
 
       // Click handler for Lightbox
-      el.addEventListener('click', function() {
+      el.addEventListener('click', () => {
         if (window.Core && window.Core.Lightbox) {
-          var visibleItems = self.getHomepageVisibleItems();
-          var targetIndex = -1;
-          for (var k = 0; k < visibleItems.length; k++) {
-            if (visibleItems[k].src === item.src) {
-              targetIndex = k;
-              break;
-            }
-          }
+          const visibleItems = this.getHomepageVisibleItems();
+          const targetIndex = visibleItems.findIndex(v => v.src === item.src);
           window.Core.Lightbox.open(targetIndex >= 0 ? targetIndex : 0, visibleItems);
         }
       });
@@ -263,30 +258,27 @@ class ContentLoader {
   }
 
   getHomepageVisibleItems() {
-    var self = this;
-    var items = [];
-    var els = document.querySelectorAll('#portfolio-inline-grid .portfolio-item');
-    for (var i = 0; i < els.length; i++) {
-      var el = els[i];
-      var media = el.querySelector('img, video');
+    const items = [];
+    document.querySelectorAll('#portfolio-inline-grid .portfolio-item').forEach(el => {
+      const media = el.querySelector('img, video');
       if (media) {
         items.push({
           src: media.src,
           type: el.dataset.type,
           title: '',
-          category: self.getCategoryName(self.activeCategory)
+          category: this.getCategoryName(this.activeCategory)
         });
       }
-    }
+    });
     return items;
   }
 
   updateLoadMoreVisibility(totalImages, totalVideos) {
-    var moreBtnWrapper = document.getElementById('portfolio-inline-more');
+    const moreBtnWrapper = document.getElementById('portfolio-inline-more');
     if (!moreBtnWrapper) return;
 
-    var moreImg = this.visibleImagesCount < totalImages;
-    var moreVid = this.visibleVideosCount < totalVideos;
+    const moreImg = this.visibleImagesCount < totalImages;
+    const moreVid = this.visibleVideosCount < totalVideos;
 
     if (this.activeCategory === 'cinematics' || this.activeCategory === 'video') {
       moreBtnWrapper.style.display = moreVid ? 'block' : 'none';
@@ -315,9 +307,12 @@ class ContentLoader {
    * Get items for a category
    */
   getFilteredItems(category) {
+    if (!this.mediaData) return [];
+
     if (category === 'all') {
-      return this.flatAll || [];
+      return Object.values(this.mediaData).flat();
     }
+
     return this.mediaData[category] || [];
   }
 
@@ -325,8 +320,7 @@ class ContentLoader {
    * Render gallery items for a category
    */
   renderCategory(category) {
-    var self = this;
-    var galleryGrid = document.getElementById('gallery-grid') || document.getElementById('portfolio-inline-grid');
+    let galleryGrid = document.getElementById('gallery-grid') || document.getElementById('portfolio-inline-grid');
     if (!galleryGrid) return;
 
     if (galleryGrid.id === 'portfolio-inline-grid') {
@@ -335,7 +329,7 @@ class ContentLoader {
       return;
     }
 
-    var items = this.getFilteredItems(category);
+    const items = this.getFilteredItems(category);
     galleryGrid.innerHTML = '';
 
     if (items.length === 0) {
@@ -343,26 +337,37 @@ class ContentLoader {
       return;
     }
 
-    var fragment = document.createDocumentFragment();
+    const fragment = document.createDocumentFragment();
 
-    items.forEach(function(item, index) {
-      var isVideo = item.type === 'video';
-      var el = document.createElement('article');
-      el.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image') + ' reveal-item loading';
+    items.forEach((item, index) => {
+      const isVideo = item.type === 'video';
+      const el = document.createElement('article');
+      el.className = `gallery-item ${isVideo ? 'gallery-item--video' : 'gallery-item--image'} reveal-item loading`;
       el.dataset.index = index;
       el.dataset.category = category === 'all' ? (item.category || 'uncategorized') : category;
       el.setAttribute('tabindex', '0');
       el.setAttribute('role', 'button');
       el.setAttribute('aria-label', (item.title || 'Open preview') + (item.category ? ', ' + item.category : ''));
 
-      el.addEventListener('click', function() {
-        if (window.Core && window.Core.Lightbox) {
-          window.Core.Lightbox.open(index, items);
+      el.addEventListener('click', () => {
+        const visibleItems = window.GalleryManager?.getVisibleData?.() || items;
+        const itemIndex = visibleItems.findIndex(entry => entry.originalIndex === index);
+        const targetIndex = itemIndex >= 0 ? itemIndex : index;
+
+        if (window.Core?.Lightbox) {
+          window.Core.Lightbox.open(targetIndex, visibleItems);
+        }
+      });
+
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          el.click();
         }
       });
 
       if (isVideo) {
-        var video = document.createElement('video');
+        const video = document.createElement('video');
         video.src = item.src;
         video.controls = true;
         video.playsInline = true;
@@ -370,24 +375,24 @@ class ContentLoader {
         if (item.aspectRatio) video.style.aspectRatio = item.aspectRatio;
         el.appendChild(video);
       } else {
-        var img = document.createElement('img');
+        const img = document.createElement('img');
         img.dataset.src = item.src;
-        img.alt = item.alt;
+        img.alt = item.alt || item.title || '';
         img.className = 'gallery-image';
         if (item.aspectRatio) img.style.aspectRatio = item.aspectRatio;
         el.appendChild(img);
       }
 
-      var overlay = document.createElement('div');
+      const overlay = document.createElement('div');
       overlay.className = 'gallery-overlay';
 
-      var title = document.createElement('h3');
+      const title = document.createElement('h3');
       title.className = 'gallery-title';
       title.textContent = item.title || 'Untitled';
 
-      var catLabel = document.createElement('p');
+      const catLabel = document.createElement('p');
       catLabel.className = 'gallery-category';
-      catLabel.textContent = item.formattedCategory || self.getCategoryName(item.category || category);
+      catLabel.textContent = this.getCategoryName(item.category || category);
 
       overlay.appendChild(title);
       overlay.appendChild(catLabel);
@@ -398,19 +403,24 @@ class ContentLoader {
 
     galleryGrid.appendChild(fragment);
     this.initLazyLoader();
+
+    this.allImages = items.map((item, idx) => Object.assign({}, item, { originalIndex: idx }));
+    if (window.GalleryManager) {
+      window.GalleryManager.allImages = this.allImages;
+    }
   }
 
   /**
    * Re-run IntersectionObserver on lazy images
    */
   initLazyLoader() {
-    var lazyImages = document.querySelectorAll('#gallery-grid img[data-src]');
+    const lazyImages = document.querySelectorAll('#gallery-grid img[data-src]');
 
     if (!window.lazyImageObserver) {
-      window.lazyImageObserver = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
+      window.lazyImageObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
           if (entry.isIntersecting) {
-            var img = entry.target;
+            const img = entry.target;
             img.src = img.dataset.src;
             img.removeAttribute('data-src');
             window.lazyImageObserver.unobserve(img);
@@ -419,7 +429,7 @@ class ContentLoader {
       }, { rootMargin: '200px' });
     }
 
-    lazyImages.forEach(function(img) {
+    lazyImages.forEach(img => {
       if (img.dataset.src) {
         window.lazyImageObserver.observe(img);
       }
@@ -430,16 +440,16 @@ class ContentLoader {
    * Populate events section
    */
   populateEvents() {
-    var eventsGrid = document.querySelector('.events-grid');
-    if (!eventsGrid || !this.data || !this.data.recentEvents) return;
+    const eventsGrid = document.querySelector('.events-grid');
+    if (!eventsGrid || !this.data?.recentEvents) return;
 
     eventsGrid.innerHTML = '';
 
-    this.data.recentEvents.forEach(function(event) {
-      var item = document.createElement('div');
+    this.data.recentEvents.forEach(event => {
+      const item = document.createElement('div');
       item.className = 'event-item';
       
-      var img = document.createElement('img');
+      const img = document.createElement('img');
       img.src = event.src;
       img.alt = event.alt || event.title;
       img.className = 'event-image';
@@ -449,14 +459,14 @@ class ContentLoader {
         img.style.aspectRatio = event.aspectRatio;
       }
       
-      var overlay = document.createElement('div');
+      const overlay = document.createElement('div');
       overlay.className = 'gallery-overlay';
       
-      var title = document.createElement('h3');
+      const title = document.createElement('h3');
       title.className = 'gallery-title';
       title.textContent = event.title;
       
-      var category = document.createElement('p');
+      const category = document.createElement('p');
       category.className = 'gallery-category';
       category.textContent = event.category;
       
@@ -473,21 +483,19 @@ class ContentLoader {
    * Populate about section with social proof
    */
   populateAbout() {
-    var self = this;
-    var sections = {
+    const sections = {
       'publications': 'publication-item',
       'awards': 'li',
       'clients': 'client-item'
     };
 
-    Object.keys(sections).forEach(function(id) {
-      var className = sections[id];
-      var container = document.getElementById(id);
-      var data = (self.data && self.data.socialProof) ? self.data.socialProof[id] : null;
+    Object.entries(sections).forEach(([id, className]) => {
+      const container = document.getElementById(id);
+      const data = this.data?.socialProof?.[id];
       if (container && data) {
         container.innerHTML = '';
-        data.forEach(function(text) {
-          var el = document.createElement(className === 'li' ? 'li' : 'span');
+        data.forEach(text => {
+          const el = document.createElement(className === 'li' ? 'li' : 'span');
           if (className !== 'li') el.className = className;
           el.textContent = text;
           container.appendChild(el);
@@ -501,12 +509,14 @@ class ContentLoader {
    */
   handleError(error) {
     console.error('❌ Content loading error:', error);
-    var galleryGrid = document.getElementById('gallery-grid') || document.getElementById('portfolio-inline-grid');
+    const galleryGrid = document.getElementById('gallery-grid') || document.getElementById('portfolio-inline-grid');
     if (galleryGrid) {
-      galleryGrid.innerHTML = '<div class="content-error">' +
-          '<p>Unable to load portfolio content. Please try refreshing the page.</p>' +
-          '<p class="error-details">' + error.message + '</p>' +
-        '</div>';
+      galleryGrid.innerHTML = `
+        <div class="content-error">
+          <p>Unable to load portfolio content. Please try refreshing the page.</p>
+          <p class="error-details">${error.message}</p>
+        </div>
+      `;
     }
   }
 }
@@ -520,15 +530,13 @@ ContentLoader.CATEGORY_NAMES = {
   'kids': 'Kids',
   'haldi': 'Haldi',
   'engagement': 'Engagement',
-  'perwedding': 'Pre-Wedding',
   'pre-wedding-photos-and-videos': 'Pre-Wedding',
-  'cinematics': 'Cinematics',
-  'video': 'Cinematics'
+  'cinematics': 'Cinematics'
 };
 
 // Initialize content loader when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', () => {
     window.contentLoader = new ContentLoader();
     window.contentLoader.init();
   });
