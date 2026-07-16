@@ -77,7 +77,7 @@ class ContentLoader {
    */
   getCategoryName(category) {
     return ContentLoader.CATEGORY_NAMES[category] || category;
-  },
+  }
 
   /**
    * Get images for a category
@@ -93,7 +93,7 @@ class ContentLoader {
     }
 
     return this.mediaData[category] || [];
-  },
+  }
 
   /**
    * Render gallery items for a category
@@ -103,6 +103,12 @@ class ContentLoader {
     // Support both gallery-grid (portfolio.html/gallery.html) and portfolio-inline-grid (index.html)
     let galleryGrid = document.getElementById('gallery-grid') || document.getElementById('portfolio-inline-grid');
     if (!galleryGrid) return;
+
+    // Optimization: Skip rendering the full 1,000+ item gallery on the homepage.
+    // The homepage gallery is loaded and paginated efficiently by the inline script.
+    if (galleryGrid.id === 'portfolio-inline-grid') {
+      return;
+    }
 
     const items = this.getFilteredItems(category);
 
@@ -192,7 +198,7 @@ class ContentLoader {
     if (window.GalleryManager) {
       window.GalleryManager.allImages = this.allImages;
     }
-  },
+  }
 
   /**
    * Re-run IntersectionObserver on lazy images

@@ -512,7 +512,7 @@
       let activeCategory = 'all';
 
       function getFilteredItems(type) {
-        return portfolioData.filter(item => 
+        return portfolioData.filter(item =>
           (activeCategory === 'all' || item.category === activeCategory) && item.type === type
         );
       }
@@ -520,16 +520,16 @@
       function appendItems(imgCount, vidCount) {
         const images = getFilteredItems('image');
         const videos = getFilteredItems('video');
-        
+
         const toAppend = [];
-        
+
         for (let i = 0; i < imgCount; i++) {
           if (visibleImagesCount < images.length) {
             toAppend.push(images[visibleImagesCount]);
             visibleImagesCount++;
           }
         }
-        
+
         for (let i = 0; i < vidCount; i++) {
           if (visibleVideosCount < videos.length) {
             toAppend.push(videos[visibleVideosCount]);
@@ -576,7 +576,7 @@
 
         const moreImg = visibleImagesCount < images.length;
         const moreVid = visibleVideosCount < videos.length;
-        
+
         if (activeCategory === 'cinematics') {
           moreBtnWrapper.style.display = moreVid ? 'block' : 'none';
         } else if (activeCategory === 'all') {
