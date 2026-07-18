@@ -12,6 +12,7 @@ class ContentLoader {
     this.allImages = []; // Cache for processed items
     this.mediaData = null; // Cache portfolio.images from JSON
     this.portfolioData = []; // Flattened and randomized for homepage
+    this.currentlyAppendedItems = []; // In-memory tracking array to bypass DOM queries
 
     // Pagination state for homepage
     this.visibleImagesCount = 0;
@@ -156,6 +157,7 @@ class ContentLoader {
     grid.innerHTML = '';
     this.visibleImagesCount = 0;
     this.visibleVideosCount = 0;
+    this.currentlyAppendedItems = []; // Reset in-memory cache
 
     // Toggle cinematics layout mode
     if (this.activeCategory === 'cinematics' || this.activeCategory === 'video') {
@@ -240,11 +242,20 @@ class ContentLoader {
         el.appendChild(vid);
       }
 
+      // Track item in our in-memory list with resolved absolute URLs
+      this.currentlyAppendedItems.push({
+        src: new URL(item.src, window.location.href).href,
+        type: item.type,
+        title: item.title || '',
+        category: this.getCategoryName(this.activeCategory),
+        poster: item.poster ? new URL(item.poster, window.location.href).href : ''
+      });
+
       // Click handler for Lightbox
       el.addEventListener('click', () => {
         if (window.Core && window.Core.Lightbox) {
           const visibleItems = this.getHomepageVisibleItems();
-          const targetIndex = visibleItems.findIndex(v => v.src === item.src);
+          const targetIndex = visibleItems.findIndex(v => v.src === new URL(item.src, window.location.href).href);
           window.Core.Lightbox.open(targetIndex >= 0 ? targetIndex : 0, visibleItems);
         }
       });
@@ -258,19 +269,8 @@ class ContentLoader {
   }
 
   getHomepageVisibleItems() {
-    const items = [];
-    document.querySelectorAll('#portfolio-inline-grid .portfolio-item').forEach(el => {
-      const media = el.querySelector('img, video');
-      if (media) {
-        items.push({
-          src: media.src,
-          type: el.dataset.type,
-          title: '',
-          category: this.getCategoryName(this.activeCategory)
-        });
-      }
-    });
-    return items;
+    // Avoid expensive O(N) DOM querySelectorAll and nested querySelector loops by returning cached array
+    return this.currentlyAppendedItems || [];
   }
 
   updateLoadMoreVisibility(totalImages, totalVideos) {

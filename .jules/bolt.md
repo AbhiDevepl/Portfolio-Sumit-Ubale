@@ -1,0 +1,3 @@
+## 2025-01-24 - [Avoid Expensive DOM Traversal in Dynamic Lightbox Feed]
+**Learning:** In highly interactive dynamic layouts with high-frequency updates, querying the DOM on demand using `querySelectorAll` and nested child node selection (e.g. `img, video`) inside event-handlers of lightbox triggers introduces major DOM lookup bottlenecks and GC churn. Maintaining a cleanly tracked in-memory array (`currentlyAppendedItems`) synchronized during node-generation transforms these queries from O(N) to O(1) instantly.
+**Action:** Always maintain an in-memory state representation of appended/rendered items inside dynamic views rather than relying on sequential DOM selections to extract attributes like `src`, `type`, or computed properties during user interactions.
