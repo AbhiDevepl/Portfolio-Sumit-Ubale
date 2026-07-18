@@ -372,7 +372,7 @@ class GalleryRenderer {
   }
 
   showLoading() {
-    this.container.innerHTML = '<div class="gallery-loading-state"><div class="gallery-loading-spinner"></div><p>Loading portfolio...</p></div>';
+    this.container.innerHTML = '<div class="gallery-loading-state"><div class="gallery-loading-spinner"></div><p>Loading portfolio</p></div>';
   }
 
   showError(message) {
