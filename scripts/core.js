@@ -31,7 +31,7 @@ window.Core = {
             <div class="lightbox-media-container">
               <div class="lightbox-loading" style="display: none;">
                 <div class="spinner"></div>
-                <p>Loading...</p>
+                <p>Loading</p>
               </div>
               <img class="lightbox-image" src="" alt="" style="display: none;">
               <div class="lightbox-video-wrapper" style="display: none;">
@@ -487,17 +487,18 @@ window.Core = {
       item.setAttribute('aria-label', `${image.title || 'Open preview'}${image.category ? `, ${image.category}` : ''}`);
 
       const openFilteredLightbox = () => {
-        const fallbackItems = allItems.map((entry, entryIndex) => ({
-          ...entry,
-          originalIndex: entryIndex,
-          type: entry.type || 'image'
-        }));
+        const fallbackItems = allItems.map((entry, entryIndex) => {
+          return Object.assign({}, entry, {
+            originalIndex: entryIndex,
+            type: entry.type || 'image'
+          });
+        });
 
-        const visibleItems = window.GalleryManager?.getVisibleData?.() || fallbackItems;
+        const visibleItems = (window.GalleryManager && typeof window.GalleryManager.getVisibleData === 'function' ? window.GalleryManager.getVisibleData() : null) || fallbackItems;
         const itemIndex = visibleItems.findIndex((entry) => entry.originalIndex === index);
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
-        if (window.Core?.Lightbox) {
+        if (window.Core && window.Core.Lightbox) {
           window.Core.Lightbox.open(targetIndex, visibleItems);
         }
       };

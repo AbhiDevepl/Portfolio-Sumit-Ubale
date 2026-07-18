@@ -82,6 +82,11 @@ class GalleryRenderer {
     this.state = state;
     this.container = container;
     this.animationFrame = null;
+    this.batchSize = 36;
+    this.renderedCount = 0;
+    this.allItemsToRender = [];
+    this.observer = null;
+    this.sentinel = null;
   }
 
   render(items, category) {
@@ -91,26 +96,118 @@ class GalleryRenderer {
     }
 
     this.animationFrame = requestAnimationFrame(() => {
-      this._renderSync(items, category);
+      this._renderProgressive(items, category);
     });
   }
 
-  _renderSync(items, category) {
-    const fragment = document.createDocumentFragment();
+  _renderProgressive(items, category) {
+    this.allItemsToRender = items;
+    this.renderedCount = 0;
 
-    items.forEach((item, index) => {
-      const element = this.createGalleryItem(item, index);
+    // Disconnect old observer if it exists
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+
+    // Clear container
+    this.container.innerHTML = '';
+
+    // Create sentinel element at the bottom to trigger scrolling
+    if (!this.sentinel) {
+      this.sentinel = document.createElement('div');
+      this.sentinel.className = 'gallery-sentinel';
+      this.sentinel.style.height = '1px';
+      this.sentinel.style.width = '100%';
+    }
+
+    this._appendNextBatch();
+
+    // Set up IntersectionObserver if there are still more items to render
+    if (this.renderedCount < this.allItemsToRender.length) {
+      this._setupObserver();
+    }
+  }
+
+  _appendNextBatch() {
+    const start = this.renderedCount;
+    const end = Math.min(start + this.batchSize, this.allItemsToRender.length);
+    if (start >= end) return;
+
+    const fragment = document.createDocumentFragment();
+    const batchItems = [];
+
+    for (let i = start; i < end; i++) {
+      const item = this.allItemsToRender[i];
+      const element = this.createGalleryItem(item, i);
       if (element) {
         fragment.appendChild(element);
+        batchItems.push(element);
       }
-    });
+    }
 
-    // Clear container and append new items
-    this.container.innerHTML = '';
+    this.renderedCount = end;
+
+    // Remove sentinel before appending to ensure it stays at the bottom
+    if (this.sentinel && this.sentinel.parentNode === this.container) {
+      this.container.removeChild(this.sentinel);
+    }
+
     this.container.appendChild(fragment);
 
-    // Trigger reveal animations
-    this.triggerRevealAnimations();
+    // Re-append sentinel to the bottom if there are more items to render
+    if (this.renderedCount < this.allItemsToRender.length && this.sentinel) {
+      this.container.appendChild(this.sentinel);
+    }
+
+    this.triggerRevealAnimationsForBatch(batchItems);
+  }
+
+  _setupObserver() {
+    if (!this.observer) {
+      this.observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && this.renderedCount < this.allItemsToRender.length) {
+            this._appendNextBatch();
+          }
+        });
+      }, {
+        rootMargin: '400px',
+        threshold: 0.01
+      });
+    }
+
+    if (this.sentinel) {
+      this.observer.observe(this.sentinel);
+    }
+  }
+
+  triggerRevealAnimationsForBatch(batchItems) {
+    if (batchItems.length === 0) return;
+
+    if (window.GSAP) {
+      window.GSAP.fromTo(batchItems,
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          stagger: 0.04,
+          ease: 'power2.out',
+          clearProps: 'all'
+        }
+      );
+    } else {
+      batchItems.forEach((item, index) => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(20px)';
+        item.style.transition = 'opacity 0.4s ease ' + (index * 0.03) + 's, transform 0.4s ease ' + (index * 0.03) + 's';
+
+        requestAnimationFrame(() => {
+          item.style.opacity = '1';
+          item.style.transform = 'translateY(0)';
+        });
+      });
+    }
   }
 
   createGalleryItem(item, index) {
@@ -144,7 +241,7 @@ class GalleryRenderer {
       }, { once: true });
 
       // Register with VideoObserver for lazy loading
-      if (window.Core?.VideoObserver) {
+      if (window.Core && window.Core.VideoObserver) {
         window.Core.VideoObserver.observe(media);
       }
 
@@ -175,7 +272,7 @@ class GalleryRenderer {
       article.appendChild(playIcon);
 
       // Initialize video hover behavior
-      if (window.Core?.VideoHover) {
+      if (window.Core && window.Core.VideoHover) {
         window.Core.VideoHover.init(media);
       }
     }
@@ -275,7 +372,7 @@ class GalleryRenderer {
   }
 
   showLoading() {
-    this.container.innerHTML = '<div class="gallery-loading-state"><div class="gallery-loading-spinner"></div><p>Loading portfolio...</p></div>';
+    this.container.innerHTML = '<div class="gallery-loading-state"><div class="gallery-loading-spinner"></div><p>Loading portfolio</p></div>';
   }
 
   showError(message) {
@@ -326,7 +423,7 @@ class ModalViewer {
 
   init() {
     // Initialize Core.Lightbox if not already done
-    if (window.Core?.Lightbox) {
+    if (window.Core && window.Core.Lightbox) {
       window.Core.Lightbox.init();
     }
 
@@ -376,7 +473,7 @@ class ModalViewer {
   }
 
   navigate(direction) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     // Debounce rapid navigation
     if (this.navigationDebounce) return;
@@ -386,7 +483,7 @@ class ModalViewer {
       this.navigationDebounce = false;
     }, this.debounceDelay);
 
-    const state = window.PortfolioGallery?.state?.getState();
+    const state = window.PortfolioGallery && window.PortfolioGallery.state && window.PortfolioGallery.state.getState();
     if (!state) return;
 
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -401,7 +498,7 @@ class ModalViewer {
   }
 
   open(index) {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     const state = this.state.getState();
     const items = state.filteredList.length > 0 ? state.filteredList : state.mediaList;
@@ -413,7 +510,7 @@ class ModalViewer {
   }
 
   close() {
-    if (!window.Core?.Lightbox) return;
+    if (!window.Core || !window.Core.Lightbox) return;
 
     window.Core.Lightbox.close();
     this.isOpen = false;
@@ -623,7 +720,7 @@ class PortfolioGallery {
       this.modal.init();
 
       // Initialize Core.Lightbox
-      if (window.Core?.Lightbox) {
+      if (window.Core && window.Core.Lightbox) {
         window.Core.Lightbox.init();
       }
 
