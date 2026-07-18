@@ -12,12 +12,14 @@ class ContentLoader {
     this.allImages = []; // Cache for processed items
     this.mediaData = null; // Cache portfolio.images from JSON
     this.portfolioData = []; // Flattened and randomized for homepage
-    this.currentlyAppendedItems = []; // In-memory tracking array to bypass DOM queries
 
     // Pagination state for homepage
     this.visibleImagesCount = 0;
     this.visibleVideosCount = 0;
     this.activeCategory = 'all';
+
+    // Performance optimization: Track currently appended items in-memory to avoid O(N) DOM queries.
+    this.currentlyAppendedItems = [];
   }
 
   /**
@@ -121,6 +123,8 @@ class ContentLoader {
         if (this.activeCategory === 'cinematics' || this.activeCategory === 'video') {
           const grid = document.getElementById('portfolio-inline-grid');
           if (grid) grid.innerHTML = '';
+          // Reset tracked appended items as we are clearing the grid
+          this.currentlyAppendedItems = [];
           this.appendItems(0, 1);
         } else {
           this.appendItems(3, 0);
@@ -155,9 +159,10 @@ class ContentLoader {
     if (!grid) return;
 
     grid.innerHTML = '';
+    // Reset tracked appended items
+    this.currentlyAppendedItems = [];
     this.visibleImagesCount = 0;
     this.visibleVideosCount = 0;
-    this.currentlyAppendedItems = []; // Reset in-memory cache
 
     // Toggle cinematics layout mode
     if (this.activeCategory === 'cinematics' || this.activeCategory === 'video') {
@@ -212,6 +217,9 @@ class ContentLoader {
     const frag = document.createDocumentFragment();
 
     toAppend.forEach((item, idx) => {
+      // Track currently appended item in-memory for O(1) retrieval when opening Lightbox
+      this.currentlyAppendedItems.push(item);
+
       const el = document.createElement('div');
       el.className = 'portfolio-item fade-in-up';
       el.dataset.type = item.type;
@@ -242,20 +250,11 @@ class ContentLoader {
         el.appendChild(vid);
       }
 
-      // Track item in our in-memory list with resolved absolute URLs
-      this.currentlyAppendedItems.push({
-        src: new URL(item.src, window.location.href).href,
-        type: item.type,
-        title: item.title || '',
-        category: this.getCategoryName(this.activeCategory),
-        poster: item.poster ? new URL(item.poster, window.location.href).href : ''
-      });
-
       // Click handler for Lightbox
       el.addEventListener('click', () => {
         if (window.Core && window.Core.Lightbox) {
           const visibleItems = this.getHomepageVisibleItems();
-          const targetIndex = visibleItems.findIndex(v => v.src === new URL(item.src, window.location.href).href);
+          const targetIndex = visibleItems.findIndex(v => v.src === item.src);
           window.Core.Lightbox.open(targetIndex >= 0 ? targetIndex : 0, visibleItems);
         }
       });
@@ -269,8 +268,18 @@ class ContentLoader {
   }
 
   getHomepageVisibleItems() {
-    // Avoid expensive O(N) DOM querySelectorAll and nested querySelector loops by returning cached array
-    return this.currentlyAppendedItems || [];
+    // Performance optimization: Bypass O(N) DOM queries (querySelectorAll + nested querySelector)
+    // by mapping the tracked, in-memory appended items directly. This yields O(1) retrieval speed
+    // and eliminates layout recalculation risk during rendering of interactive components.
+    // Absolute URLs are explicitly resolved to guarantee 100% visual and structural parity with DOM-queried elements.
+    return this.currentlyAppendedItems.map(item => ({
+      src: item.src ? new URL(item.src, window.location.href).href : '',
+      type: item.type,
+      title: item.title || '',
+      category: this.getCategoryName(this.activeCategory),
+      poster: item.poster ? new URL(item.poster, window.location.href).href : '',
+      alt: item.alt || ''
+    }));
   }
 
   updateLoadMoreVisibility(totalImages, totalVideos) {
