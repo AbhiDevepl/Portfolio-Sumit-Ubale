@@ -12,6 +12,8 @@ class ContentLoader {
     this.allImages = []; // Cache for processed items
     this.mediaData = null; // Cache portfolio.images from JSON
     this.portfolioData = []; // Flattened and randomized for homepage
+    this.filteredCache = {}; // Cache for filtered category/type queries
+    this._flatMediaDataCache = null; // Cache for flat mediaData
 
     // Pagination state for homepage
     this.visibleImagesCount = 0;
@@ -65,6 +67,10 @@ class ContentLoader {
 
       this.data = data1 || data2;
       this.mediaData = this.data.portfolio.images;
+
+      // Reset caches
+      this.filteredCache = {};
+      this._flatMediaDataCache = null;
 
       // Flatten categories for homepage
       this.portfolioData = [];
@@ -178,16 +184,25 @@ class ContentLoader {
     this.appendItems(iAdd, vAdd);
   }
 
+  /**
+   * Lazy-initialize and cache the filtered results of portfolioData for the specified category and media type
+   */
+  getFilteredCacheItem(category, type) {
+    const key = category + '_' + type;
+    if (!this.filteredCache[key]) {
+      this.filteredCache[key] = this.portfolioData.filter(function(item) {
+        return (category === 'all' || item.category === category) && item.type === type;
+      });
+    }
+    return this.filteredCache[key];
+  }
+
   appendItems(imgCount, vidCount) {
     const grid = document.getElementById('portfolio-inline-grid');
     if (!grid) return;
 
-    const images = this.portfolioData.filter(item =>
-      (this.activeCategory === 'all' || item.category === this.activeCategory) && item.type === 'image'
-    );
-    const videos = this.portfolioData.filter(item =>
-      (this.activeCategory === 'all' || item.category === this.activeCategory) && item.type === 'video'
-    );
+    const images = this.getFilteredCacheItem(this.activeCategory, 'image');
+    const videos = this.getFilteredCacheItem(this.activeCategory, 'video');
 
     const toAppend = [];
 
@@ -310,7 +325,10 @@ class ContentLoader {
     if (!this.mediaData) return [];
 
     if (category === 'all') {
-      return Object.values(this.mediaData).flat();
+      if (!this._flatMediaDataCache) {
+        this._flatMediaDataCache = Object.values(this.mediaData).flat();
+      }
+      return this._flatMediaDataCache;
     }
 
     return this.mediaData[category] || [];
