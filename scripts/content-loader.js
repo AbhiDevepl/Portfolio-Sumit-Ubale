@@ -368,11 +368,11 @@ class ContentLoader {
       el.setAttribute('aria-label', (item.title || 'Open preview') + (item.category ? ', ' + item.category : ''));
 
       el.addEventListener('click', () => {
-        const visibleItems = window.GalleryManager?.getVisibleData?.() || items;
+        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : items;
         const itemIndex = visibleItems.findIndex(entry => entry.originalIndex === index);
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
-        if (window.Core?.Lightbox) {
+        if (window.Core && window.Core.Lightbox) {
           window.Core.Lightbox.open(targetIndex, visibleItems);
         }
       });
@@ -459,7 +459,7 @@ class ContentLoader {
    */
   populateEvents() {
     const eventsGrid = document.querySelector('.events-grid');
-    if (!eventsGrid || !this.data?.recentEvents) return;
+    if (!eventsGrid || !(this.data && this.data.recentEvents)) return;
 
     eventsGrid.innerHTML = '';
 
@@ -509,7 +509,7 @@ class ContentLoader {
 
     Object.entries(sections).forEach(([id, className]) => {
       const container = document.getElementById(id);
-      const data = this.data?.socialProof?.[id];
+      const data = (this.data && this.data.socialProof && this.data.socialProof[id]) ? this.data.socialProof[id] : null;
       if (container && data) {
         container.innerHTML = '';
         data.forEach(text => {
