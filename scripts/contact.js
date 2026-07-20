@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Disable submit button
     submitButton.disabled = true;
     const originalButtonText = submitButton.textContent;
-    submitButton.textContent = 'Sending...';
+    submitButton.textContent = 'Sending\u2026';
     
     // Collect form data
     const formData = {

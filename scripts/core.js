@@ -31,7 +31,7 @@ window.Core = {
             <div class="lightbox-media-container">
               <div class="lightbox-loading" style="display: none;">
                 <div class="spinner"></div>
-                <p>Loading...</p>
+                <p>Loading\u2026</p>
               </div>
               <img class="lightbox-image" src="" alt="" style="display: none;">
               <div class="lightbox-video-wrapper" style="display: none;">
