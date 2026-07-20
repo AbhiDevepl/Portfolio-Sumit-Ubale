@@ -326,7 +326,12 @@ class ContentLoader {
 
     if (category === 'all') {
       if (!this._flatMediaDataCache) {
-        this._flatMediaDataCache = Object.values(this.mediaData).flat();
+        var flatList = [];
+        var values = Object.values(this.mediaData);
+        for (var i = 0; i < values.length; i++) {
+          Array.prototype.push.apply(flatList, values[i]);
+        }
+        this._flatMediaDataCache = flatList;
       }
       return this._flatMediaDataCache;
     }
