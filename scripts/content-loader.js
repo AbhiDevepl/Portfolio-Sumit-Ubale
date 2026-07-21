@@ -261,7 +261,9 @@ class ContentLoader {
       let absoluteSrc = item.src;
       if (typeof window !== 'undefined' && window.location && window.location.href) {
         try {
-          absoluteSrc = new URL(item.src, window.location.href).href;
+          if (absoluteSrc && absoluteSrc.indexOf('http://') !== 0 && absoluteSrc.indexOf('https://') !== 0) {
+            absoluteSrc = new URL(absoluteSrc, window.location.href).href;
+          }
         } catch (e) {
           absoluteSrc = item.src;
         }
@@ -566,12 +568,14 @@ ContentLoader.CATEGORY_NAMES = {
 };
 
 // Initialize content loader when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+if (typeof document !== 'undefined' && typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      window.contentLoader = new ContentLoader();
+      window.contentLoader.init();
+    });
+  } else {
     window.contentLoader = new ContentLoader();
     window.contentLoader.init();
-  });
-} else {
-  window.contentLoader = new ContentLoader();
-  window.contentLoader.init();
+  }
 }
