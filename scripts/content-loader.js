@@ -19,6 +19,7 @@ class ContentLoader {
     this.visibleImagesCount = 0;
     this.visibleVideosCount = 0;
     this.activeCategory = 'all';
+    this.currentlyAppendedItems = []; // Track currently appended items for O(1) retrieval
   }
 
   /**
@@ -162,6 +163,7 @@ class ContentLoader {
     grid.innerHTML = '';
     this.visibleImagesCount = 0;
     this.visibleVideosCount = 0;
+    this.currentlyAppendedItems = []; // Reset tracked items
 
     // Toggle cinematics layout mode
     if (this.activeCategory === 'cinematics' || this.activeCategory === 'video') {
@@ -255,6 +257,14 @@ class ContentLoader {
         el.appendChild(vid);
       }
 
+      // Track items in-memory resolving URLs to absolute form
+      this.currentlyAppendedItems.push({
+        src: new URL(item.src, window.location.href).href,
+        type: item.type,
+        title: item.title || '',
+        category: this.getCategoryName(this.activeCategory)
+      });
+
       // Click handler for Lightbox
       el.addEventListener('click', () => {
         if (window.Core && window.Core.Lightbox) {
@@ -273,19 +283,8 @@ class ContentLoader {
   }
 
   getHomepageVisibleItems() {
-    const items = [];
-    document.querySelectorAll('#portfolio-inline-grid .portfolio-item').forEach(el => {
-      const media = el.querySelector('img, video');
-      if (media) {
-        items.push({
-          src: media.src,
-          type: el.dataset.type,
-          title: '',
-          category: this.getCategoryName(this.activeCategory)
-        });
-      }
-    });
-    return items;
+    // Optimized to bypass O(N) DOM queries entirely by returning cached in-memory array
+    return this.currentlyAppendedItems;
   }
 
   updateLoadMoreVisibility(totalImages, totalVideos) {
