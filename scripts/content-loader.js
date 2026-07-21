@@ -258,8 +258,17 @@ class ContentLoader {
       }
 
       // Track items in-memory resolving URLs to absolute form
+      var absoluteSrc = item.src;
+      if (typeof window !== 'undefined' && window.location && window.location.href) {
+        try {
+          absoluteSrc = new URL(item.src, window.location.href).href;
+        } catch (e) {
+          absoluteSrc = item.src;
+        }
+      }
+
       this.currentlyAppendedItems.push({
-        src: new URL(item.src, window.location.href).href,
+        src: absoluteSrc,
         type: item.type,
         title: item.title || '',
         category: this.getCategoryName(this.activeCategory)
