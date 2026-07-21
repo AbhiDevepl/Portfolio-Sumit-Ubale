@@ -14,6 +14,7 @@ class ContentLoader {
     this.portfolioData = []; // Flattened and randomized for homepage
     this.filteredCache = {}; // Cache for filtered category/type queries
     this._flatMediaDataCache = null; // Cache for flat mediaData
+    this.currentlyAppendedItems = []; // Track currently appended items for O(1) retrieval
 
     // Pagination state for homepage
     this.visibleImagesCount = 0;
@@ -162,6 +163,7 @@ class ContentLoader {
     grid.innerHTML = '';
     this.visibleImagesCount = 0;
     this.visibleVideosCount = 0;
+    this.currentlyAppendedItems = []; // Reset tracked items on category switch or reload
 
     // Toggle cinematics layout mode
     if (this.activeCategory === 'cinematics' || this.activeCategory === 'video') {
@@ -222,6 +224,9 @@ class ContentLoader {
 
     if (toAppend.length === 0) return;
 
+    // Maintain in-memory track of appended items to bypass DOM queries
+    Array.prototype.push.apply(this.currentlyAppendedItems, toAppend);
+
     const frag = document.createDocumentFragment();
 
     toAppend.forEach((item, idx) => {
@@ -273,19 +278,13 @@ class ContentLoader {
   }
 
   getHomepageVisibleItems() {
-    const items = [];
-    document.querySelectorAll('#portfolio-inline-grid .portfolio-item').forEach(el => {
-      const media = el.querySelector('img, video');
-      if (media) {
-        items.push({
-          src: media.src,
-          type: el.dataset.type,
-          title: '',
-          category: this.getCategoryName(this.activeCategory)
-        });
-      }
-    });
-    return items;
+    // Avoid slow O(N) DOM queries on every scroll/click; return absolute URLs in map
+    return this.currentlyAppendedItems.map(item => ({
+      src: new URL(item.src, window.location.href).href,
+      type: item.type,
+      title: '',
+      category: this.getCategoryName(this.activeCategory)
+    }));
   }
 
   updateLoadMoreVisibility(totalImages, totalVideos) {
