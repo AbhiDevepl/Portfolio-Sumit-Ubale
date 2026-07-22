@@ -19,6 +19,7 @@ class ContentLoader {
     this.visibleImagesCount = 0;
     this.visibleVideosCount = 0;
     this.activeCategory = 'all';
+    this.currentlyAppendedItems = []; // Track currently appended items for O(1) retrieval
   }
 
   /**
@@ -162,6 +163,7 @@ class ContentLoader {
     grid.innerHTML = '';
     this.visibleImagesCount = 0;
     this.visibleVideosCount = 0;
+    this.currentlyAppendedItems = []; // Reset tracked items
 
     // Toggle cinematics layout mode
     if (this.activeCategory === 'cinematics' || this.activeCategory === 'video') {
@@ -255,6 +257,25 @@ class ContentLoader {
         el.appendChild(vid);
       }
 
+      // Track items in-memory resolving URLs to absolute form
+      let absoluteSrc = item.src;
+      if (typeof window !== 'undefined' && window.location && window.location.href) {
+        try {
+          if (absoluteSrc && absoluteSrc.indexOf('http://') !== 0 && absoluteSrc.indexOf('https://') !== 0) {
+            absoluteSrc = new URL(absoluteSrc, window.location.href).href;
+          }
+        } catch (e) {
+          absoluteSrc = item.src;
+        }
+      }
+
+      this.currentlyAppendedItems.push({
+        src: absoluteSrc,
+        type: item.type,
+        title: item.title || '',
+        category: this.getCategoryName(this.activeCategory)
+      });
+
       // Click handler for Lightbox
       el.addEventListener('click', () => {
         if (window.Core && window.Core.Lightbox) {
@@ -273,19 +294,8 @@ class ContentLoader {
   }
 
   getHomepageVisibleItems() {
-    const items = [];
-    document.querySelectorAll('#portfolio-inline-grid .portfolio-item').forEach(el => {
-      const media = el.querySelector('img, video');
-      if (media) {
-        items.push({
-          src: media.src,
-          type: el.dataset.type,
-          title: '',
-          category: this.getCategoryName(this.activeCategory)
-        });
-      }
-    });
-    return items;
+    // Optimized to bypass O(N) DOM queries entirely by returning cached in-memory array
+    return this.currentlyAppendedItems;
   }
 
   updateLoadMoreVisibility(totalImages, totalVideos) {
@@ -558,12 +568,14 @@ ContentLoader.CATEGORY_NAMES = {
 };
 
 // Initialize content loader when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+if (typeof document !== 'undefined' && typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      window.contentLoader = new ContentLoader();
+      window.contentLoader.init();
+    });
+  } else {
     window.contentLoader = new ContentLoader();
     window.contentLoader.init();
-  });
-} else {
-  window.contentLoader = new ContentLoader();
-  window.contentLoader.init();
+  }
 }
