@@ -60,14 +60,8 @@ class GalleryLoader {
       categoriesContainer.appendChild(fragment);
     }
 
-    // Aggregate images
-    let images = [];
-    if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => Array.prototype.push.apply(images, catImages));
-    } else {
-      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
-    }
+    // Aggregate images via cached method
+    const images = this.getImagesForCategory(this.category);
     
     if (!images.length) {
       grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
@@ -97,18 +91,58 @@ class GalleryLoader {
     return Core.Media.createItem(image, index, allItems, (cat) => this.category);
   }
 
+  /**
+   * Lazy-initialize and cache the aggregated image list for the specified category
+   * to avoid O(N) traversal on every category change.
+   */
+  getImagesForCategory(category) {
+    if (!this._imagesCache) {
+      this._imagesCache = {};
+    }
+    if (this._imagesCache[category]) {
+      return this._imagesCache[category];
+    }
+
+    let images = [];
+    if (category === 'all') {
+      Object.values(this.data.portfolio.images).forEach(catImages => Array.prototype.push.apply(images, catImages));
+    } else {
+      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === category);
+      images = this.data.portfolio.images[key] || [];
+    }
+
+    this._imagesCache[category] = images;
+    return images;
+  }
+
+  /**
+   * Lazy-initialize and cache the enriched lightbox dataset for the specified category
+   * to bypass expensive O(N) mapping operations on category transitions.
+   */
   getGalleryData() {
+    if (!this._galleryDataCache) {
+      this._galleryDataCache = {};
+    }
+    if (this._galleryDataCache[this.category]) {
+      return this._galleryDataCache[this.category];
+    }
+
     // Helper to get raw data for lightbox with injected category
+    let result;
     if (this.category === 'all') {
       let all = [];
       Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
         const enriched = imgs.map(img => Object.assign({}, img, { category: catSlug }));
         Array.prototype.push.apply(all, enriched);
       });
-      return all;
+      result = all;
+    } else {
+      const imgs = this.data.portfolio.images[this.category] || [];
+      result = imgs.map(img => Object.assign({}, img, { category: this.category }));
     }
-    const imgs = this.data.portfolio.images[this.category] || [];
-    return imgs.map(img => Object.assign({}, img, { category: this.category }));
+
+    this._galleryDataCache[this.category] = result;
+    return result;
   }
 
   initAnimations() {

@@ -9,3 +9,7 @@ This journal contains critical performance-related learnings specific to this co
 ## 2026-07-21 - [Caching Appended Portfolio Items to Prevent O(N) DOM-Queries and Layout Thrashing]
 **Learning:** Querying the DOM dynamically inside high-frequency interaction events (such as fetching visible elements to pass to the Lightbox upon clicking a portfolio item) triggers expensive browser layout calculations and element lookups (`document.querySelectorAll` + nested `.querySelector`). By tracking the appended items in-memory during insertion via `this.currentlyAppendedItems`, we can bypass the DOM query entirely and retrieve the exact items structure in O(1) time complexity.
 **Action:** Maintain a parallel in-memory array/cache of dynamic visual elements inside loaders/renderers to avoid querying the DOM when those structures are requested for interactive features (like Lightboxes).
+
+## 2026-07-22 - [Caching Category Image Aggregation and Lightbox Mapping in GalleryLoader]
+**Learning:** For a dedicated gallery with 1,000+ items, navigating category filter chips can trigger costly iteration and object construction loops (e.g. `Object.entries` mapping and cloning). Storing lazy-initialized category caches (`this._imagesCache` and `this._galleryDataCache`) in the loader avoids redundant O(N) array transformations entirely on subsequent category clicks.
+**Action:** Always cache aggregated or enriched views of large datasets when they are toggled dynamically via category navigation filters.
