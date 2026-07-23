@@ -82,35 +82,118 @@ class GalleryRenderer {
     this.state = state;
     this.container = container;
     this.animationFrame = null;
+
+    // Progressive rendering state
+    this.batchSize = 36;
+    this.renderedCount = 0;
+    this.allFilteredItems = [];
+    this.sentinel = null;
+    this.observer = null;
   }
 
-  render(items, category) {
+  render(state) {
+    if (!state) return;
+
     // Cancel pending animation frame
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
     }
 
     this.animationFrame = requestAnimationFrame(() => {
-      this._renderSync(items, category);
+      if (state.isLoading) {
+        this.showLoading();
+        return;
+      }
+
+      if (state.hasError) {
+        this.showError('Unable to load portfolio. Please check your connection and try again.');
+        return;
+      }
+
+      this._renderSync(state.filteredList, state.activeCategory);
     });
   }
 
   _renderSync(items, category) {
+    // Disconnect previous observer if any
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+
+    this.allFilteredItems = items;
+    this.renderedCount = 0;
+
+    // Clear container completely
+    this.container.innerHTML = '';
+
+    if (items.length === 0) {
+      this.container.innerHTML = '<p class="no-items">No items found in this category.</p>';
+      return;
+    }
+
+    // Set up IntersectionObserver before rendering the first batch to avoid stale observer references
+    this.setupObserver();
+
+    // Render first batch (initial load)
+    this.renderNextBatch(true);
+  }
+
+  renderNextBatch(isInitial = false) {
+    if (this.renderedCount >= this.allFilteredItems.length) return;
+
+    const start = this.renderedCount;
+    const end = Math.min(start + this.batchSize, this.allFilteredItems.length);
+    const batch = this.allFilteredItems.slice(start, end);
+
     const fragment = document.createDocumentFragment();
 
-    items.forEach((item, index) => {
-      const element = this.createGalleryItem(item, index);
+    batch.forEach((item, index) => {
+      const absoluteIndex = start + index;
+      const element = this.createGalleryItem(item, absoluteIndex);
       if (element) {
         fragment.appendChild(element);
       }
     });
 
-    // Clear container and append new items
-    this.container.innerHTML = '';
-    this.container.appendChild(fragment);
+    // Remove sentinel before appending new items so new items go before sentinel
+    if (this.sentinel && this.sentinel.parentNode === this.container) {
+      this.container.removeChild(this.sentinel);
+    }
 
-    // Trigger reveal animations
-    this.triggerRevealAnimations();
+    this.container.appendChild(fragment);
+    this.renderedCount = end;
+
+    // Trigger reveal animations for the newly appended items only
+    const newItems = Array.from(this.container.children).slice(start);
+    this.triggerRevealAnimations(newItems, isInitial);
+
+    // Re-append sentinel if there are more items to render
+    if (this.renderedCount < this.allFilteredItems.length) {
+      if (!this.sentinel) {
+        this.sentinel = document.createElement('div');
+        this.sentinel.className = 'gallery-sentinel';
+        this.sentinel.style.height = '10px';
+        this.sentinel.style.width = '100%';
+        this.sentinel.style.clear = 'both';
+      }
+      this.container.appendChild(this.sentinel);
+      if (this.observer) {
+        this.observer.observe(this.sentinel);
+      }
+    }
+  }
+
+  setupObserver() {
+    if (this.renderedCount >= this.allFilteredItems.length) return;
+
+    this.observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        this.renderNextBatch(false);
+      }
+    }, {
+      rootMargin: '400px', // Preload next batch 400px before reaching the bottom
+      threshold: 0.1
+    });
   }
 
   createGalleryItem(item, index) {
@@ -240,28 +323,44 @@ class GalleryRenderer {
     window.Core.Lightbox.open(index, lightboxItems);
   }
 
-  triggerRevealAnimations() {
-    const items = this.container.querySelectorAll('.gallery-item');
+  triggerRevealAnimations(newItems, isInitial = false) {
+    const items = newItems || Array.from(this.container.querySelectorAll('.gallery-item'));
 
-    if (window.GSAP && window.ScrollTrigger) {
-      // Use GSAP if available
-      window.GSAP.fromTo(items,
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          stagger: 0.05,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: this.container,
-            start: 'top 80%'
+    if (window.GSAP) {
+      if (isInitial && window.ScrollTrigger) {
+        // Use ScrollTrigger on initial load for scroll-driven reveals
+        window.GSAP.fromTo(items,
+          { opacity: 0, y: 40 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.6,
+            stagger: 0.05,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: this.container,
+              start: 'top 80%'
+            }
           }
-        }
-      );
+        );
+      } else {
+        // Appended batch or direct animation without scroll trigger to keep main thread light
+        window.GSAP.fromTo(items,
+          { opacity: 0, y: 40 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.6,
+            stagger: 0.05,
+            ease: 'power2.out',
+            overwrite: 'auto'
+          }
+        );
+      }
     } else {
       // Fallback to CSS animations
       items.forEach((item, index) => {
+        if (!item.classList || !item.classList.contains('gallery-item')) return;
         item.style.opacity = '0';
         item.style.transform = 'translateY(20px)';
         item.style.transition = 'opacity 0.5s ease ' + (index * 0.05) + 's, transform 0.5s ease ' + (index * 0.05) + 's';
@@ -593,8 +692,12 @@ class PortfolioGallery {
     // Initialize renderer
     this.renderer = new GalleryRenderer(this.state, this.container);
 
+    // Subscribe renderer to state changes
+    this.state.subscribe((state) => {
+      this.renderer.render(state);
+    });
+
     // Show loading state
-    this.renderer.showLoading();
     this.state.setLoading(true);
 
     try {
@@ -607,9 +710,6 @@ class PortfolioGallery {
       // Update state
       this.state.setMediaList(allItems);
       this.state.setLoading(false);
-
-      // Initial render
-      this.renderer.render(allItems, 'all');
 
       // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
@@ -630,7 +730,6 @@ class PortfolioGallery {
     } catch (error) {
       console.error('Failed to load portfolio:', error);
       this.state.setError(true);
-      this.renderer.showError('Unable to load portfolio. Please check your connection and try again.');
     }
   }
 
