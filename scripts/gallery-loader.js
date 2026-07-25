@@ -7,6 +7,9 @@ class GalleryLoader {
   constructor() {
     this.data = null;
     this.category = this.getCategoryFromURL();
+    this._categoriesRendered = false;
+    this._imagesCache = {};
+    this._galleryDataCache = {};
   }
 
   async init() {
@@ -43,31 +46,35 @@ class GalleryLoader {
     const categoryInfo = this.data.portfolio.categories.find(c => c.slug.toLowerCase() === this.category);
     if (titleEl) titleEl.textContent = categoryInfo ? categoryInfo.name : this.category.toUpperCase();
 
-    // Render category buttons (navigation)
+    // Render category buttons (navigation) exactly once to prevent layout thrashing and paint overhead
     if (categoriesContainer) {
-      categoriesContainer.innerHTML = '';
-      const fragment = Core.DOM.createFragment(this.data.portfolio.categories, (cat) => {
-        const btn = document.createElement('button');
-        btn.className = `category-btn ${cat.slug === this.category ? 'active' : ''}`;
-        btn.textContent = cat.name;
-        btn.onclick = () => {
-          this.category = cat.slug;
-          window.history.pushState({ category: cat.slug }, '', `?category=${cat.slug}`);
-          this.renderGallery();
-        };
-        return btn;
-      });
-      categoriesContainer.appendChild(fragment);
+      if (!this._categoriesRendered) {
+        categoriesContainer.innerHTML = '';
+        const fragment = Core.DOM.createFragment(this.data.portfolio.categories, (cat) => {
+          const btn = document.createElement('button');
+          btn.className = `category-btn ${cat.slug === this.category ? 'active' : ''}`;
+          btn.textContent = cat.name;
+          btn.dataset.category = cat.slug;
+          btn.onclick = () => {
+            this.category = cat.slug;
+            window.history.pushState({ category: cat.slug }, '', `?category=${cat.slug}`);
+            this.renderGallery();
+          };
+          return btn;
+        });
+        categoriesContainer.appendChild(fragment);
+        this._categoriesRendered = true;
+      } else {
+        // Update active class on existing buttons
+        const buttons = categoriesContainer.querySelectorAll('.category-btn');
+        buttons.forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.category === this.category);
+        });
+      }
     }
 
-    // Aggregate images
-    let images = [];
-    if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => Array.prototype.push.apply(images, catImages));
-    } else {
-      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
-    }
+    // Aggregate images using lazy-initialized in-memory cache
+    const images = this.getCategoryImages();
     
     if (!images.length) {
       grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
@@ -83,7 +90,7 @@ class GalleryLoader {
     }
 
     grid.innerHTML = '';
-    // Hoist getGalleryData to avoid O(N^2) rendering bottleneck (1192 items)
+    // Hoist getGalleryData (using cache) to avoid O(N^2) rendering bottleneck (1192 items)
     const allItems = this.getGalleryData();
     const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, allItems));
     grid.appendChild(galleryFragment);
@@ -97,7 +104,26 @@ class GalleryLoader {
     return Core.Media.createItem(image, index, allItems, (cat) => this.category);
   }
 
+  getCategoryImages() {
+    if (this._imagesCache[this.category]) {
+      return this._imagesCache[this.category];
+    }
+    let images = [];
+    if (this.category === 'all') {
+      Object.values(this.data.portfolio.images).forEach(catImages => Array.prototype.push.apply(images, catImages));
+    } else {
+      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
+      images = this.data.portfolio.images[key] || [];
+    }
+    this._imagesCache[this.category] = images;
+    return images;
+  }
+
   getGalleryData() {
+    if (this._galleryDataCache[this.category]) {
+      return this._galleryDataCache[this.category];
+    }
+    let result;
     // Helper to get raw data for lightbox with injected category
     if (this.category === 'all') {
       let all = [];
@@ -105,10 +131,13 @@ class GalleryLoader {
         const enriched = imgs.map(img => Object.assign({}, img, { category: catSlug }));
         Array.prototype.push.apply(all, enriched);
       });
-      return all;
+      result = all;
+    } else {
+      const imgs = this.data.portfolio.images[this.category] || [];
+      result = imgs.map(img => Object.assign({}, img, { category: this.category }));
     }
-    const imgs = this.data.portfolio.images[this.category] || [];
-    return imgs.map(img => Object.assign({}, img, { category: this.category }));
+    this._galleryDataCache[this.category] = result;
+    return result;
   }
 
   initAnimations() {
