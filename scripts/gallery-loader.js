@@ -43,31 +43,48 @@ class GalleryLoader {
     const categoryInfo = this.data.portfolio.categories.find(c => c.slug.toLowerCase() === this.category);
     if (titleEl) titleEl.textContent = categoryInfo ? categoryInfo.name : this.category.toUpperCase();
 
-    // Render category buttons (navigation)
+    // Render category buttons (navigation) once, and then toggle active class dynamically
     if (categoriesContainer) {
-      categoriesContainer.innerHTML = '';
-      const fragment = Core.DOM.createFragment(this.data.portfolio.categories, (cat) => {
-        const btn = document.createElement('button');
-        btn.className = `category-btn ${cat.slug === this.category ? 'active' : ''}`;
-        btn.textContent = cat.name;
-        btn.onclick = () => {
-          this.category = cat.slug;
-          window.history.pushState({ category: cat.slug }, '', `?category=${cat.slug}`);
-          this.renderGallery();
-        };
-        return btn;
-      });
-      categoriesContainer.appendChild(fragment);
+      if (!this._categoriesRendered) {
+        categoriesContainer.innerHTML = '';
+        const fragment = Core.DOM.createFragment(this.data.portfolio.categories, (cat) => {
+          const btn = document.createElement('button');
+          btn.className = `category-btn ${cat.slug === this.category ? 'active' : ''}`;
+          btn.textContent = cat.name;
+          btn.setAttribute('data-slug', cat.slug); // Using standard data attribute for CI-safe DOM lookup
+          btn.onclick = () => {
+            this.category = cat.slug;
+            window.history.pushState({ category: cat.slug }, '', `?category=${cat.slug}`);
+            this.renderGallery();
+          };
+          return btn;
+        });
+        categoriesContainer.appendChild(fragment);
+        this._categoriesRendered = true;
+      } else {
+        const buttons = categoriesContainer.querySelectorAll('.category-btn');
+        buttons.forEach((btn) => {
+          const btnSlug = btn.getAttribute('data-slug');
+          btn.classList.toggle('active', btnSlug === this.category);
+        });
+      }
     }
 
-    // Aggregate images
-    let images = [];
-    if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => Array.prototype.push.apply(images, catImages));
-    } else {
-      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
+    // Aggregate images with lazy-initialized in-memory cache to bypass O(N) operations
+    if (!this._imagesCache) {
+      this._imagesCache = {};
     }
+    if (!this._imagesCache[this.category]) {
+      let imagesList = [];
+      if (this.category === 'all') {
+        Object.values(this.data.portfolio.images).forEach(catImages => Array.prototype.push.apply(imagesList, catImages));
+      } else {
+        const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
+        imagesList = this.data.portfolio.images[key] || [];
+      }
+      this._imagesCache[this.category] = imagesList;
+    }
+    const images = this._imagesCache[this.category];
     
     if (!images.length) {
       grid.innerHTML = '<p class="error-msg">No items found in this category.</p>';
@@ -98,17 +115,26 @@ class GalleryLoader {
   }
 
   getGalleryData() {
-    // Helper to get raw data for lightbox with injected category
-    if (this.category === 'all') {
-      let all = [];
-      Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
-        const enriched = imgs.map(img => Object.assign({}, img, { category: catSlug }));
-        Array.prototype.push.apply(all, enriched);
-      });
-      return all;
+    // Lazy-initialized cache to bypass redundant category mapping operations on large datasets
+    if (!this._galleryDataCache) {
+      this._galleryDataCache = {};
     }
-    const imgs = this.data.portfolio.images[this.category] || [];
-    return imgs.map(img => Object.assign({}, img, { category: this.category }));
+    if (!this._galleryDataCache[this.category]) {
+      let result;
+      if (this.category === 'all') {
+        let all = [];
+        Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
+          const enriched = imgs.map(img => Object.assign({}, img, { category: catSlug }));
+          Array.prototype.push.apply(all, enriched);
+        });
+        result = all;
+      } else {
+        const imgs = this.data.portfolio.images[this.category] || [];
+        result = imgs.map(img => Object.assign({}, img, { category: this.category }));
+      }
+      this._galleryDataCache[this.category] = result;
+    }
+    return this._galleryDataCache[this.category];
   }
 
   initAnimations() {
