@@ -82,6 +82,13 @@ class GalleryRenderer {
     this.state = state;
     this.container = container;
     this.animationFrame = null;
+
+    // Batch loading states for progressive rendering
+    this.batchSize = 36;
+    this.renderedCount = 0;
+    this.itemsToRender = [];
+    this.sentinel = null;
+    this.observer = null;
   }
 
   render(items, category) {
@@ -96,27 +103,93 @@ class GalleryRenderer {
   }
 
   _renderSync(items, category) {
-    const fragment = document.createDocumentFragment();
+    // Reset batch loading states
+    this.cleanupSentinel();
+    this.itemsToRender = items;
+    this.renderedCount = 0;
 
-    items.forEach((item, index) => {
-      const element = this.createGalleryItem(item, index);
+    // Clear container
+    this.container.innerHTML = '';
+
+    // Render first batch
+    this.renderNextBatch();
+  }
+
+  renderNextBatch() {
+    const start = this.renderedCount;
+    const end = Math.min(start + this.batchSize, this.itemsToRender.length);
+
+    if (start >= this.itemsToRender.length) {
+      this.cleanupSentinel();
+      return;
+    }
+
+    const batchItems = this.itemsToRender.slice(start, end);
+    const fragment = document.createDocumentFragment();
+    const newlyCreatedElements = [];
+
+    batchItems.forEach((item, index) => {
+      // Calculate overall index in filteredList
+      const absoluteIndex = start + index;
+      const element = this.createGalleryItem(item, absoluteIndex);
       if (element) {
         fragment.appendChild(element);
+        newlyCreatedElements.push(element);
       }
     });
 
-    // Clear container and append new items
-    this.container.innerHTML = '';
-    this.container.appendChild(fragment);
+    // Remove sentinel before appending if it exists
+    this.cleanupSentinel();
 
-    // Trigger reveal animations
-    this.triggerRevealAnimations();
+    // Append batch items to container
+    this.container.appendChild(fragment);
+    this.renderedCount = end;
+
+    // Trigger reveal animations on newly created elements
+    this.triggerRevealAnimations(newlyCreatedElements);
+
+    // If there are more items to load, setup sentinel
+    if (this.renderedCount < this.itemsToRender.length) {
+      this.setupSentinel();
+    }
+  }
+
+  setupSentinel() {
+    this.sentinel = document.createElement('div');
+    this.sentinel.className = 'gallery-sentinel';
+    this.sentinel.style.height = '1px';
+    this.sentinel.style.width = '100%';
+    this.sentinel.style.clear = 'both';
+    this.container.appendChild(this.sentinel);
+
+    this.observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          this.renderNextBatch();
+        }
+      });
+    }, {
+      rootMargin: '400px'
+    });
+
+    this.observer.observe(this.sentinel);
+  }
+
+  cleanupSentinel() {
+    if (this.observer && this.sentinel) {
+      this.observer.unobserve(this.sentinel);
+    }
+    if (this.sentinel && this.sentinel.parentNode) {
+      this.sentinel.parentNode.removeChild(this.sentinel);
+    }
+    this.sentinel = null;
+    this.observer = null;
   }
 
   createGalleryItem(item, index) {
     const isVideo = item.type === 'video';
     const article = document.createElement('article');
-    article.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image');
+    article.className = 'gallery-item ' + (isVideo ? 'gallery-item--video' : 'gallery-item--image') + ' loading';
     article.dataset.index = index;
     article.dataset.category = item.category || '';
     article.setAttribute('tabindex', '0');
@@ -240,8 +313,8 @@ class GalleryRenderer {
     window.Core.Lightbox.open(index, lightboxItems);
   }
 
-  triggerRevealAnimations() {
-    const items = this.container.querySelectorAll('.gallery-item');
+  triggerRevealAnimations(newElements) {
+    const items = newElements || this.container.querySelectorAll('.gallery-item');
 
     if (window.GSAP && window.ScrollTrigger) {
       // Use GSAP if available
@@ -593,8 +666,18 @@ class PortfolioGallery {
     // Initialize renderer
     this.renderer = new GalleryRenderer(this.state, this.container);
 
+    // Subscribe to state changes
+    this.state.subscribe((state) => {
+      if (state.isLoading) {
+        this.renderer.showLoading();
+      } else if (state.hasError) {
+        this.renderer.showError('Unable to load portfolio. Please check your connection and try again.');
+      } else {
+        this.renderer.render(state.filteredList, state.activeCategory);
+      }
+    });
+
     // Show loading state
-    this.renderer.showLoading();
     this.state.setLoading(true);
 
     try {
@@ -607,9 +690,6 @@ class PortfolioGallery {
       // Update state
       this.state.setMediaList(allItems);
       this.state.setLoading(false);
-
-      // Initial render
-      this.renderer.render(allItems, 'all');
 
       // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
@@ -630,7 +710,6 @@ class PortfolioGallery {
     } catch (error) {
       console.error('Failed to load portfolio:', error);
       this.state.setError(true);
-      this.renderer.showError('Unable to load portfolio. Please check your connection and try again.');
     }
   }
 
