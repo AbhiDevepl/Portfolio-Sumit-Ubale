@@ -7,6 +7,9 @@ class GalleryLoader {
   constructor() {
     this.data = null;
     this.category = this.getCategoryFromURL();
+    this._imagesCache = {}; // Cache for aggregate/category images to bypass O(N) aggregation
+    this._galleryDataCache = {}; // Cache for getGalleryData() results
+    this._categoriesRendered = false; // Flag to render navigation buttons exactly once
   }
 
   async init() {
@@ -43,30 +46,47 @@ class GalleryLoader {
     const categoryInfo = this.data.portfolio.categories.find(c => c.slug.toLowerCase() === this.category);
     if (titleEl) titleEl.textContent = categoryInfo ? categoryInfo.name : this.category.toUpperCase();
 
-    // Render category buttons (navigation)
+    // Render category buttons (navigation) - optimized to render exactly once and only toggle active class
     if (categoriesContainer) {
-      categoriesContainer.innerHTML = '';
-      const fragment = Core.DOM.createFragment(this.data.portfolio.categories, (cat) => {
-        const btn = document.createElement('button');
-        btn.className = `category-btn ${cat.slug === this.category ? 'active' : ''}`;
-        btn.textContent = cat.name;
-        btn.onclick = () => {
-          this.category = cat.slug;
-          window.history.pushState({ category: cat.slug }, '', `?category=${cat.slug}`);
-          this.renderGallery();
-        };
-        return btn;
-      });
-      categoriesContainer.appendChild(fragment);
+      if (!this._categoriesRendered) {
+        categoriesContainer.innerHTML = '';
+        const fragment = Core.DOM.createFragment(this.data.portfolio.categories, (cat) => {
+          const btn = document.createElement('button');
+          btn.className = `category-btn ${cat.slug === this.category ? 'active' : ''}`;
+          btn.textContent = cat.name;
+          btn.dataset.category = cat.slug;
+          btn.onclick = () => {
+            this.category = cat.slug;
+            window.history.pushState({ category: cat.slug }, '', `?category=${cat.slug}`);
+            this.renderGallery();
+          };
+          return btn;
+        });
+        categoriesContainer.appendChild(fragment);
+        this._categoriesRendered = true;
+      } else {
+        const buttons = categoriesContainer.querySelectorAll('.category-btn');
+        buttons.forEach(btn => {
+          if (btn.dataset.category === this.category) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+      }
     }
 
-    // Aggregate images
-    let images = [];
-    if (this.category === 'all') {
-      Object.values(this.data.portfolio.images).forEach(catImages => Array.prototype.push.apply(images, catImages));
-    } else {
-      const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
-      images = this.data.portfolio.images[key] || [];
+    // Aggregate images - optimized using lazy-initialized in-memory cache
+    let images = this._imagesCache[this.category];
+    if (!images) {
+      if (this.category === 'all') {
+        images = [];
+        Object.values(this.data.portfolio.images).forEach(catImages => Array.prototype.push.apply(images, catImages));
+      } else {
+        const key = Object.keys(this.data.portfolio.images).find(k => k.toLowerCase() === this.category);
+        images = this.data.portfolio.images[key] || [];
+      }
+      this._imagesCache[this.category] = images;
     }
     
     if (!images.length) {
@@ -98,17 +118,24 @@ class GalleryLoader {
   }
 
   getGalleryData() {
+    if (this._galleryDataCache[this.category]) {
+      return this._galleryDataCache[this.category];
+    }
     // Helper to get raw data for lightbox with injected category
+    let result;
     if (this.category === 'all') {
       let all = [];
       Object.entries(this.data.portfolio.images).forEach(([catSlug, imgs]) => {
         const enriched = imgs.map(img => Object.assign({}, img, { category: catSlug }));
         Array.prototype.push.apply(all, enriched);
       });
-      return all;
+      result = all;
+    } else {
+      const imgs = this.data.portfolio.images[this.category] || [];
+      result = imgs.map(img => Object.assign({}, img, { category: this.category }));
     }
-    const imgs = this.data.portfolio.images[this.category] || [];
-    return imgs.map(img => Object.assign({}, img, { category: this.category }));
+    this._galleryDataCache[this.category] = result;
+    return result;
   }
 
   initAnimations() {
