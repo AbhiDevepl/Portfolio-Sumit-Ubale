@@ -714,6 +714,9 @@ class PortfolioGallery {
   }
 
   async fetchData() {
+    if (window.Core && typeof window.Core.fetchPortfolioData === 'function') {
+      return window.Core.fetchPortfolioData();
+    }
     const response = await fetch('/data/portfolio.json');
     if (!response.ok) {
       throw new Error('Failed to fetch portfolio data');
