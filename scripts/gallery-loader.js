@@ -33,8 +33,12 @@ class GalleryLoader {
   }
 
   async loadData() {
-    const response = await fetch('/data/portfolio.json');
-    this.data = await response.json();
+    if (window.Core && typeof window.Core.fetchPortfolioData === 'function') {
+      this.data = await window.Core.fetchPortfolioData();
+    } else {
+      const response = await fetch('/data/portfolio.json');
+      this.data = await response.json();
+    }
   }
 
   renderGallery() {

@@ -54,13 +54,20 @@ class ContentLoader {
    */
   async loadData() {
     try {
-      const [res1, res2] = await Promise.all([
-        fetch('/data/portfolio.json').catch(() => null),
-        fetch('/data/new_portfolio.json').catch(() => null)
-      ]);
+      let data1 = null;
+      if (window.Core && typeof window.Core.fetchPortfolioData === 'function') {
+        data1 = await window.Core.fetchPortfolioData('/data/portfolio.json').catch(() => null);
+      } else {
+        const res = await fetch('/data/portfolio.json').catch(() => null);
+        data1 = res && res.ok ? await res.json() : null;
+      }
 
-      const data1 = res1 && res1.ok ? await res1.json() : null;
-      const data2 = res2 && res2.ok ? await res2.json() : null;
+      let data2 = null;
+      // Only fetch the fallback file if primary data fails to load, preventing a redundant 404 request
+      if (!data1) {
+        const res2 = await fetch('/data/new_portfolio.json').catch(() => null);
+        data2 = res2 && res2.ok ? await res2.json() : null;
+      }
 
       if (!data1 && !data2) {
         throw new Error("Failed to load portfolio data");
