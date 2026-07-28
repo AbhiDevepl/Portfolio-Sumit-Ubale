@@ -33,6 +33,34 @@ window.Core = {
   },
 
   /**
+   * CACHED SERVICES FETCH
+   * Utilizes sessionStorage to cache services JSON data across page navigations,
+   * completely bypassing network latency and saving bandwidth per page view.
+   */
+  async fetchServicesData(url = '/data/services.json') {
+    const cacheKey = 'sumit_services_data';
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (e) {
+      console.warn('SessionStorage cache access failed:', e);
+    }
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Network response was not ok');
+    const data = await res.json();
+
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify(data));
+    } catch (e) {
+      console.warn('SessionStorage write failed:', e);
+    }
+    return data;
+  },
+
+  /**
    * LIGHTBOX ENGINE
    */
   Lightbox: {

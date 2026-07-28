@@ -50,9 +50,14 @@ class ServiceLoader {
   }
 
   async loadData() {
-    const response = await fetch('/data/services.json');
-    const data = await response.json();
-    this.servicesData = data.services;
+    if (window.Core && typeof window.Core.fetchServicesData === 'function') {
+      const data = await window.Core.fetchServicesData();
+      this.servicesData = data.services;
+    } else {
+      const response = await fetch('/data/services.json');
+      const data = await response.json();
+      this.servicesData = data.services;
+    }
   }
 
   renderPage() {
