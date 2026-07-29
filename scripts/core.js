@@ -4,17 +4,26 @@
  */
 
 window.Core = {
+  _cachedPortfolioData: null,
+  _cachedServicesData: null,
+
   /**
    * CACHED PORTFOLIO FETCH
-   * Utilizes sessionStorage to cache portfolio JSON data across page navigations,
-   * completely bypassing network latency and saving ~291KB of bandwidth per page view.
+   * Utilizes an in-memory cache and sessionStorage to cache portfolio JSON data,
+   * completely bypassing network latency and saving ~291KB of bandwidth per page view,
+   * while avoiding redundant sessionStorage access and O(N) JSON parsing.
    */
   async fetchPortfolioData(url = '/data/portfolio.json') {
+    if (window.Core._cachedPortfolioData) {
+      return window.Core._cachedPortfolioData;
+    }
+
     const cacheKey = 'sumit_portfolio_data';
     try {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
-        return JSON.parse(cached);
+        window.Core._cachedPortfolioData = JSON.parse(cached);
+        return window.Core._cachedPortfolioData;
       }
     } catch (e) {
       console.warn('SessionStorage cache access failed:', e);
@@ -24,6 +33,7 @@ window.Core = {
     if (!res.ok) throw new Error('Network response was not ok');
     const data = await res.json();
 
+    window.Core._cachedPortfolioData = data;
     try {
       sessionStorage.setItem(cacheKey, JSON.stringify(data));
     } catch (e) {
@@ -34,15 +44,21 @@ window.Core = {
 
   /**
    * CACHED SERVICES FETCH
-   * Utilizes sessionStorage to cache services JSON data across page navigations,
-   * completely bypassing network latency and saving bandwidth per page view.
+   * Utilizes an in-memory cache and sessionStorage to cache services JSON data,
+   * completely bypassing network latency and saving bandwidth per page view,
+   * while avoiding redundant sessionStorage access and O(N) JSON parsing.
    */
   async fetchServicesData(url = '/data/services.json') {
+    if (window.Core._cachedServicesData) {
+      return window.Core._cachedServicesData;
+    }
+
     const cacheKey = 'sumit_services_data';
     try {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
-        return JSON.parse(cached);
+        window.Core._cachedServicesData = JSON.parse(cached);
+        return window.Core._cachedServicesData;
       }
     } catch (e) {
       console.warn('SessionStorage cache access failed:', e);
@@ -52,6 +68,7 @@ window.Core = {
     if (!res.ok) throw new Error('Network response was not ok');
     const data = await res.json();
 
+    window.Core._cachedServicesData = data;
     try {
       sessionStorage.setItem(cacheKey, JSON.stringify(data));
     } catch (e) {
@@ -482,7 +499,7 @@ window.Core = {
     init(videoElement) {
       if (!videoElement || videoElement.tagName !== 'VIDEO') return;
 
-      const parent = videoElement.closest('.gallery-item');
+      const parent = videoElement.closest('.gallery-item, .portfolio-item');
       if (!parent) return;
       
       // Register with Observer for lazy loading/auto-pause
