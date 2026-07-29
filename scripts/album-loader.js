@@ -38,10 +38,13 @@ class AlbumLoader {
         return cat.slug !== 'all' && (this.data.portfolio.images[cat.slug] && this.data.portfolio.images[cat.slug].length > 0);
     });
 
+    // Batch DOM updates using DocumentFragment to avoid reflow overhead
+    const fragment = document.createDocumentFragment();
     categories.forEach((cat, index) => {
       const card = this.createAlbumCard(cat, index);
-      grid.appendChild(card);
+      fragment.appendChild(card);
     });
+    grid.appendChild(fragment);
 
     document.body.classList.remove('loading');
   }
