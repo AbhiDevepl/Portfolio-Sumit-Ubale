@@ -10,6 +10,11 @@ class GalleryLoader {
     this._imagesCache = {}; // Cache for aggregate/category images to bypass O(N) aggregation
     this._galleryDataCache = {}; // Cache for getGalleryData() results
     this._categoriesRendered = false; // Flag to render navigation buttons exactly once
+    this.batchSize = 36;
+    this.renderedCount = 0;
+    this.imagesToRender = [];
+    this.sentinel = null;
+    this.observer = null;
   }
 
   async init() {
@@ -106,14 +111,77 @@ class GalleryLoader {
       }
     }
 
+    this.cleanupSentinel();
+    this.imagesToRender = images;
+    this.renderedCount = 0;
     grid.innerHTML = '';
-    // Hoist getGalleryData to avoid O(N^2) rendering bottleneck (1192 items)
-    const allItems = this.getGalleryData();
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, allItems));
-    grid.appendChild(galleryFragment);
 
-    if (window.ScrollTrigger) ScrollTrigger.refresh();
+    // Render first batch progressively
+    this.renderNextBatch();
     document.body.classList.remove('loading');
+  }
+
+  cleanupSentinel() {
+    if (this.observer && this.sentinel) {
+      this.observer.unobserve(this.sentinel);
+    }
+    if (this.sentinel && this.sentinel.parentNode) {
+      this.sentinel.parentNode.removeChild(this.sentinel);
+    }
+    this.sentinel = null;
+    this.observer = null;
+  }
+
+  setupSentinel() {
+    const grid = document.getElementById('gallery-grid');
+    if (!grid) return;
+    this.sentinel = document.createElement('div');
+    this.sentinel.className = 'gallery-sentinel';
+    this.sentinel.style.cssText = 'height: 1px; width: 100%; clear: both;';
+    grid.appendChild(this.sentinel);
+
+    this.observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          this.renderNextBatch();
+        }
+      });
+    }, { rootMargin: '400px' });
+
+    this.observer.observe(this.sentinel);
+  }
+
+  renderNextBatch() {
+    const grid = document.getElementById('gallery-grid');
+    if (!grid) return;
+
+    const start = this.renderedCount;
+    const end = Math.min(start + this.batchSize, this.imagesToRender.length);
+
+    if (start >= this.imagesToRender.length) {
+      this.cleanupSentinel();
+      return;
+    }
+
+    const batchItems = this.imagesToRender.slice(start, end);
+    const allItems = this.getGalleryData();
+
+    // Create fragment for the batch
+    const fragment = Core.DOM.createFragment(batchItems, (img, idx) => {
+      return this.createGalleryItem(img, start + idx, allItems);
+    });
+
+    this.cleanupSentinel();
+    grid.appendChild(fragment);
+    this.renderedCount = end;
+
+    if (this.renderedCount < this.imagesToRender.length) {
+      this.setupSentinel();
+    }
+
+    if (window.ScrollTrigger) {
+      window.ScrollTrigger.refresh();
+    }
   }
 
   createGalleryItem(image, index, allItems) {
