@@ -10,6 +10,13 @@ class GalleryLoader {
     this._imagesCache = {}; // Cache for aggregate/category images to bypass O(N) aggregation
     this._galleryDataCache = {}; // Cache for getGalleryData() results
     this._categoriesRendered = false; // Flag to render navigation buttons exactly once
+
+    // Batch loading states for progressive rendering
+    this.batchSize = 36;
+    this.renderedCount = 0;
+    this.itemsToRender = [];
+    this.sentinel = null;
+    this.observer = null;
   }
 
   async init() {
@@ -106,14 +113,92 @@ class GalleryLoader {
       }
     }
 
+    // Clear previous progressive state
+    this.cleanupSentinel();
+    this.itemsToRender = images;
+    this.renderedCount = 0;
     grid.innerHTML = '';
-    // Hoist getGalleryData to avoid O(N^2) rendering bottleneck (1192 items)
-    const allItems = this.getGalleryData();
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, allItems));
-    grid.appendChild(galleryFragment);
 
-    if (window.ScrollTrigger) ScrollTrigger.refresh();
+    // Render first batch
+    this.renderNextBatch();
+
     document.body.classList.remove('loading');
+  }
+
+  renderNextBatch() {
+    const grid = document.getElementById('gallery-grid');
+    if (!grid) return;
+
+    const start = this.renderedCount;
+    const end = Math.min(start + this.batchSize, this.itemsToRender.length);
+
+    if (start >= this.itemsToRender.length) {
+      this.cleanupSentinel();
+      return;
+    }
+
+    const batchItems = this.itemsToRender.slice(start, end);
+    const allItems = this.getGalleryData();
+
+    const newlyCreatedElements = [];
+    const fragment = Core.DOM.createFragment(batchItems, (img, idx) => {
+      const absoluteIndex = start + idx;
+      const element = this.createGalleryItem(img, absoluteIndex, allItems);
+      if (element) {
+        newlyCreatedElements.push(element);
+      }
+      return element;
+    });
+
+    // Remove sentinel before appending if it exists
+    this.cleanupSentinel();
+
+    // Append batch items to container
+    grid.appendChild(fragment);
+    this.renderedCount = end;
+
+    // Trigger reveal animations on newly created elements
+    this.triggerRevealAnimations(newlyCreatedElements);
+
+    // If there are more items to load, setup sentinel
+    if (this.renderedCount < this.itemsToRender.length) {
+      this.setupSentinel();
+    }
+  }
+
+  setupSentinel() {
+    const grid = document.getElementById('gallery-grid');
+    if (!grid) return;
+
+    this.sentinel = document.createElement('div');
+    this.sentinel.className = 'gallery-sentinel';
+    this.sentinel.style.height = '1px';
+    this.sentinel.style.width = '100%';
+    this.sentinel.style.clear = 'both';
+    grid.appendChild(this.sentinel);
+
+    this.observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          this.renderNextBatch();
+        }
+      });
+    }, {
+      rootMargin: '400px'
+    });
+
+    this.observer.observe(this.sentinel);
+  }
+
+  cleanupSentinel() {
+    if (this.observer && this.sentinel) {
+      this.observer.unobserve(this.sentinel);
+    }
+    if (this.sentinel && this.sentinel.parentNode) {
+      this.sentinel.parentNode.removeChild(this.sentinel);
+    }
+    this.sentinel = null;
+    this.observer = null;
   }
 
   createGalleryItem(image, index, allItems) {
@@ -142,14 +227,40 @@ class GalleryLoader {
     return result;
   }
 
+  triggerRevealAnimations(newElements) {
+    if (window.gsap) {
+      window.gsap.fromTo(newElements,
+        { opacity: 0, y: 20, scale: 0.95 },
+        {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          duration: 0.6,
+          stagger: 0.05,
+          ease: 'power2.out',
+          overwrite: 'auto'
+        }
+      );
+    } else {
+      newElements.forEach((item, index) => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(20px) scale(0.95)';
+        item.style.transition = 'opacity 0.5s ease ' + (index * 0.05) + 's, transform 0.5s ease ' + (index * 0.05) + 's';
+
+        setTimeout(() => {
+          item.style.opacity = '1';
+          item.style.transform = 'translateY(0) scale(1)';
+        }, 50);
+      });
+    }
+  }
+
   initAnimations() {
     const hasGsap = typeof window !== 'undefined' && window.gsap;
-    const hasScrollTrigger = typeof window !== 'undefined' && window.ScrollTrigger;
 
     // If GSAP is not loaded (e.g., CDN blocked), skip animations instead of throwing.
     if (!hasGsap) {
       console.warn('GalleryLoader: GSAP not available, skipping animations.');
-      document.querySelectorAll('.reveal-item').forEach(el => el.style.opacity = 1);
       return;
     }
 
@@ -163,33 +274,6 @@ class GalleryLoader {
         ease: 'power2.out',
         clearProps: 'all' // Ensure clean state after animation
       });
-
-      if (hasScrollTrigger) {
-        // Use batch() for better performance with many items and reliable triggering
-        ScrollTrigger.batch('.gallery-item', {
-          start: 'top 95%', // Trigger slightly earlier
-          onEnter: batch => gsap.to(batch, {
-            opacity: 1,
-            scale: 1,
-            duration: 0.6,
-            stagger: 0.05,
-            ease: 'power2.out',
-            overwrite: true
-          }),
-          onEnterBack: batch => gsap.to(batch, { opacity: 1, scale: 1, overwrite: true }) // Keep visible when scrolling back
-        });
-        
-        ScrollTrigger.refresh();
-      } else {
-        // Fallback if ScrollTrigger is missing
-        window.gsap.to('.gallery-item', {
-          opacity: 1,
-          scale: 1,
-          duration: 0.6,
-          stagger: 0.05,
-          ease: 'power2.out'
-        });
-      }
       
       // Force loader removal just in case
       document.body.classList.remove('loading');
