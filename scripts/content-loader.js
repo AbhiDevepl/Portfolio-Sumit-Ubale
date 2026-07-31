@@ -89,11 +89,11 @@ class ContentLoader {
         const categoriesObj = (data.portfolio && data.portfolio.images) ? data.portfolio.images : data;
         Object.keys(categoriesObj).forEach(cat => {
           if (Array.isArray(categoriesObj[cat])) {
+            const formattedCat = this.getCategoryName(cat);
             categoriesObj[cat].forEach(item => {
               if (globalSeen.has(item.src)) return;
               globalSeen.add(item.src);
 
-              const formattedCat = this.getCategoryName(cat);
               this.portfolioData.push({
                 type: item.type === 'video' ? 'video' : 'image',
                 category: cat,
@@ -484,6 +484,7 @@ class ContentLoader {
     if (!eventsGrid || !(this.data && this.data.recentEvents)) return;
 
     eventsGrid.innerHTML = '';
+    const fragment = document.createDocumentFragment();
 
     this.data.recentEvents.forEach(event => {
       const item = document.createElement('div');
@@ -515,8 +516,10 @@ class ContentLoader {
       
       item.appendChild(img);
       item.appendChild(overlay);
-      eventsGrid.appendChild(item);
+      fragment.appendChild(item);
     });
+
+    eventsGrid.appendChild(fragment);
   }
 
   /**
@@ -534,12 +537,14 @@ class ContentLoader {
       const data = (this.data && this.data.socialProof && this.data.socialProof[id]) ? this.data.socialProof[id] : null;
       if (container && data) {
         container.innerHTML = '';
+        const fragment = document.createDocumentFragment();
         data.forEach(text => {
           const el = document.createElement(className === 'li' ? 'li' : 'span');
           if (className !== 'li') el.className = className;
           el.textContent = text;
-          container.appendChild(el);
+          fragment.appendChild(el);
         });
+        container.appendChild(fragment);
       }
     });
   }

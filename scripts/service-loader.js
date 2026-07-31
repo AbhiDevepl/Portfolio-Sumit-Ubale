@@ -76,11 +76,13 @@ class ServiceLoader {
     // Populate Deliverables
     const list = document.getElementById('deliverables-list');
     list.innerHTML = '';
+    const deliverablesFragment = document.createDocumentFragment();
     s.deliverables.forEach(item => {
       const li = document.createElement('li');
       li.textContent = item;
-      list.appendChild(li);
+      deliverablesFragment.appendChild(li);
     });
+    list.appendChild(deliverablesFragment);
 
     // Populate Random Featured Image
     this.renderRandomFeature(s);
@@ -96,11 +98,13 @@ class ServiceLoader {
       gallery.classList.remove('layout-centered');
     }
 
+    const galleryFragment = document.createDocumentFragment();
     s.gallery.forEach((item, index) => {
       item.category = s.slug;
-        const mediaItem = Core.Media.createItem(item, index, s.gallery);
-      gallery.appendChild(mediaItem);
+      const mediaItem = Core.Media.createItem(item, index, s.gallery);
+      galleryFragment.appendChild(mediaItem);
     });
+    gallery.appendChild(galleryFragment);
 
     document.body.classList.remove('loading');
   }
