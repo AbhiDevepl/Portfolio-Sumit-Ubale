@@ -10,6 +10,13 @@ class GalleryLoader {
     this._imagesCache = {}; // Cache for aggregate/category images to bypass O(N) aggregation
     this._galleryDataCache = {}; // Cache for getGalleryData() results
     this._categoriesRendered = false; // Flag to render navigation buttons exactly once
+
+    // Progressive batch rendering states
+    this.batchSize = 36;
+    this.renderedCount = 0;
+    this.itemsToRender = [];
+    this.sentinel = null;
+    this.observer = null;
   }
 
   async init() {
@@ -106,14 +113,100 @@ class GalleryLoader {
       }
     }
 
-    grid.innerHTML = '';
-    // Hoist getGalleryData to avoid O(N^2) rendering bottleneck (1192 items)
-    const allItems = this.getGalleryData();
-    const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, allItems));
-    grid.appendChild(galleryFragment);
+    // Reset progressive loading states
+    this.cleanupSentinel();
+    this.itemsToRender = images;
+    this.renderedCount = 0;
 
-    if (window.ScrollTrigger) ScrollTrigger.refresh();
+    grid.innerHTML = '';
+
+    // Render first batch dynamically
+    this.renderNextBatch();
+
     document.body.classList.remove('loading');
+  }
+
+  cleanupSentinel() {
+    if (this.observer) {
+      if (this.sentinel) {
+        this.observer.unobserve(this.sentinel);
+      }
+      this.observer.disconnect();
+    }
+    if (this.sentinel && this.sentinel.parentNode) {
+      this.sentinel.parentNode.removeChild(this.sentinel);
+    }
+    this.sentinel = null;
+    this.observer = null;
+  }
+
+  setupSentinel() {
+    const grid = document.getElementById('gallery-grid');
+    if (!grid) return;
+
+    // Feature detection for IntersectionObserver (safeguard for test suites or old browsers)
+    if (typeof window === 'undefined' || !window.IntersectionObserver) {
+      this.batchSize = this.itemsToRender.length;
+      this.renderNextBatch();
+      return;
+    }
+
+    this.sentinel = document.createElement('div');
+    this.sentinel.className = 'gallery-sentinel';
+    this.sentinel.style.height = '1px';
+    this.sentinel.style.width = '100%';
+    this.sentinel.style.clear = 'both';
+    grid.appendChild(this.sentinel);
+
+    this.observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          this.renderNextBatch();
+        }
+      });
+    }, {
+      rootMargin: '400px'
+    });
+
+    this.observer.observe(this.sentinel);
+  }
+
+  renderNextBatch() {
+    const grid = document.getElementById('gallery-grid');
+    if (!grid) return;
+
+    const start = this.renderedCount;
+    const end = Math.min(start + this.batchSize, this.itemsToRender.length);
+
+    if (start >= this.itemsToRender.length) {
+      this.cleanupSentinel();
+      return;
+    }
+
+    const batchItems = this.itemsToRender.slice(start, end);
+    const allItems = this.getGalleryData();
+
+    const fragment = Core.DOM.createFragment(batchItems, (img, idx) => {
+      const absoluteIndex = start + idx;
+      return this.createGalleryItem(img, absoluteIndex, allItems);
+    });
+
+    // Remove sentinel before appending new batch
+    this.cleanupSentinel();
+
+    // Append batch items to container
+    grid.appendChild(fragment);
+    this.renderedCount = end;
+
+    // Refresh ScrollTrigger to account for newly appended elements
+    if (window.ScrollTrigger) {
+      ScrollTrigger.refresh();
+    }
+
+    // Set up new sentinel if there are more items to render
+    if (this.renderedCount < this.itemsToRender.length) {
+      this.setupSentinel();
+    }
   }
 
   createGalleryItem(image, index, allItems) {
