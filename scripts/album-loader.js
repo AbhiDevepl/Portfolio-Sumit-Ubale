@@ -54,15 +54,30 @@ class AlbumLoader {
     const card = document.createElement('div');
     card.className = 'album-card stagger-reveal';
     
-    // Get all images (non-videos) for this category
-    const categoryImages = (this.data.portfolio.images[category.slug] || [])
-      .filter(item => item.type === 'image' || !item.type || item.src.match(/\.(jpe?g|png|webp)/i));
-    
-    // Random selection
+    // PERFORMANCE OPTIMIZATION: Replace O(N) filtering of all category images with O(1) lazy randomized probing.
+    // Since categories contain up to 300+ items (e.g. candid/prewedding) which are mostly images,
+    // probing a random index is highly likely (~99%+) to succeed immediately, completely bypassing
+    // expensive array allocation and regex matching on hundreds of items.
+    const items = this.data.portfolio.images[category.slug] || [];
     let selectedImage = null;
-    if (categoryImages.length > 0) {
-      const randomIndex = Math.floor(Math.random() * categoryImages.length);
-      selectedImage = categoryImages[randomIndex];
+
+    if (items.length > 0) {
+      const isImage = (item) => item && (item.type === 'image' || !item.type || item.src.match(/\.(jpe?g|png|webp)/i));
+
+      // Attempt up to 5 randomized probes to find a valid image in O(1) time
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const randomIndex = Math.floor(Math.random() * items.length);
+        const probe = items[randomIndex];
+        if (isImage(probe)) {
+          selectedImage = probe;
+          break;
+        }
+      }
+
+      // Safe fallback: sequential search if randomized probes fail
+      if (!selectedImage) {
+        selectedImage = items.find(isImage);
+      }
     }
 
     let coverSrc = selectedImage ? selectedImage.src : '';
