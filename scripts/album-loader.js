@@ -54,18 +54,31 @@ class AlbumLoader {
     const card = document.createElement('div');
     card.className = 'album-card stagger-reveal';
     
-    // Get all images (non-videos) for this category
-    const categoryImages = (this.data.portfolio.images[category.slug] || [])
-      .filter(item => item.type === 'image' || !item.type || item.src.match(/\.(jpe?g|png|webp)/i));
-    
-    // Random selection
+    const items = this.data.portfolio.images[category.slug] || [];
     let selectedImage = null;
-    if (categoryImages.length > 0) {
-      const randomIndex = Math.floor(Math.random() * categoryImages.length);
-      selectedImage = categoryImages[randomIndex];
+
+    if (items.length > 0) {
+      // Lazy randomized probing (up to 5 attempts) to find a valid image in O(1) time complexity.
+      // This completely avoids filtering/scanning the entire array and running regex on 1,000+ items.
+      const isImage = (item) => item && (item.type === 'image' || !item.type || /\.(jpe?g|png|webp)/i.test(item.src));
+
+      const len = items.length;
+      for (let i = 0; i < 5; i++) {
+        const randIdx = Math.floor(Math.random() * len);
+        const candidate = items[randIdx];
+        if (isImage(candidate)) {
+          selectedImage = candidate;
+          break;
+        }
+      }
+
+      // If random probing fails (unlikely if most items are images), fall back to a sequential find
+      if (!selectedImage) {
+        selectedImage = items.find(isImage);
+      }
     }
 
-    let coverSrc = selectedImage ? selectedImage.src : '';
+    const coverSrc = selectedImage ? selectedImage.src : '';
 
     card.innerHTML = `
       <img src="${coverSrc}" alt="${category.name}" class="album-image" loading="lazy">
