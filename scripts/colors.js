@@ -154,10 +154,8 @@
   window.SiteColors = Palette;
 
   // Initialize
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', injectStyles);
-  } else {
-    injectStyles();
-  }
+  // Inject CSS variables immediately to prevent Flash of Unstyled Content (FOUC)
+  // and eliminate unnecessary style recalculations/reflows during page load.
+  injectStyles();
 
 })();
