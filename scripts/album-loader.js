@@ -54,15 +54,35 @@ class AlbumLoader {
     const card = document.createElement('div');
     card.className = 'album-card stagger-reveal';
     
-    // Get all images (non-videos) for this category
-    const categoryImages = (this.data.portfolio.images[category.slug] || [])
-      .filter(item => item.type === 'image' || !item.type || item.src.match(/\.(jpe?g|png|webp)/i));
-    
-    // Random selection
+    // Get a random cover image (non-videos) for this category
+    const rawItems = this.data.portfolio.images[category.slug] || [];
     let selectedImage = null;
-    if (categoryImages.length > 0) {
-      const randomIndex = Math.floor(Math.random() * categoryImages.length);
-      selectedImage = categoryImages[randomIndex];
+
+    if (rawItems.length > 0) {
+      // Helper function to check if item is an image, safely ignoring URL query parameters
+      const isImage = (item) => {
+        if (!item) return false;
+        if (item.type === 'video') return false;
+        if (item.type === 'image') return true;
+        const urlPath = (item.src || '').split('?')[0].toLowerCase();
+        return !urlPath.endsWith('.mp4') && !urlPath.endsWith('.webm');
+      };
+
+      // Lazy randomized probing (up to 5 attempts) for O(1) selection without array allocations
+      const len = rawItems.length;
+      for (let i = 0; i < 5; i++) {
+        const randomIndex = Math.floor(Math.random() * len);
+        const item = rawItems[randomIndex];
+        if (isImage(item)) {
+          selectedImage = item;
+          break;
+        }
+      }
+
+      // Fallback to sequential find to ensure we still find one if the probes missed
+      if (!selectedImage) {
+        selectedImage = rawItems.find(isImage);
+      }
     }
 
     let coverSrc = selectedImage ? selectedImage.src : '';

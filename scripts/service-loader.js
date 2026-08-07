@@ -113,11 +113,38 @@ class ServiceLoader {
     const container = document.getElementById('random-image-container');
     if (!container) return;
 
-    const imageList = service.gallery.filter(item => item.type !== 'video');
-    if (imageList.length > 0) {
-      const randomIndex = Math.floor(Math.random() * imageList.length);
-      const selectedImage = imageList[randomIndex];
+    const gallery = service.gallery || [];
+    let selectedImage = null;
 
+    if (gallery.length > 0) {
+      // Helper function to check if item is an image, safely ignoring URL query parameters
+      const isImage = (item) => {
+        if (!item) return false;
+        if (item.type === 'video') return false;
+        if (item.type === 'image') return true;
+        const urlPath = (item.src || '').split('?')[0].toLowerCase();
+        return !urlPath.endsWith('.mp4') && !urlPath.endsWith('.webm');
+      };
+
+      const len = gallery.length;
+
+      // Lazy randomized probing (up to 5 attempts) for O(1) selection without array allocations
+      for (let i = 0; i < 5; i++) {
+        const randomIndex = Math.floor(Math.random() * len);
+        const item = gallery[randomIndex];
+        if (isImage(item)) {
+          selectedImage = item;
+          break;
+        }
+      }
+
+      // Fallback to sequential find to ensure we still find one if the probes missed
+      if (!selectedImage) {
+        selectedImage = gallery.find(isImage);
+      }
+    }
+
+    if (selectedImage) {
       const img = document.createElement('img');
       img.src = selectedImage.src;
       img.alt = `Featured ${service.title}`;
