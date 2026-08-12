@@ -171,10 +171,11 @@
   <footer id="main-footer" class="site-footer"></footer>
 
   <!-- Scripts -->
-  <script src="/scripts/core.js"></script>
+  <!-- Defer loading of non-critical utilities and ES modules to prevent parser-blocking and optimize First Contentful Paint (FCP) and Time to Interactive (TTI) -->
+  <script src="/scripts/core.js" defer></script>
   <script src="/scripts/portfolio-gallery.js" type="module"></script>
-  <script src="/scripts/navigation.js"></script>
-  <script src="/scripts/smooth-scroll.js"></script>
+  <script src="/scripts/navigation.js" defer></script>
+  <script src="/scripts/smooth-scroll.js" defer></script>
 </body>
 
 </html>
