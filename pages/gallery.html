@@ -167,12 +167,13 @@
     <footer class="footer" id="main-footer"></footer>
 
     <!-- Scripts -->
-    <script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
-    <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js"></script>
-    <script src="/scripts/core.js"></script>
-    <script src="/scripts/gallery-loader.js"></script>
-    <script src="/scripts/navigation.js"></script>
-    <script src="/scripts/loader.js"></script>
+    <!-- Defer loading of external libraries and internal scripts to prevent parser-blocking and optimize First Contentful Paint (FCP) and Time to Interactive (TTI) -->
+    <script src="https://unpkg.com/gsap@3/dist/gsap.min.js" defer></script>
+    <script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js" defer></script>
+    <script src="/scripts/core.js" defer></script>
+    <script src="/scripts/gallery-loader.js" defer></script>
+    <script src="/scripts/navigation.js" defer></script>
+    <script src="/scripts/loader.js" defer></script>
 
 </body>
 
