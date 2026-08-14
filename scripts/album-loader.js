@@ -54,16 +54,9 @@ class AlbumLoader {
     const card = document.createElement('div');
     card.className = 'album-card stagger-reveal';
     
-    // Get all images (non-videos) for this category
-    const categoryImages = (this.data.portfolio.images[category.slug] || [])
-      .filter(item => item.type === 'image' || !item.type || item.src.match(/\.(jpe?g|png|webp)/i));
-    
-    // Random selection
-    let selectedImage = null;
-    if (categoryImages.length > 0) {
-      const randomIndex = Math.floor(Math.random() * categoryImages.length);
-      selectedImage = categoryImages[randomIndex];
-    }
+    // Optimization: Use O(1) lazy random probing to select a cover image without O(N) array allocation or full regex scanning
+    const categoryItems = this.data.portfolio.images[category.slug] || [];
+    const selectedImage = this.getRandomCoverImage(categoryItems);
 
     let coverSrc = selectedImage ? selectedImage.src : '';
 
@@ -83,6 +76,32 @@ class AlbumLoader {
     };
 
     return card;
+  }
+
+  /**
+   * Selects a random cover image in O(1) time complexity, avoiding full
+   * O(N) array filtering and regex matching across hundreds of items.
+   */
+  getRandomCoverImage(items) {
+    if (!items || items.length === 0) return null;
+
+    const isImage = (item) => {
+      if (!item) return false;
+      if (item.type === 'image') return true;
+      if (item.type === 'video') return false;
+      const url = item.src ? item.src.split('?')[0] : '';
+      return !url || /\.(jpe?g|png|webp|avif)$/i.test(url);
+    };
+
+    // O(1) probing: try up to 5 random items
+    for (let i = 0; i < 5; i++) {
+      const randIdx = Math.floor(Math.random() * items.length);
+      const candidate = items[randIdx];
+      if (isImage(candidate)) return candidate;
+    }
+
+    // Fallback if random attempts didn't hit an image
+    return items.find(isImage) || null;
   }
 
   initAnimations() {
