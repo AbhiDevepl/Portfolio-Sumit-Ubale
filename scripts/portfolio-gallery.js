@@ -613,9 +613,12 @@ class FilterController {
     // Touch scroll indicator
     this.chipsContainer.style.scrollbarWidth = 'none';
     this.chipsContainer.style.msOverflowStyle = 'none';
-    const style = document.createElement('style');
-    style.textContent = '.filter-chips-container::-webkit-scrollbar { display: none; }';
-    document.head.appendChild(style);
+    if (!document.getElementById('hide-filter-chips-scrollbar')) {
+      const style = document.createElement('style');
+      style.id = 'hide-filter-chips-scrollbar';
+      style.textContent = '.filter-chips-container::-webkit-scrollbar { display: none; }';
+      document.head.appendChild(style);
+    }
   }
 
   selectFromURL() {
@@ -800,10 +803,14 @@ class PortfolioGallery {
   }
 
   formatCategoryName(slug) {
-    return slug
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    if (!this._categoryNameCache) this._categoryNameCache = {};
+    if (!this._categoryNameCache[slug]) {
+      this._categoryNameCache[slug] = slug
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+    return this._categoryNameCache[slug];
   }
 
   retry() {
