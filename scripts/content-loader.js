@@ -126,6 +126,8 @@ class ContentLoader {
 
   /**
    * Setup homepage-specific gallery logic (Pagination + Load More)
+   * Note: Category button click delegation is handled by GalleryManager in gallery.js
+   * to avoid duplicate event execution and redundant re-renders.
    */
   setupHomepageGallery() {
     const loadMoreBtn = document.getElementById('inline-load-more-btn');
@@ -140,25 +142,6 @@ class ContentLoader {
         }
       });
     }
-
-    // Set up category button click event listeners
-    const categoryBtns = document.querySelectorAll('.category-btn');
-    categoryBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        categoryBtns.forEach(b => {
-          b.classList.remove('active');
-          b.setAttribute('aria-selected', 'false');
-        });
-        btn.classList.add('active');
-        btn.setAttribute('aria-selected', 'true');
-
-        const newCategory = btn.getAttribute('data-category');
-        if (this.activeCategory !== newCategory) {
-          this.activeCategory = newCategory;
-          this.renderInlineInitial();
-        }
-      });
-    });
 
     this.renderInlineInitial();
   }
