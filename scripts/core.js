@@ -153,15 +153,55 @@ window.Core = {
       `;
       document.body.insertAdjacentHTML('beforeend', html);
       this.state.container = document.getElementById('lightbox');
+      this.cacheElements();
       this.bindEvents();
     },
 
+    /**
+     * Cache DOM references to eliminate repetitive querySelector / querySelectorAll calls
+     * during slide navigation and video controls interactions.
+     */
+    cacheElements() {
+      const c = this.state.container;
+      if (!c) return;
+      this.elements = {
+        img: c.querySelector('.lightbox-image'),
+        vidWrapper: c.querySelector('.lightbox-video-wrapper'),
+        vid: c.querySelector('.lightbox-video'),
+        loading: c.querySelector('.lightbox-loading'),
+        captionTitle: c.querySelector('.lightbox-caption-copy h3'),
+        captionCategory: c.querySelector('.lightbox-caption-copy p'),
+        counter: c.querySelector('.lightbox-counter'),
+        closeBtn: c.querySelector('.lightbox-close'),
+        overlay: c.querySelector('.lightbox-overlay'),
+        prevBtn: c.querySelector('.lightbox-prev'),
+        nextBtn: c.querySelector('.lightbox-next'),
+        mediaContainer: c.querySelector('.lightbox-media-container'),
+        playPauseOverlay: c.querySelector('.video-play-pause'),
+        playPauseSmall: c.querySelector('.play-pause-small'),
+        playIcons: c.querySelectorAll('.play-icon, .play-icon-small'),
+        pauseIcons: c.querySelectorAll('.pause-icon, .pause-icon-small'),
+        videoOverlayControls: c.querySelector('.video-overlay-controls'),
+        controlsBar: c.querySelector('.video-controls-bar'),
+        progress: c.querySelector('.video-progress'),
+        progressFilled: c.querySelector('.video-progress-filled'),
+        timeDisplay: c.querySelector('.video-time'),
+        muteBtn: c.querySelector('.mute-btn'),
+        volumeIcon: c.querySelector('.volume-icon'),
+        muteIcon: c.querySelector('.mute-icon'),
+        volumeSlider: c.querySelector('.volume-slider'),
+        speedSelect: c.querySelector('.playback-speed'),
+        fullscreenBtn: c.querySelector('.fullscreen-btn')
+      };
+    },
+
     bindEvents() {
-      const { container } = this.state;
-      container.querySelector('.lightbox-close').onclick = () => this.close();
-      container.querySelector('.lightbox-overlay').onclick = () => this.close();
-      container.querySelector('.lightbox-prev').onclick = () => this.nav(-1);
-      container.querySelector('.lightbox-next').onclick = () => this.nav(1);
+      const el = this.elements;
+      if (!el) return;
+      el.closeBtn.onclick = () => this.close();
+      el.overlay.onclick = () => this.close();
+      el.prevBtn.onclick = () => this.nav(-1);
+      el.nextBtn.onclick = () => this.nav(1);
       this.bindTouch();
 
       // Video controls
@@ -180,7 +220,7 @@ window.Core = {
     },
 
     bindTouch() {
-      const mediaContainer = this.state.container.querySelector('.lightbox-media-container');
+      const mediaContainer = this.elements ? this.elements.mediaContainer : null;
       if (!mediaContainer) return;
 
       mediaContainer.addEventListener('touchstart', (e) => {
@@ -207,18 +247,19 @@ window.Core = {
     },
 
     bindVideoControls() {
-      const { container } = this.state;
-      const video = container.querySelector('.lightbox-video');
-      const wrapper = container.querySelector('.lightbox-video-wrapper');
-      const playPauseOverlay = container.querySelector('.video-play-pause');
-      const playPauseSmall = container.querySelector('.play-pause-small');
-      const progress = container.querySelector('.video-progress');
-      const progressFilled = container.querySelector('.video-progress-filled');
-      const timeDisplay = container.querySelector('.video-time');
-      const muteBtn = container.querySelector('.mute-btn');
-      const volumeSlider = container.querySelector('.volume-slider');
-      const speedSelect = container.querySelector('.playback-speed');
-      const fullscreenBtn = container.querySelector('.fullscreen-btn');
+      const el = this.elements;
+      if (!el) return;
+      const video = el.vid;
+      const wrapper = el.vidWrapper;
+      const playPauseOverlay = el.playPauseOverlay;
+      const playPauseSmall = el.playPauseSmall;
+      const progress = el.progress;
+      const progressFilled = el.progressFilled;
+      const timeDisplay = el.timeDisplay;
+      const muteBtn = el.muteBtn;
+      const volumeSlider = el.volumeSlider;
+      const speedSelect = el.speedSelect;
+      const fullscreenBtn = el.fullscreenBtn;
 
       // Play/Pause overlay (center button)
       playPauseOverlay.onclick = () => this.togglePlayPause();
@@ -276,11 +317,11 @@ window.Core = {
       // Show/hide controls
       let controlsTimeout;
       const showControls = () => {
-        container.querySelector('.video-controls-bar').style.opacity = '1';
+        el.controlsBar.style.opacity = '1';
         clearTimeout(controlsTimeout);
         controlsTimeout = setTimeout(() => {
           if (!video.paused) {
-            container.querySelector('.video-controls-bar').style.opacity = '0';
+            el.controlsBar.style.opacity = '0';
           }
         }, 3000);
       };
@@ -290,7 +331,8 @@ window.Core = {
     },
 
     togglePlayPause() {
-      const video = this.state.container.querySelector('.lightbox-video');
+      const video = this.elements ? this.elements.vid : null;
+      if (!video) return;
       if (video.paused) {
         video.play();
       } else {
@@ -299,24 +341,25 @@ window.Core = {
     },
 
     updatePlayPauseIcons(isPlaying) {
-      const container = this.state.container;
-      const playIcons = container.querySelectorAll('.play-icon, .play-icon-small');
-      const pauseIcons = container.querySelectorAll('.pause-icon, .pause-icon-small');
+      if (!this.elements) return;
+      const playIcons = this.elements.playIcons;
+      const pauseIcons = this.elements.pauseIcons;
       
       playIcons.forEach(icon => icon.style.display = isPlaying ? 'none' : 'block');
       pauseIcons.forEach(icon => icon.style.display = isPlaying ? 'block' : 'none');
       
       // Hide overlay controls when playing
-      const overlay = container.querySelector('.video-overlay-controls');
+      const overlay = this.elements.videoOverlayControls;
       if (overlay) {
         overlay.style.opacity = isPlaying ? '0' : '1';
       }
     },
 
     updateMuteButton() {
-      const video = this.state.container.querySelector('.lightbox-video');
-      const volumeIcon = this.state.container.querySelector('.volume-icon');
-      const muteIcon = this.state.container.querySelector('.mute-icon');
+      if (!this.elements) return;
+      const video = this.elements.vid;
+      const volumeIcon = this.elements.volumeIcon;
+      const muteIcon = this.elements.muteIcon;
       
       volumeIcon.style.display = video.muted ? 'none' : 'block';
       muteIcon.style.display = video.muted ? 'block' : 'none';
@@ -346,7 +389,7 @@ window.Core = {
       this.state.active = false;
       this.state.container.classList.remove('active');
       this.state.container.setAttribute('aria-hidden', 'true');
-      const video = this.state.container.querySelector('.lightbox-video');
+      const video = this.elements ? this.elements.vid : null;
       if (video) { video.pause(); video.src = ''; }
       
       setTimeout(() => {
@@ -364,22 +407,22 @@ window.Core = {
     },
 
     pauseActiveVideo() {
-      const video = this.state.container.querySelector('.lightbox-video');
+      const video = this.elements ? this.elements.vid : null;
       if (!video) return;
       video.pause();
     },
 
     updateContent() {
       const item = this.state.items[this.state.currentIndex];
-      if (!item) return;
+      if (!item || !this.elements) return;
 
-      const imgEl = this.state.container.querySelector('.lightbox-image');
-      const vidWrapper = this.state.container.querySelector('.lightbox-video-wrapper');
-      const vidEl = this.state.container.querySelector('.lightbox-video');
-      const loadingEl = this.state.container.querySelector('.lightbox-loading');
-      const captionTitle = this.state.container.querySelector('.lightbox-caption-copy h3');
-      const captionCategory = this.state.container.querySelector('.lightbox-caption-copy p');
-      const counterEl = this.state.container.querySelector('.lightbox-counter');
+      const imgEl = this.elements.img;
+      const vidWrapper = this.elements.vidWrapper;
+      const vidEl = this.elements.vid;
+      const loadingEl = this.elements.loading;
+      const captionTitle = this.elements.captionTitle;
+      const captionCategory = this.elements.captionCategory;
+      const counterEl = this.elements.counter;
 
       const isVid = item.type === 'video';
       
