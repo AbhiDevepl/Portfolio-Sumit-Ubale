@@ -6,6 +6,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const sections = document.querySelectorAll('section');
   if (sections.length === 0) return;
 
+  // Optimization: Skip heavy GSAP/ScrollTrigger/Observer setup for prefers-reduced-motion
+  const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReducedMotion) {
+    document.querySelectorAll('.stagger-reveal, .scroll-reveal').forEach(el => {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    });
+    return;
+  }
+
   if (window.gsap) {
     const ctx = gsap.context(() => {
       // 1. Generic Reveal Observer (IntersectionObserver for performance)
