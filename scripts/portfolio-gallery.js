@@ -613,9 +613,12 @@ class FilterController {
     // Touch scroll indicator
     this.chipsContainer.style.scrollbarWidth = 'none';
     this.chipsContainer.style.msOverflowStyle = 'none';
-    const style = document.createElement('style');
-    style.textContent = '.filter-chips-container::-webkit-scrollbar { display: none; }';
-    document.head.appendChild(style);
+    if (!document.getElementById('hide-filter-chips-scrollbar')) {
+      const style = document.createElement('style');
+      style.id = 'hide-filter-chips-scrollbar';
+      style.textContent = '.filter-chips-container::-webkit-scrollbar { display: none; }';
+      document.head.appendChild(style);
+    }
   }
 
   selectFromURL() {
@@ -643,6 +646,7 @@ class PortfolioGallery {
     this.modal = null;
     this.filterController = null;
     this.categoryMap = {}; // O(1) Filtering
+    this._categoryNameCache = {}; // Cache for formatted category names
     this.init();
   }
 
@@ -800,10 +804,18 @@ class PortfolioGallery {
   }
 
   formatCategoryName(slug) {
-    return slug
+    if (!slug) return '';
+    if (this._categoryNameCache && this._categoryNameCache[slug]) {
+      return this._categoryNameCache[slug];
+    }
+    const formatted = slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+    if (this._categoryNameCache) {
+      this._categoryNameCache[slug] = formatted;
+    }
+    return formatted;
   }
 
   retry() {
