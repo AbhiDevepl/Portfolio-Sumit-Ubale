@@ -543,14 +543,20 @@ window.Core = {
       item.setAttribute('aria-label', `${image.title || 'Open preview'}${image.category ? `, ${image.category}` : ''}`);
 
       const openFilteredLightbox = () => {
-        const fallbackItems = allItems.map((entry, entryIndex) => {
-          const newItem = Object.assign({}, entry);
-          newItem.originalIndex = entryIndex;
-          newItem.type = entry.type || 'image';
-          return newItem;
-        });
+        // Optimization: Lazy-evaluate fallbackItems only when GalleryManager.getVisibleData is absent.
+        // Bypasses redundant O(N) object allocations (1,000+ items) on every gallery item click.
+        let visibleItems;
+        if (window.GalleryManager && typeof window.GalleryManager.getVisibleData === 'function') {
+          visibleItems = window.GalleryManager.getVisibleData();
+        } else {
+          visibleItems = allItems.map((entry, entryIndex) => {
+            const newItem = Object.assign({}, entry);
+            newItem.originalIndex = entryIndex;
+            newItem.type = entry.type || 'image';
+            return newItem;
+          });
+        }
 
-        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : fallbackItems;
         const itemIndex = visibleItems.findIndex((entry) => entry.originalIndex === index);
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
