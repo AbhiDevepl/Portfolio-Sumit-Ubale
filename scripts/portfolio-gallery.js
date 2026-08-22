@@ -500,15 +500,17 @@ class FilterController {
   constructor(state, chipsContainer) {
     this.state = state;
     this.chipsContainer = chipsContainer;
+    this.chips = [];
     this.init();
   }
 
   init() {
     if (!this.chipsContainer) return;
 
-    const chips = this.chipsContainer.querySelectorAll('.filter-chip');
+    // Cache chip element references once to eliminate repeated O(N) querySelectorAll DOM traversals on every category interaction
+    this.chips = Array.prototype.slice.call(this.chipsContainer.querySelectorAll('.filter-chip'));
 
-    chips.forEach(chip => {
+    this.chips.forEach(chip => {
       chip.addEventListener('click', () => {
         this.setActiveChip(chip);
         const category = chip.dataset.category;
@@ -529,8 +531,8 @@ class FilterController {
   }
 
   setActiveChip(activeChip) {
-    const chips = this.chipsContainer.querySelectorAll('.filter-chip');
-    chips.forEach(chip => {
+    // Optimization: Iterate over cached in-memory element references to update active state without DOM query overhead
+    this.chips.forEach(chip => {
       chip.classList.remove('active');
       chip.setAttribute('aria-selected', 'false');
     });
@@ -623,7 +625,7 @@ class FilterController {
     const category = params.get('category');
 
     if (category) {
-      const chip = this.chipsContainer.querySelector('[data-category="' + category + '"]');
+      const chip = this.chips.find(c => c.dataset.category === category);
       if (chip) {
         this.setActiveChip(chip);
         this.filterByCategory(category);
