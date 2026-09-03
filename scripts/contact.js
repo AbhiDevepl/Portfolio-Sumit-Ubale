@@ -151,10 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     try {
-      // TODO: Replace with your actual form submission endpoint
-      // Example: FormSpree, Netlify Forms, or custom backend
-      
-      // Simulated submission (replace with actual API call)
       await submitToFormSubmit(formData);
       
       // Success feedback

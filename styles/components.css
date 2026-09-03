@@ -1009,7 +1009,9 @@
   padding: var(--space-10);
   background-color: var(--bg-primary);
   border: 1px solid var(--border-color);
-  transition: all var(--transition-base);
+  transition: transform 500ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 500ms ease,
+              box-shadow 500ms ease;
   display: flex;
   flex-direction: column;
 }
@@ -1017,6 +1019,7 @@
 .testimonial-card:hover {
   transform: translateY(-5px);
   border-color: var(--accent);
+  box-shadow: 0 18px 40px -28px var(--shadow-dark);
 }
 
 .testimonial-stars {
@@ -1152,4 +1155,13 @@
   .whatsapp-tooltip {
     display: none; /* Hide tooltip on mobile to avoid clutter */
   }
+}
+
+/* Empty state for the home-page inline portfolio grid */
+.gallery-empty-inline {
+  grid-column: 1 / -1;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
 }

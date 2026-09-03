@@ -36,6 +36,21 @@
   display: grid;
   grid-template-rows: 1fr auto;
   gap: var(--space-4);
+  transform: scale(0.965) translateY(14px);
+  transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.lightbox.active .lightbox-content {
+  transform: scale(1) translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-content,
+  .lightbox.active .lightbox-content {
+    transform: none;
+    transition: none;
+  }
 }
 
 .lightbox-media-container {

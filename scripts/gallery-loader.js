@@ -88,6 +88,9 @@ class GalleryLoader {
     const galleryFragment = Core.DOM.createFragment(images, (img, idx) => this.createGalleryItem(img, idx, allItems));
     grid.appendChild(galleryFragment);
 
+    window.Motion?.kill('gallery-grid');
+    window.Motion?.reveal(grid.children, { y: 36, stagger: 0.045, owner: 'gallery-grid' });
+
     if (window.ScrollTrigger) ScrollTrigger.refresh();
     document.body.classList.remove('loading');
   }

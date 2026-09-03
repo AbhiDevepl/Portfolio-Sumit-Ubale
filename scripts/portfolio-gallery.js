@@ -6,6 +6,14 @@
  * Integrates with existing Core.Lightbox, Core.VideoHover, and Core.VideoObserver
  */
 
+// Turns a category slug ("pre-wedding-photos-and-videos") into a label.
+function formatCategoryName(slug) {
+  return slug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 // ========================================
 // GALLERY STATE MANAGEMENT
 // ========================================
@@ -89,12 +97,37 @@ class GalleryRenderer {
       cancelAnimationFrame(this.animationFrame);
     }
 
-    this.animationFrame = requestAnimationFrame(() => {
-      this._renderSync(items, category);
-    });
+    const swap = () => {
+      this.animationFrame = requestAnimationFrame(() => this._renderSync(items, category));
+    };
+
+    // Switching category: fade the current grid down first so tiles do not
+    // pop straight from one set to the next. First paint skips this.
+    const hasContent = this.container.children.length > 0;
+    if (hasContent && window.gsap && !window.Motion?.reduced) {
+      gsap.to(this.container, {
+        opacity: 0,
+        duration: 0.18,
+        ease: 'power1.in',
+        overwrite: true,
+        onComplete: swap
+      });
+    } else {
+      swap();
+    }
   }
 
   _renderSync(items, category) {
+    // Drop observers/tweens from the previous render before building the next
+    // one, otherwise every filter click leaves another batch behind.
+    window.Motion?.kill('portfolio-grid');
+    if (window.gsap) gsap.set(this.container, { opacity: 1 });
+
+    if (!items || items.length === 0) {
+      this.showEmpty(category);
+      return;
+    }
+
     const fragment = document.createDocumentFragment();
 
     items.forEach((item, index) => {
@@ -244,36 +277,14 @@ class GalleryRenderer {
 
   triggerRevealAnimations() {
     const items = this.container.querySelectorAll('.gallery-item');
+    if (!items.length) return;
 
-    if (window.GSAP && window.ScrollTrigger) {
-      // Use GSAP if available
-      window.GSAP.fromTo(items,
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          stagger: 0.05,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: this.container,
-            start: 'top 80%'
-          }
-        }
-      );
-    } else {
-      // Fallback to CSS animations
-      items.forEach((item, index) => {
-        item.style.opacity = '0';
-        item.style.transform = 'translateY(20px)';
-        item.style.transition = `opacity 0.5s ease ${index * 0.05}s, transform 0.5s ease ${index * 0.05}s`;
-
-        setTimeout(() => {
-          item.style.opacity = '1';
-          item.style.transform = 'translateY(0)';
-        }, 50);
-      });
-    }
+    window.Motion?.reveal(items, {
+      y: 36,
+      duration: 0.75,
+      stagger: 0.045,
+      owner: 'portfolio-grid'
+    });
   }
 
   showLoading() {
@@ -281,6 +292,22 @@ class GalleryRenderer {
       <div class="gallery-loading-state">
         <div class="gallery-loading-spinner"></div>
         <p>Loading portfolio...</p>
+      </div>
+    `;
+  }
+
+  showEmpty(category) {
+    if (window.gsap) gsap.set(this.container, { opacity: 1 });
+    const label = category && category !== 'all' ? formatCategoryName(category) : null;
+    this.container.innerHTML = `
+      <div class="gallery-empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <path d="M21 15l-5-5L5 21"/>
+        </svg>
+        <h3>Nothing here yet</h3>
+        <p>${label ? `No ${label} work has been published yet.` : 'No work has been published yet.'} Try another category.</p>
       </div>
     `;
   }
@@ -593,6 +620,12 @@ class PortfolioGallery {
       // Initial render
       this.renderer.render(allItems, 'all');
 
+      // Re-render whenever the filtered list changes. Without this the filter
+      // chips updated state and the URL but never touched the grid.
+      this.state.subscribe(({ filteredList, activeCategory }) => {
+        this.renderer.render(filteredList, activeCategory);
+      });
+
       // Initialize filter controller
       const chipsContainer = document.querySelector('.filter-chips-container');
       if (chipsContainer) {
@@ -638,8 +671,8 @@ class PortfolioGallery {
             order: index,
             // Ensure consistent property names
             id: item.id || `${category}-${index}`,
-            title: item.title || `${this.formatCategoryName(category)} ${index + 1}`,
-            alt: item.alt || item.title || `${this.formatCategoryName(category)} photography`,
+            title: item.title || `${formatCategoryName(category)} ${index + 1}`,
+            alt: item.alt || item.title || `${formatCategoryName(category)} photography`,
             type: item.type || 'image'
           });
         });
@@ -672,13 +705,6 @@ class PortfolioGallery {
     });
 
     return allItems;
-  }
-
-  formatCategoryName(slug) {
-    return slug
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
   }
 
   retry() {

@@ -97,6 +97,10 @@ class ServiceLoader {
       gallery.appendChild(mediaItem);
     });
 
+    window.Motion?.kill('service-gallery');
+    window.Motion?.reveal(gallery.children, { y: 36, stagger: 0.05, owner: 'service-gallery' });
+    window.Motion?.refresh();
+
     document.body.classList.remove('loading');
   }
 

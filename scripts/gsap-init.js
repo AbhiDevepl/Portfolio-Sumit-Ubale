@@ -24,6 +24,10 @@ if (window.gsap) {
     scroller: window,
   });
 
+  // Mobile browsers fire resize when the address bar collapses. Without this,
+  // every such nudge re-measures triggers and makes scrubbed motion stutter.
+  ScrollTrigger.config({ ignoreMobileResize: true });
+
   // Refresh ScrollTrigger on window resize (debounced)
   let resizeTimer;
   window.addEventListener("resize", () => {

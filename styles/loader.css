@@ -58,6 +58,19 @@
   pointer-events: none;
 }
 
+/* Leaving the page: the overlay closes back over the content, faster than the
+   initial reveal so navigation never feels held up. */
+#page-loader.is-leaving {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all;
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 1, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #page-loader.is-leaving { transition: none; }
+}
+
 @keyframes loaderLogoReveal {
   to {
     opacity: 1;

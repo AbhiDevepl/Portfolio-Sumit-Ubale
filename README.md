@@ -55,7 +55,9 @@ This portfolio embodies **restraint, editorial elegance, and cinematic motion**:
 ├── pages/
 │   ├── gallery.html       # Full gallery by category
 │   ├── albums.html        # Wedding albums
-│   └── service.html       # Service landing (dynamic content)
+│   ├── portfolio.html     # Filterable portfolio grid
+│   ├── service.html       # Service landing (dynamic content)
+│   └── *-maharashtra.html # 4 static SEO landing pages
 │
 ├── styles/
 │   ├── theme.css          # Design tokens (colors from colors.js)
@@ -66,14 +68,13 @@ This portfolio embodies **restraint, editorial elegance, and cinematic motion**:
 │   ├── loader.css         # Page loader
 │   ├── lightbox-video.css # Lightbox & video controls
 │   ├── service.css        # Service page
-│   └── project-card.css   # Card components
+│   └── portfolio-gallery.css # Portfolio grid, chips, empty/error states
 │
 ├── scripts/
 │   ├── colors.js          # Color system (injected into :root)
 │   ├── core.js            # Lightbox, VideoObserver, Media factory, DOM utils
 │   ├── loader.js          # Page loader lifecycle
-│   ├── content-loader.js  # Fetches portfolio.json, populates homepage
-│   ├── gallery.js         # Homepage gallery filter & lightbox
+│   ├── portfolio-gallery.js # Portfolio page gallery, chips & modal
 │   ├── gallery-loader.js  # Gallery page
 │   ├── album-loader.js    # Albums page
 │   ├── service-loader.js  # Service page
@@ -88,11 +89,11 @@ This portfolio embodies **restraint, editorial elegance, and cinematic motion**:
 ├── data/
 │   ├── portfolio.json     # Gallery images by category
 │   ├── services.json      # Service copy & deliverables
-│   └── new_portfolio.json # Optional / legacy
+│   └── new_portfolio.json # Newer pre-wedding uploads (Cloudinary)
 │
-└── Python/                # Dev tooling: Sirv sync (not part of static deploy)
-    ├── sync-sirv.py
-    └── ...
+└── Python/                # Local dev tooling, not part of the deploy
+    ├── main.py            # Tkinter helper: append entries to new_portfolio.json
+    └── b2-proxy.py        # Unused stub
 ```
 
 Images and video are loaded from CDN (Sirv, Cloudinary). There is no local `assets/images` folder.
@@ -142,35 +143,26 @@ Images and video are loaded from CDN (Sirv, Cloudinary). There is no local `asse
 
 ## 📝 Content Management
 
-### 📂 Smart Media Management (Recommended)
+### Where media lives
 
-I have implemented an automated synchronization workflow using **Sirv**. This is the best way to manage hundreds of images and videos without manual JSON editing.
+Images and video are **not stored in this repo**. They are served from two CDNs,
+and the JSON files under `data/` decide what appears on the site:
 
-#### 1. Upload to Sirv
-- Upload your images and videos to [Sirv](https://sirv.com).
-- Organize them into folders named exactly like your categories:
-  - `/Weddings`
-  - `/Portraits`
-  - `/Pre-Wedding`
-  - `/Maternity`
-  - `/Engagement`
-  - `/Haldi`
-  - `/Cinematics`
+- `data/portfolio.json` — the main library. Media hosted on **Sirv**
+  (`exdevx.sirv.com`), sized with `?w=800&q=80`. Holds `portfolio.categories`
+  (filter definitions), `portfolio.images` (one array per category) and `about`.
+- `data/new_portfolio.json` — newer pre-wedding uploads hosted on
+  **Cloudinary**. Merged with the above on the home page.
 
-#### 2. Run the Sync Script
-From the project root, run the sync script (lives in `Python/`) to update `data/portfolio.json` with your latest Sirv uploads:
+There is **no sync script**: `portfolio.json` is edited by hand.
+`Python/main.py` is a small local Tkinter helper for appending entries to
+`new_portfolio.json` — set `CATEGORY_KEY` and `START_ID` at the top of the file
+before running it. Nothing under `Python/` is deployed.
 
-```bash
-python3 Python/sync-sirv.py
-```
-
-This script will:
-- Authenticate with Sirv API.
-- Scan your folders.
-- Automatically detect images vs. videos.
-- Update `data/portfolio.json` with optimized CDN links.
-
----
+Populated categories are `weddings`, `portraits`,
+`pre-wedding-photos-and-videos`, `maternity`, `engagement`, `haldi`,
+`cinematics` (videos), `events` and `kids`. A filter chip must reference one of
+these ids; `commercial` is declared as a category but has no images.
 
 ### 📝 Manual Additions (Legacy)
 
@@ -300,28 +292,23 @@ All animations are optimized for mobile with `prefers-reduced-motion` support.
 
 ## 🚀 Deployment
 
-### Netlify (Recommended)
+Hosted on **Netlify** at **https://supf.in**. Pushing to `main` deploys.
 
-1. Connect your Git repository
-2. Build settings: None (static site)
-3. Publish directory: `/` (root)
-4. Deploy!
+- Build command: none (static site)
+- Publish directory: `.` (repo root)
+- Site ID: `.netlify/state.json`
 
-### GitHub Pages
+Configuration lives in `netlify.toml` (redirects, security headers including the
+CSP, and `Cache-Control`), with `_redirects` for short friendly URLs and
+`_headers` duplicating most of the header block.
 
-```bash
-git add .
-git commit -m "Initial commit"
-git push origin main
-```
+> **Adding a third-party script, font, image host or API endpoint?** Add its
+> origin to the `Content-Security-Policy` in `netlify.toml`. The CSP is an
+> allowlist — anything missing works locally and is silently blocked in
+> production.
 
-Enable GitHub Pages in repository settings.
-
-### Vercel
-
-```bash
-vercel --prod
-```
+Canonical URLs, `sitemap.xml` and `robots.txt` all use the bare apex domain
+`https://supf.in`; keep them consistent when adding pages.
 
 ---
 

@@ -39,6 +39,10 @@ class AlbumLoader {
       grid.appendChild(card);
     });
 
+    window.Motion?.kill('albums-grid');
+    window.Motion?.reveal(grid.children, { y: 40, stagger: 0.08, owner: 'albums-grid' });
+    window.Motion?.refresh();
+
     document.body.classList.remove('loading');
   }
 
