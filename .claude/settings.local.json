@@ -3,5 +3,9 @@
     "allow": [
       "Bash(start:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "gsap"
+  ],
+  "enableAllProjectMcpServers": true
 }

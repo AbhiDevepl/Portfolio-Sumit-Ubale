@@ -105,8 +105,10 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" media="print" onload="this.media='all'">
   <link rel="preconnect" href="https://exdevx.sirv.com">
+  <link rel="preconnect" href="https://res.cloudinary.com">
   <link rel="preload" as="image" href="https://exdevx.sirv.com/IMG_Hero_peub99.webp?profile=true">
 
   <script src="/scripts/colors.js"></script>
@@ -343,5 +345,12 @@
       });
     });
   </script>
+  <!-- Motion: GSAP + ScrollTrigger drive the shared landing-page reveals.
+       Deferred so they never block the copy, which renders without them. -->
+  <script src="https://unpkg.com/gsap@3.15.0/dist/gsap.min.js" defer></script>
+  <script src="https://unpkg.com/gsap@3.15.0/dist/ScrollTrigger.min.js" defer></script>
+  <script src="/scripts/gsap-init.js" defer></script>
+  <script src="/scripts/motion.js" defer></script>
+  <script src="/scripts/landing-motion.js" defer></script>
 </body>
 </html>

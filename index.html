@@ -198,6 +198,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="preconnect" href="https://exdevx.sirv.com">
+  <link rel="preconnect" href="https://res.cloudinary.com">
 
   <!-- Font Loading Optimization (non-render-blocking) -->
   <link rel="stylesheet"
@@ -605,16 +606,15 @@
         });
       }
 
-      Promise.all([
-        fetch('/data/portfolio.json').then(res => res.ok ? res.json() : null).catch(() => null),
-        fetch('/data/new_portfolio.json').then(res => res.ok ? res.json() : null).catch(() => null)
-      ])
-      .then(([oldData, newData]) => {
-        // Integrate both JSON sources to gather all contents
-        integrateData(oldData);
-        integrateData(newData);
+      // portfolio.json is the only data source; the second file this used to
+      // merge (new_portfolio.json) was folded into it, so fetching it now
+      // would be a guaranteed 404 on every page load.
+      fetch('/data/portfolio.json')
+        .then(res => res.ok ? res.json() : Promise.reject(new Error(`portfolio.json ${res.status}`)))
+        .then((data) => {
+          integrateData(data);
 
-        // Optional: Remove duplicates based on src URL
+        // Guard against the same photo appearing in two categories.
         const seen = new Set();
         portfolioData = portfolioData.filter(item => {
           if (seen.has(item.src)) return false;

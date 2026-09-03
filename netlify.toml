@@ -8,23 +8,15 @@
   command = ""
 
 # ============================================================
-# SPA Routing — Prevent 404 on direct URL access
-# (Must be LAST redirect, only for unknown paths)
+# Redirects — single source of truth (the _redirects file was removed
+# so host rules are not defined in two places).
+#
+# No SPA catch-all: this is a multi-page static site. Netlify serves each
+# HTML file directly, and a "/*" -> "/index.html" rewrite would only mask
+# genuine 404s.
 # ============================================================
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  conditions = {Role = ["admin"]}
-  force = false
 
-# Individual page routes — serve HTML directly (avoids SPA rewrite)
-[[redirects]]
-  from = "/pages/:page"
-  to = "/pages/:page"
-  status = 200
-
-# Force HTTPS
+# Canonical host: force https + non-www
 [[redirects]]
   from = "http://supf.in/*"
   to = "https://supf.in/:splat"
@@ -42,6 +34,52 @@
   to = "https://supf.in/:splat"
   status = 301
   force = true
+
+# Friendly short URLs -> actual pages
+[[redirects]]
+  from = "/portfolio"
+  to = "/pages/portfolio.html"
+  status = 301
+
+[[redirects]]
+  from = "/gallery"
+  to = "/pages/gallery.html"
+  status = 301
+
+[[redirects]]
+  from = "/albums"
+  to = "/pages/albums.html"
+  status = 301
+
+[[redirects]]
+  from = "/services"
+  to = "/pages/service.html"
+  status = 301
+
+[[redirects]]
+  from = "/shrigonda"
+  to = "/pages/wedding-photographer-shrigonda.html"
+  status = 301
+
+[[redirects]]
+  from = "/prewedding"
+  to = "/pages/pre-wedding-shoot-ahilyanagar.html"
+  status = 301
+
+[[redirects]]
+  from = "/candid"
+  to = "/pages/candid-photographer-maharashtra.html"
+  status = 301
+
+[[redirects]]
+  from = "/films"
+  to = "/pages/cinematic-wedding-films-maharashtra.html"
+  status = 301
+
+[[redirects]]
+  from = "/pages/"
+  to = "/pages/portfolio.html"
+  status = 301
 
 # ============================================================
 # Global Headers — Security + SEO + Performance
@@ -114,3 +152,16 @@
   for = "/robots.txt"
   [headers.values]
     Cache-Control = "public, max-age=86400"
+
+# Local fonts (if ever self-hosted)
+[[headers]]
+  for = "/*.woff2"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Web app manifest
+[[headers]]
+  for = "/site.webmanifest"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+    Content-Type = "application/manifest+json"

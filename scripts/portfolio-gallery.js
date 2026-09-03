@@ -197,6 +197,13 @@ class GalleryRenderer {
         article.classList.remove('loading');
         article.classList.add('loaded');
       }
+
+      // A tile whose image 404s would otherwise sit at opacity 0 forever and
+      // read as an empty white box. Mark it so CSS can show a placeholder.
+      media.addEventListener('error', () => {
+        article.classList.remove('loading');
+        article.classList.add('media-error');
+      }, { once: true });
     }
 
     article.appendChild(media);
@@ -215,10 +222,15 @@ class GalleryRenderer {
     // Overlay with title/category
     const overlay = document.createElement('div');
     overlay.className = 'gallery-overlay';
-    overlay.innerHTML = `
-      <h3 class="gallery-item-title">${item.title || ''}</h3>
-      <p class="gallery-item-category">${this.formatCategory(item.category)}</p>
-    `;
+    // textContent, not innerHTML: titles/categories come from portfolio.json,
+    // so anything with a `<` in it would otherwise be parsed as markup.
+    const heading = document.createElement('h3');
+    heading.className = 'gallery-item-title';
+    heading.textContent = item.title || '';
+    const cat = document.createElement('p');
+    cat.className = 'gallery-item-category';
+    cat.textContent = this.formatCategory(item.category);
+    overlay.append(heading, cat);
     article.appendChild(overlay);
 
     // Click handler
@@ -716,4 +728,11 @@ class PortfolioGallery {
 // ========================================
 // INITIALIZE
 // ========================================
+
+// portfolio.html ships empty #main-nav / #main-footer placeholders, same as the
+// other sub-pages. Without this call the page rendered with no navigation and
+// no footer at all. Done at module scope so the markup exists before
+// navigation.js binds on DOMContentLoaded.
+window.Core?.DOM?.injectGlobalComponents();
+
 window.PortfolioGallery = new PortfolioGallery();

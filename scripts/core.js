@@ -541,6 +541,13 @@ window.Core = {
              item.classList.remove('loading');
              media.classList.add('loaded');
         }
+
+        // Failed image: drop the loading shimmer and flag the tile instead of
+        // leaving it invisible.
+        media.addEventListener('error', () => {
+          item.classList.remove('loading');
+          item.classList.add('media-error');
+        }, { once: true });
       }
 
       item.appendChild(media);
@@ -564,7 +571,15 @@ window.Core = {
       const overlay = document.createElement('div');
       overlay.className = 'gallery-overlay';
       const displayCategory = categoryFormatter ? categoryFormatter(image.category) : (image.category || '');
-      overlay.innerHTML = `<h3 class="gallery-title">${image.title || ''}</h3><p class="gallery-category">${displayCategory}</p>`;
+      // textContent, not innerHTML: titles and categories come from JSON and
+      // must never be parsed as markup.
+      const overlayTitle = document.createElement('h3');
+      overlayTitle.className = 'gallery-title';
+      overlayTitle.textContent = image.title || '';
+      const overlayCategory = document.createElement('p');
+      overlayCategory.className = 'gallery-category';
+      overlayCategory.textContent = displayCategory;
+      overlay.append(overlayTitle, overlayCategory);
       item.appendChild(overlay);
 
       const openItem = (e) => {

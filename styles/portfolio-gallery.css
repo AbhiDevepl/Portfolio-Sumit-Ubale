@@ -525,3 +525,30 @@
     padding-right: max(var(--space-6), env(safe-area-inset-right));
   }
 }
+
+/* ========================================
+   MEDIA FAILURE STATE
+   A tile whose image cannot load (dead CDN, 404) would otherwise stay at
+   opacity 0 and read as an empty box. Show a quiet placeholder instead.
+   ======================================== */
+.gallery-item.media-error {
+  background: var(--surface-2, #ecebe6);
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-item.media-error .gallery-media,
+.gallery-item.media-error .gallery-image,
+.gallery-item.media-error .gallery-overlay,
+.gallery-item.media-error .gallery-video-play-icon {
+  display: none;
+}
+
+.gallery-item.media-error::after {
+  content: "Image unavailable";
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, #8a8a85);
+}

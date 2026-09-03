@@ -1,182 +1,239 @@
 # AGENTS.md
 
-Guidance for AI agents (Claude Code, Codex, etc.) working in this repository.
+Technical reference for this repository. Written against the code as it
+actually exists — if something here disagrees with the code, the code wins and
+this file is the bug.
 
-## Project Overview
+## Project overview
 
-A **photography portfolio website** for Sumit Ubale, a wedding photographer in
-Shrigonda, Maharashtra, India. It is a **static multi-page site** built with
-vanilla HTML/CSS/JS — no framework, no bundler, no build step, no
-`package.json`. Files are served exactly as they sit in the repo.
+A static photography portfolio for Sumit Ubale (Shrigonda / Ahilyanagar,
+Maharashtra). Plain HTML, CSS and vanilla JavaScript.
 
-Production site: **https://supf.in**
+- **No build step, no bundler, no package.json.** Files are served as authored.
+- **No framework.** Do not introduce React/Next/Vue/Three.js.
+- Animation is GSAP + ScrollTrigger, smooth scrolling is Lenis, both from a
+  pinned CDN.
+- Deployed to **Netlify**. Production origin is **https://supf.in**.
 
-SEO target keywords: Wedding Photographer Shrigonda, Wedding Photographer
-Ahilyanagar, Candid Wedding Photographer Maharashtra, Pre Wedding Shoot
-Shrigonda.
+## Running it locally
 
-## Development
-
-There is nothing to install or compile. Serve the repo root over HTTP:
+There is nothing to install or compile:
 
 ```bash
-python3 -m http.server 8000   # then open http://localhost:8000
+python3 -m http.server 8000
+# then open http://127.0.0.1:8000/
 ```
 
-Use a real HTTP server, not `file://` — several scripts `fetch()` JSON from
-root-absolute paths (`/data/portfolio.json`), which only resolve when the repo
-root is the web root.
+Use a server, not `file://` — every page fetches JSON with absolute paths
+(`/data/portfolio.json`) and uses a JS module, both of which need HTTP.
+
+### Checks
+
+```bash
+node tests/check-portfolio-data.mjs   # data <-> filter-chip integrity
+node --check scripts/<file>.js        # syntax
+```
+
+`tests/check-portfolio-data.mjs` has no dependencies. It asserts that every
+filter chip in `pages/portfolio.html` maps to a non-empty category in
+`data/portfolio.json`, that every declared category has an images array, and
+that every item has a valid absolute `src`, `alt` and `type`. It also prints
+the media-host breakdown, which is how a dead CDN becomes visible. Run it after
+touching portfolio data or the chips.
+
+## Repository layout
+
+```
+index.html              Single-page home (hero, portfolio, about, contact)
+pages/
+  portfolio.html        Full gallery + category filter chips
+  gallery.html          Single-category gallery (?category=<slug>)
+  albums.html           Album index
+  service.html          Service detail (?s=<slug>)
+  wedding-photographer-shrigonda.html      \
+  pre-wedding-shoot-ahilyanagar.html        | four self-contained
+  candid-photographer-maharashtra.html      | SEO landing pages
+  cinematic-wedding-films-maharashtra.html /
+scripts/                Vanilla JS, no modules except portfolio-gallery.js
+styles/                 Plain CSS, loaded per page
+data/
+  portfolio.json        All gallery media + categories + about
+  services.json         Service pages content
+tests/                  Dependency-free node checks
+Python/main.py          Local-only Tkinter helper for bulk-adding image URLs.
+                        Not part of the site; not run in CI or at deploy.
+netlify.toml            Deployment config: redirects AND headers (single source)
+sitemap.xml robots.txt site.webmanifest
+```
+
+## Data model
+
+`data/portfolio.json` has two top-level keys, `portfolio` and `about`.
+
+```jsonc
+{
+  "portfolio": {
+    "categories": [ { "id": "weddings", "name": "Weddings", "slug": "weddings" } ],
+    "images": {
+      "weddings":  [ { "id": 1, "title": "...", "type": "image",
+                       "src": "https://...", "alt": "...", "aspectRatio": "3/4" } ],
+      "cinematics": [ { "type": "video", "src": "https://.../1.mp4" } ]
+    }
+  },
+  "about": { "name": "...", "tagline": "...", "bio": "...", "image": "...", "social": {} }
+}
+```
+
+Rules that are easy to break:
+
+- **The key of `portfolio.images` IS the category slug.** `portfolio-gallery.js`
+  copies it onto each item as `item.category`, and the filter chips in
+  `pages/portfolio.html` filter on exactly that string. A chip whose
+  `data-category` has no matching key renders an empty grid, silently.
+- Every entry in `categories` must have a matching `images` key, or the
+  category button on `gallery.html` leads nowhere.
+- `type` is `"image"` or `"video"`. Videos are lazy-loaded and never autoplay
+  with sound.
+
+Current categories: `weddings`, `portraits`, `pre-wedding-photos-and-videos`,
+`maternity`, `engagement`, `haldi`, `cinematics` (video), `events`, `kids`.
+
+## Media / CDN
+
+Two image hosts appear in the data:
+
+| Host | Status | Count |
+|---|---|---|
+| `res.cloudinary.com/portfolio-sumit-ubale` | **live** | 231 (pre-wedding) |
+| `exdevx.sirv.com` | **DEAD — account deactivated, HTTP 403** | 905 |
+
+> **The Sirv account is deactivated.** Every `exdevx.sirv.com` URL returns 403
+> with an "Account deactivated" page, so all categories except pre-wedding
+> render placeholder tiles. The original image files are **not** in this repo,
+> so this cannot be fixed from here — it needs either the Sirv account
+> reactivated or the originals re-uploaded (Cloudinary already hosts some) and
+> the `src` values rewritten. Do not "fix" this by deleting the data.
+
+Tiles whose media fails to load get a `.media-error` class and show a quiet
+"Image unavailable" placeholder rather than an invisible box
+(`portfolio-gallery.js`, `core.js`, styled in both gallery stylesheets).
+
+There is no Sirv API integration, no sync script, and no `SIRV_*` credential in
+this repo — only plain delivery URLs sitting in the JSON.
+
+## Pages and their scripts
+
+Load order matters: GSAP → ScrollTrigger → (Lenis) → `core.js` →
+`gsap-init.js` → `motion.js` → page script.
+
+| Page | Scripts (after colors.js) |
+|---|---|
+| `index.html` | core, gsap-init, motion, smooth-scroll, hero, sections, navigation, contact, loader, whatsapp |
+| `pages/portfolio.html` | core, gsap-init, motion, **portfolio-gallery** (module), navigation, smooth-scroll |
+| `pages/gallery.html` | core, gsap-init, motion, **gallery-loader**, sections, navigation, loader |
+| `pages/albums.html` | core, gsap-init, motion, **album-loader**, sections, navigation, loader, whatsapp |
+| `pages/service.html` | core, gsap-init, motion, **service-loader**, sections, navigation, loader |
+| 4 SEO landing pages | gsap-init, motion, **landing-motion** |
+
+`colors.js` runs in `<head>` (before paint) and injects CSS colour custom
+properties, so it must stay a blocking script.
+
+### Script responsibilities
+
+- **`core.js`** — shared `Core` namespace: `Core.Lightbox`, `Core.Media`
+  (the gallery-item factory used by gallery/albums), `Core.VideoHover`,
+  `Core.VideoObserver`, `Core.DOM` (fragment helper +
+  `injectGlobalComponents()`, which fills the empty `#main-nav` /
+  `#main-footer` placeholders on sub-pages). Every page with those
+  placeholders must call it, or it ships with no navigation.
+- **`portfolio-gallery.js`** — the portfolio page only. ES module. State →
+  renderer → filter controller. Owns its own item factory (not `Core.Media`)
+  because it renders a different overlay and card shape.
+- **`gallery-loader.js` / `album-loader.js` / `service-loader.js`** — fetch
+  JSON and render via `Core.DOM` / `Core.Media`.
+- **`motion.js`** — the shared motion system (below).
+- **`landing-motion.js`** — applies `motion.js` to the `.lp-*` markup shared by
+  all four SEO landing pages. One file covers all four; there is no per-page
+  animation code.
+- **`smooth-scroll.js`** — Lenis, driven from the GSAP ticker and synced to
+  ScrollTrigger. Falls back to native anchor scrolling when Lenis is absent or
+  reduced motion is on.
+
+## Motion system
+
+`window.Motion` (in `scripts/motion.js`) is the only thing that should be
+creating reveals. Its API:
+
+- `Motion.reveal(targets, {y, scale, duration, stagger, threshold, owner})`
+- `Motion.parallax(target, {amount, trigger, owner})`
+- `Motion.kill(owner)` / `Motion.refresh()` / `Motion.reduced`
+
+Design decisions worth preserving:
+
+- **Reveals use ONE IntersectionObserver, not a ScrollTrigger per element.**
+  The grid can hold 1000+ items; a trigger each is far more expensive. GSAP
+  still drives the tween.
+- ScrollTrigger is reserved for genuinely scroll-linked work (scrubbed
+  parallax).
+- Everything animates `transform` / `opacity` only — no layout-triggering
+  properties.
+- **`owner` is how re-renders stay clean.** Every filter change calls
+  `Motion.kill('portfolio-grid')` before rendering, so observers and tweens do
+  not stack up. If you add a reveal inside re-rendered markup, give it an owner
+  and kill it.
+- `Motion.kill()` makes anything still pending visible. Content must never be
+  stranded at `opacity: 0`.
+
+### Reduced motion
+
+`motion.js` checks `prefers-reduced-motion` and, when set, shows every element
+immediately and creates no tweens, observers or parallax. It also listens for
+the setting changing mid-session. CSS has matching
+`@media (prefers-reduced-motion: reduce)` blocks. **No content may depend on an
+animation to become visible or reachable.**
+
+### Pinned dependencies
+
+```
+gsap@3.15.0, ScrollTrigger@3.15.0, @studio-freight/lenis@1.0.29  (unpkg)
+```
+
+Pin exact versions — a floating `gsap@3` can ship a breaking build. The global
+is **`window.gsap`** (lowercase); `window.GSAP` does not exist.
 
 ## Deployment
 
-Hosted on **Netlify**, deployed by pushing to `main`. The Netlify site ID lives
-in `.netlify/state.json`. There is no build command; `publish = "."`.
+Netlify, publishing the repo root (`publish = "."`, no build command).
 
-| File | Role |
-|------|------|
-| `netlify.toml` | Authoritative config: HTTPS/www redirects, security headers (incl. **CSP**), `Cache-Control` rules |
-| `_redirects` | Short friendly URLs (`/portfolio` → `/pages/portfolio.html`) and HTTPS/www forcing |
-| `_headers` | Cache/security headers; **duplicates** most of `netlify.toml`'s header block. Netlify merges both — edit `netlify.toml` first and keep `_headers` in sync or it will drift |
-| `robots.txt` | Allows the site, disallows `/Python/`; points at the sitemap |
-| `sitemap.xml` | All 8 pages plus the root, all on `https://supf.in` |
+**`netlify.toml` is the single source of truth for redirects and headers.** The
+old `_redirects` and `_headers` files were removed so host rules are not
+defined in two places — do not reintroduce them.
 
-**The CSP in `netlify.toml` is a real deploy hazard.** It is an allowlist, so
-any new third-party origin must be added there or the browser silently blocks
-it. Origins currently required:
+It defines: https + non-www canonicalisation to `supf.in`, friendly short URLs
+(`/portfolio`, `/gallery`, `/shrigonda`, …), security headers including a CSP
+that allowlists unpkg / Google Fonts / Cloudinary / Sirv / FormSubmit, and
+cache headers (immutable for `/scripts` + `/styles`, no-cache for HTML).
 
-- `script-src` — `https://unpkg.com` (GSAP, ScrollTrigger, Lenis)
-- `style-src` / `font-src` — Google Fonts
-- `img-src` / `media-src` — `https://*.sirv.com`, `https://res.cloudinary.com`
-- `connect-src` — `https://formsubmit.co` (contact form)
+There is **no SPA catch-all rewrite** and there should not be one: this is a
+multi-page static site, and `/*  ->  /index.html` would only mask real 404s.
 
-Canonical URLs, `sitemap.xml`, `robots.txt` and the redirect rules must all
-agree on the bare apex domain `https://supf.in` (no `www`).
+The site is not on Vercel or Cloudflare; there is no `vercel.json` or
+`wrangler.jsonc`. Canonical URLs, `og:url`, sitemap and robots all use
+`https://supf.in` and must stay consistent.
 
-## Media & Data
+## Contact form
 
-Images and video are **never stored in the repo** — they are served from two
-CDNs, and the JSON files under `data/` are the source of truth for what is
-displayed.
-
-| File | Contents |
-|------|----------|
-| `data/portfolio.json` | `portfolio.categories` (11 filter definitions), `portfolio.images` (9 category arrays), and an `about` block. Media on **Sirv** (`exdevx.sirv.com`), with `?w=800&q=80` sizing params |
-| `data/new_portfolio.json` | A single `pre-wedding-photos-and-videos` array of newer uploads on **Cloudinary** (`res.cloudinary.com`). Merged with the above on the home page |
-| `data/services.json` | Static service definitions and copy for `pages/service.html` |
-
-Populated categories in `portfolio.images`: `weddings`, `portraits`,
-`pre-wedding-photos-and-videos`, `maternity`, `engagement`, `haldi`,
-`cinematics` (videos), `events`, `kids`. Note that `portfolio.categories`
-also declares `commercial`, which has **no** images array — anything iterating
-categories must tolerate a category with zero items.
-
-There is **no sync script in this repo.** `data/portfolio.json` is maintained by
-hand. `Python/main.py` is a local Tkinter helper for appending entries to
-`new_portfolio.json` (edit `CATEGORY_KEY` / `START_ID` at the top before
-running); `Python/b2-proxy.py` is an unused stub. Nothing under `Python/` is
-part of the deployed site.
-
-## Architecture
-
-### Colour tokens are injected at runtime
-
-`styles/theme.css` defines **only** spacing, typography, radius, shadow and
-z-index tokens. Every colour token (`--text-primary`, `--bg-primary`,
-`--accent`, `--border-color`, …) is generated and injected into `:root` by
-`scripts/colors.js` at load time. That is why `colors.js` is the **first**
-script on every single page — remove or defer it and the site renders
-unstyled. CSS referencing a colour token has no static fallback.
-
-### Pages and their scripts
-
-| Page | Scripts (in load order) |
-|------|-------------------------|
-| `index.html` | `colors`, `core`, `gsap-init`, `smooth-scroll`, `hero`, `sections`, `navigation`, `contact`, `loader`, `whatsapp` + an **inline** gallery script |
-| `pages/portfolio.html` | `colors`, `core`, `portfolio-gallery`, `navigation`, `smooth-scroll` |
-| `pages/gallery.html` | `colors`, `core`, `gallery-loader`, `navigation`, `loader` |
-| `pages/albums.html` | `colors`, `core`, `album-loader`, `navigation`, `loader`, `whatsapp` |
-| `pages/service.html` | `colors`, `core`, `service-loader`, `navigation`, `loader` |
-| 4 SEO landing pages | `colors` only (static content) |
-
-### Script modules
-
-| File | Purpose |
-|------|---------|
-| `core.js` | Shared engine: Lightbox, VideoObserver (lazy load + auto-pause), VideoHover, `Media.createItem()` factory, `DOM.injectGlobalComponents()` for shared nav/footer |
-| `colors.js` | Injects the colour design tokens into `:root` (see above) |
-| `portfolio-gallery.js` | Portfolio page gallery: state store, renderer, chip filtering, modal viewer |
-| `gallery-loader.js` | Gallery page loader |
-| `album-loader.js` | Albums page loader |
-| `service-loader.js` | Service page loader, reads `services.json` |
-| `hero.js`, `sections.js`, `gsap-init.js` | GSAP animation setup and scroll reveals |
-| `navigation.js` | Mobile menu toggle |
-| `smooth-scroll.js` | Lenis smooth scrolling |
-| `contact.js` | Contact form validation, POSTs to FormSubmit.co |
-| `whatsapp.js` | Context-aware pre-filled WhatsApp CTAs |
-| `loader.js` | Page loading lifecycle |
-
-### Three independent gallery implementations
-
-This is the main thing to understand before editing gallery code — they do
-**not** share a filtering path:
-
-1. **Home page** (`index.html`) — a self-contained inline `<script>`. Renders
-   `.portfolio-item` divs into `#portfolio-inline-grid`, merges both portfolio
-   JSON files, shuffles, and paginates with a "load more" button. No lightbox.
-2. **Portfolio page** — `portfolio-gallery.js`. A `GalleryState` store whose
-   subscribers re-render `#gallery-grid`; `.filter-chip` buttons filter by
-   `data-category` and sync a `?category=` query param. Renders `.gallery-item`
-   articles and opens `Core.Lightbox`.
-3. **Gallery / Albums / Service pages** — `*-loader.js` built on
-   `Core.Media.createItem()`.
-
-Filter chips must use category ids that exist as keys in
-`portfolio.images`. A chip pointing at a missing or empty category renders the
-empty state rather than a blank grid.
-
-### CSS
-
-| File | Purpose |
-|------|---------|
-| `theme.css` | Non-colour design tokens |
-| `base.css` | Reset, typography, utilities |
-| `layout.css` | Grid, containers, breakpoints |
-| `components.css` | Nav, hero, sections, contact, footer, home-page grid |
-| `animations.css` | Animation classes, reduced-motion fallbacks |
-| `loader.css` | Page loader |
-| `lightbox-video.css` | Lightbox and custom video controls |
-| `portfolio-gallery.css` | Portfolio page grid, chips, loading/empty/error states |
-| `service.css` | Service page |
+`scripts/contact.js` POSTs to FormSubmit's AJAX endpoint. The destination email
+is visible in the client source, which is inherent to a static site with no
+backend — do not try to obfuscate it and call that security.
 
 ## Conventions
 
-- **Vanilla JS only.** No frameworks, no bundler, no npm dependency.
-- **Pin CDN versions.** Third-party scripts load from unpkg with exact
-  versions (`gsap@3.15.0`, `lenis@1.0.29`). Never use a floating major-version
-  range — it turns an upstream release into an unannounced production deploy.
-- **Add new third-party origins to the CSP** in `netlify.toml`, or they are
-  blocked in production while working fine locally.
-- **Media URLs come from the JSON files**, never hardcoded and never local.
-- **Fetch with root-absolute paths** (`/data/...`) so a page works regardless
-  of the directory it is served from.
-- **Keep SEO markup intact**: unique title, meta description, Open Graph,
-  Twitter Card, JSON-LD (`LocalBusiness` + `Photographer`), canonical URL,
-  and alt text on every image.
-- **Accessibility**: semantic landmarks, ARIA on interactive elements,
-  keyboard support in the lightbox (Escape / arrows / space), visible focus,
-  WCAG AA contrast.
-- **Performance**: lazy-load below the fold, batch DOM writes with
-  `DocumentFragment`, `preload="none"` on video, respect
-  `prefers-reduced-motion`.
-- `console.error` / `console.warn` in failure paths are intentional; there is
-  no debug logging to strip.
-
-## Repository automation
-
-Historically a bot opened a large number of near-duplicate
-"optimize gallery" pull requests, and roughly 140 stale `bolt-*` branches
-remain on the remote. There is **no automation configuration in this repo** —
-no `.github/` directory and no workflow files — so the bot is configured
-outside the repository (GitHub App / external service) and cannot be disabled
-by a code change here. Do not open further automated optimization PRs. Branch
-and PR cleanup has to be done through GitHub itself.
+- Render text from JSON with `textContent`, never `innerHTML`. `innerHTML` is
+  fine only for markup literals authored in the file.
+- Prefer `Core.DOM.createFragment` for list rendering; append once.
+- Images get `loading="lazy"` + `decoding="async"`; videos get `preload="none"`
+  and are observed for lazy loading.
+- Keep `console.error` / `console.warn` for genuine failures; no debug logging.
+- Match the surrounding style: 2-space indent, no semicolon-free style, plain
+  classes over frameworks.

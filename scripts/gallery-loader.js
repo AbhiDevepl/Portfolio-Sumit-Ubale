@@ -114,63 +114,31 @@ class GalleryLoader {
     return imgs.map(img => ({ ...img, category: this.category }));
   }
 
+  // Page-header reveal only. Grid items are owned by Motion.reveal() in
+  // renderGallery(); animating them here too meant two systems writing the
+  // same opacity, and a ScrollTrigger.batch left behind on every re-render.
   initAnimations() {
-    const hasGsap = typeof window !== 'undefined' && window.gsap;
-    const hasScrollTrigger = typeof window !== 'undefined' && window.ScrollTrigger;
+    if (!window.gsap || window.Motion?.reduced) return;
 
-    // If GSAP is not loaded (e.g., CDN blocked), skip animations instead of throwing.
-    if (!hasGsap) {
-      console.warn('GalleryLoader: GSAP not available, skipping animations.');
-      document.querySelectorAll('.reveal-item').forEach(el => el.style.opacity = 1);
-      return;
-    }
-
-    // Brief delay to ensure DOM layout is settled before initializing ScrollTrigger
-    setTimeout(() => {
-      window.gsap.from('.stagger-reveal', {
-        opacity: 0,
-        y: 20,
-        duration: 0.8,
-        stagger: 0.1,
-        ease: 'power2.out',
-        clearProps: 'all' // Ensure clean state after animation
-      });
-
-      if (hasScrollTrigger) {
-        // Use batch() for better performance with many items and reliable triggering
-        ScrollTrigger.batch('.gallery-item', {
-          start: 'top 95%', // Trigger slightly earlier
-          onEnter: batch => gsap.to(batch, {
-            opacity: 1,
-            scale: 1,
-            duration: 0.6,
-            stagger: 0.05,
-            ease: 'power2.out',
-            overwrite: true
-          }),
-          onEnterBack: batch => gsap.to(batch, { opacity: 1, scale: 1, overwrite: true }) // Keep visible when scrolling back
-        });
-        
-        ScrollTrigger.refresh();
-      } else {
-        // Fallback if ScrollTrigger is missing
-        window.gsap.to('.gallery-item', {
-          opacity: 1,
-          scale: 1,
-          duration: 0.6,
-          stagger: 0.05,
-          ease: 'power2.out'
-        });
-      }
-      
-      // Force loader removal just in case
-      document.body.classList.remove('loading');
-    }, 100);
+    gsap.from('.stagger-reveal', {
+      opacity: 0,
+      y: 20,
+      duration: 0.8,
+      stagger: 0.1,
+      ease: 'power2.out',
+      clearProps: 'all'
+    });
   }
 
   handleError(error) {
     const grid = document.getElementById('gallery-grid');
-    if (grid) grid.innerHTML = `<div class="error-msg">Failed to load gallery: ${error.message}</div>`;
+    if (grid) {
+      grid.innerHTML = '';
+      const msg = document.createElement('div');
+      msg.className = 'error-msg';
+      msg.textContent = `Failed to load gallery: ${error.message}`;
+      grid.appendChild(msg);
+    }
     document.body.classList.remove('loading');
   }
 }
