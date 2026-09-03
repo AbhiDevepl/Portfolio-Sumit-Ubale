@@ -583,3 +583,41 @@
     height: 56px;
   }
 }
+
+/* ========================================
+   INTERACTION POLISH
+   ======================================== */
+
+/* Kill the 300ms tap delay on the lightbox controls. */
+.lightbox-close,
+.lightbox-prev,
+.lightbox-next {
+  touch-action: manipulation;
+}
+
+/* Core.Lightbox.updateContent() already sets imgEl.style.opacity to 0 on
+   swap and back to 1 on load, but nothing animated between the two, so
+   navigating prev/next hard-cut. This transitions that existing inline
+   opacity change; no JS change. */
+.lightbox-image {
+  transition: opacity 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-close,
+  .lightbox-prev,
+  .lightbox-next {
+    transition: none;
+  }
+  .lightbox-close:hover,
+  .lightbox-prev:hover,
+  .lightbox-next:hover,
+  .lightbox-close:active,
+  .lightbox-prev:active,
+  .lightbox-next:active {
+    transform: none;
+  }
+  .lightbox-image {
+    transition: none;
+  }
+}

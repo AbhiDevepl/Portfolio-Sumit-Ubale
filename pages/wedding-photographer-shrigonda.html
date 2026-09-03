@@ -364,6 +364,62 @@
     }
     .sticky-whatsapp:hover { transform: scale(1.08); }
     .sticky-whatsapp svg { width: 28px; height: 28px; fill: #fff; }
+
+    /* ============================================================
+       Focus, reduced motion and tablet tier.
+       Added in the UI/UX pass: these pages previously had hover states
+       with no focus parity, no reduced-motion guard for their inline
+       transitions, and a single 640px breakpoint (nothing between 641px
+       and the 1100px container).
+       ============================================================ */
+
+    /* Focus parity. base.css only supplies a 1px ring, which is too weak
+       against the near-black hero; this matches the lightbox treatment. */
+    .lp-cta-primary:focus-visible,
+    .lp-cta-whatsapp:focus-visible,
+    .lp-faq-question:focus-visible,
+    .lp-gallery-strip a:focus-visible {
+      outline: 2px solid var(--editorial-black);
+      outline-offset: 3px;
+      border-radius: 2px;
+    }
+
+    /* On the dark hero and dark sections the ring must invert to stay visible. */
+    .lp-hero .lp-cta-primary:focus-visible,
+    .lp-hero .lp-cta-whatsapp:focus-visible,
+    .lp-final-cta .lp-cta-primary:focus-visible,
+    .lp-section-dark :focus-visible {
+      outline-color: #fff;
+    }
+
+    /* Press feedback: these were hover-only, so touch users got nothing. */
+    .lp-cta-primary:active,
+    .lp-cta-whatsapp:active { transform: scale(0.97); }
+
+    /* Tablet tier: 641-1024px. Without this the 3-up strip stayed 3-up
+       right down to 641px, well past where the images stop reading. */
+    @media (min-width: 641px) and (max-width: 1024px) {
+      .lp-container { padding: 0 2rem; }
+      .lp-gallery-strip { grid-template-columns: repeat(2, 1fr); }
+      .lp-testimonials { grid-template-columns: repeat(2, 1fr); }
+      .lp-locations-grid,
+      .lp-cities-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .lp-cta-primary,
+      .lp-cta-whatsapp,
+      .lp-testimonial-card,
+      .lp-gallery-strip img,
+      .lp-faq-answer,
+      .lp-location-card {
+        transition: none !important;
+        animation: none !important;
+      }
+      .lp-cta-primary:active,
+      .lp-cta-whatsapp:active { transform: none; }
+      .lp-hero-bg { transform: none !important; }
+    }
   </style>
 </head>
 

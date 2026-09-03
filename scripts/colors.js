@@ -71,6 +71,10 @@
       editorial_rose: '#A3A199',
       editorial_gray: '#66645E',
       editorial_light_gray: '#FBFBFA',
+      // Referenced 10x by the SEO landing pages (and .text-black) but never
+      // defined, so those declarations were being dropped. This is the value
+      // the landing pages were already falling back to.
+      editorial_black: '#0A0A0A',
     }
   };
 
@@ -120,6 +124,7 @@
     '--editorial-rose': Palette.legacy.editorial_rose,
     '--editorial-gray': Palette.legacy.editorial_gray,
     '--editorial-light-gray': Palette.legacy.editorial_light_gray,
+    '--editorial-black': Palette.legacy.editorial_black,
   };
 
   /**

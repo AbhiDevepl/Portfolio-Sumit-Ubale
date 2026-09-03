@@ -120,6 +120,18 @@
   outline-offset: 2px;
 }
 
+/* Press feedback was previously defined only inside the coarse-pointer
+   media query, so mouse and keyboard activation had no active state. */
+.filter-chip:active {
+  transform: scale(0.97);
+}
+
+/* Removes the 300ms tap delay on the chip rail. */
+.filter-chip,
+.gallery-item {
+  touch-action: manipulation;
+}
+
 /* ========================================
    GALLERY GRID
    ======================================== */
@@ -180,7 +192,8 @@
   will-change: transform;
 }
 
-.gallery-item:hover {
+.gallery-item:hover,
+.gallery-item:focus-visible {
   transform: translateY(-4px);
   box-shadow: 0 12px 32px -12px var(--shadow-dark);
 }
@@ -227,7 +240,8 @@
 }
 
 /* Slow, deliberate push-in — the image moves, the frame stays put. */
-.gallery-item:hover .gallery-media {
+.gallery-item:hover .gallery-media,
+.gallery-item:focus-visible .gallery-media {
   transform: scale(1.06);
 }
 
@@ -532,7 +546,7 @@
    opacity 0 and read as an empty box. Show a quiet placeholder instead.
    ======================================== */
 .gallery-item.media-error {
-  background: var(--surface-2, #ecebe6);
+  background: var(--bg-dim);
   min-height: 220px;
   display: flex;
   align-items: center;
@@ -550,5 +564,5 @@
   content: "Image unavailable";
   font-size: 0.8125rem;
   letter-spacing: 0.04em;
-  color: var(--text-muted, #8a8a85);
+  color: var(--text-secondary);
 }

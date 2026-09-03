@@ -18,12 +18,17 @@
 
   const has = (sel) => document.querySelector(sel);
 
+  // Offsets are deliberately small (12-16px). On a photography page a large
+  // travel distance reads as a template slide-in; a short rise reads as a
+  // fade and keeps attention on the image. Stagger stays at 0.04-0.08 so
+  // longer card groups finish quickly instead of trickling in.
+
   // --- Hero -------------------------------------------------------------
   // Above the fold, so the observer fires immediately: this reads as a
   // staggered entrance rather than a scroll reveal.
   Motion.reveal(
     '.lp-eyebrow, .lp-h1, .lp-hero-sub, .lp-cta-group',
-    { y: 24, duration: 1, stagger: 0.12, threshold: 0, owner: 'lp-hero' }
+    { y: 14, duration: 0.85, stagger: 0.08, threshold: 0, owner: 'lp-hero' }
   );
 
   // A slow drift on the hero backdrop. Small on purpose — the photograph is
@@ -37,7 +42,7 @@
   document.querySelectorAll('.lp-section, .lp-section-alt, .lp-section-dark').forEach((section) => {
     const heading = section.querySelectorAll('.lp-section-label, .lp-section-title');
     if (heading.length) {
-      Motion.reveal(heading, { y: 22, duration: 0.85, stagger: 0.08, owner: 'lp-sections' });
+      Motion.reveal(heading, { y: 12, duration: 0.7, stagger: 0.06, owner: 'lp-sections' });
     }
   });
 
@@ -55,12 +60,12 @@
   ].forEach((selector) => {
     const items = document.querySelectorAll(selector);
     if (items.length) {
-      Motion.reveal(items, { y: 28, duration: 0.8, stagger: 0.07, owner: 'lp-cards' });
+      Motion.reveal(items, { y: 16, duration: 0.7, stagger: 0.04, owner: 'lp-cards' });
     }
   });
 
   // --- Closing CTA ------------------------------------------------------
   if (has('.lp-final-cta')) {
-    Motion.reveal('.lp-final-cta > *', { y: 26, duration: 0.9, stagger: 0.1, owner: 'lp-cta' });
+    Motion.reveal('.lp-final-cta > *', { y: 14, duration: 0.75, stagger: 0.07, owner: 'lp-cta' });
   }
 })();

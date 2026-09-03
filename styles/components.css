@@ -995,7 +995,11 @@
 /* Testimonials Section */
 .testimonials {
   padding: var(--space-32) 0;
-  background-color: var(--bg-secondary);
+  /* Was the undefined token --bg-secondary, so this declaration was dropped
+     and the section rendered on the page background.
+     Pinned to that same background to keep rendering identical; if an
+     alternating band is wanted, that is a deliberate design change. */
+  background-color: var(--bg-primary);
 }
 
 .testimonials-grid {
@@ -1172,7 +1176,7 @@
    opacity 0 and read as an empty box. Show a quiet placeholder instead.
    ======================================== */
 .gallery-item.media-error {
-  background: var(--surface-2, #ecebe6);
+  background: var(--bg-dim);
   min-height: 220px;
   display: flex;
   align-items: center;
@@ -1190,5 +1194,5 @@
   content: "Image unavailable";
   font-size: 0.8125rem;
   letter-spacing: 0.04em;
-  color: var(--text-muted, #8a8a85);
+  color: var(--text-secondary);
 }
