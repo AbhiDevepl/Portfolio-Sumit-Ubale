@@ -1,0 +1,595 @@
+/**
+ * PORTFOLIO GALLERY STYLES
+ * Premium, mobile-first gallery system
+ * Uses site-wide design tokens from colors.js
+ */
+
+/* ========================================
+   PORTFOLIO PAGE LAYOUT
+   ======================================== */
+.portfolio-page {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+}
+
+/* ========================================
+   HERO SECTION
+   ======================================== */
+.portfolio-hero {
+  padding: var(--space-8) var(--space-6);
+  padding-bottom: var(--space-6);
+  background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-primary) 100%);
+}
+
+@media (min-width: 768px) {
+  .portfolio-hero {
+    padding: var(--space-12) var(--space-8);
+    padding-bottom: var(--space-8);
+  }
+}
+
+.portfolio-hero-content {
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.portfolio-title {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2) 0;
+  line-height: 1.1;
+}
+
+.portfolio-subtitle {
+  font-size: clamp(1rem, 3vw, 1.125rem);
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: 400;
+}
+
+/* ========================================
+   FILTER CHIPS
+   ======================================== */
+.filter-chips-container {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  padding: var(--space-2) 0;
+  margin: 0 calc(-1 * var(--space-6));
+  padding-left: var(--space-6);
+  padding-right: var(--space-6);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.filter-chips-container::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .filter-chips-container {
+    justify-content: center;
+    flex-wrap: wrap;
+    overflow-x: visible;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.filter-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  scroll-snap-align: start;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.filter-chip:hover {
+  background: var(--bg-overlay);
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.filter-chip.active {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: var(--text-inverse);
+}
+
+.filter-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Press feedback was previously defined only inside the coarse-pointer
+   media query, so mouse and keyboard activation had no active state. */
+.filter-chip:active {
+  transform: scale(0.97);
+}
+
+/* Removes the 300ms tap delay on the chip rail. */
+.filter-chip,
+.gallery-item {
+  touch-action: manipulation;
+}
+
+/* ========================================
+   GALLERY GRID
+   ======================================== */
+.portfolio-gallery-section {
+  padding: var(--space-8) 0;
+}
+
+@media (min-width: 768px) {
+  .portfolio-gallery-section {
+    padding: var(--space-12) 0;
+  }
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+@media (min-width: 640px) {
+  .gallery-grid {
+    gap: var(--space-4);
+  }
+}
+
+@media (min-width: 768px) {
+  .gallery-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .gallery-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-8);
+  }
+}
+
+/* ========================================
+   GALLERY ITEM
+   ======================================== */
+.gallery-item {
+  position: relative;
+  aspect-ratio: 3/4;
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  background-color: var(--bg-surface);
+  cursor: pointer;
+  box-shadow: 0 4px 16px -8px var(--shadow-color);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.gallery-item:hover,
+.gallery-item:focus-visible {
+  will-change: transform;
+}
+
+.gallery-item:hover,
+.gallery-item:focus-visible {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px -12px var(--shadow-dark);
+}
+
+.gallery-item:active {
+  transform: scale(0.98);
+}
+
+.gallery-item:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Loading state with shimmer */
+.gallery-item.loading {
+  background: linear-gradient(
+    90deg,
+    var(--border-color) 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    var(--border-color) 100%
+  );
+  background-size: 200% 100%;
+  animation: gallery-shimmer 1.5s infinite;
+}
+
+@keyframes gallery-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.gallery-item.loaded {
+  animation: none;
+}
+
+/* Media element */
+.gallery-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.001);
+  transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1),
+              filter 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Slow, deliberate push-in — the image moves, the frame stays put. */
+.gallery-item:hover .gallery-media,
+.gallery-item:focus-visible .gallery-media {
+  transform: scale(1.06);
+}
+
+/* Video play icon */
+.gallery-video-play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0.9;
+  transition: all var(--transition-base);
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: var(--radius-full);
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.gallery-item:hover .gallery-video-play-icon {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.1);
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.gallery-video-play-icon svg {
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+}
+
+/* Hide play icon when video is playing */
+.gallery-item video:not([paused]) ~ .gallery-video-play-icon {
+  opacity: 0;
+}
+
+/* Overlay */
+.gallery-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    transparent 100%
+  );
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: var(--space-4);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+}
+
+.gallery-item:hover .gallery-overlay {
+  opacity: 1;
+}
+
+.gallery-item-title {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-inverse);
+  margin: 0 0 var(--space-1) 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.gallery-item-category {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  text-transform: capitalize;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   LOADING STATE
+   ======================================== */
+.gallery-loading-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-24);
+  color: var(--text-secondary);
+}
+
+.gallery-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--space-4);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.gallery-loading-state p {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+.gallery-empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-24);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.gallery-empty-state svg {
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--space-4);
+  opacity: 0.4;
+}
+
+.gallery-empty-state h3 {
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.gallery-empty-state p {
+  margin: 0;
+  font-size: var(--text-sm);
+  max-width: 400px;
+}
+
+/* ========================================
+   ERROR STATE
+   ======================================== */
+.gallery-error-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-24);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.gallery-error-state svg {
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--space-4);
+  opacity: 0.5;
+}
+
+.gallery-error-state h3 {
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.gallery-error-state p {
+  margin: 0 0 var(--space-4) 0;
+  font-size: var(--text-sm);
+  max-width: 400px;
+}
+
+.gallery-retry-btn {
+  padding: var(--space-3) var(--space-6);
+  background: var(--text-primary);
+  color: var(--text-inverse);
+  border: none;
+  border-radius: var(--radius-full);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.gallery-retry-btn:hover {
+  background: var(--text-secondary);
+  transform: translateY(-2px);
+}
+
+.gallery-retry-btn:active {
+  transform: scale(0.98);
+}
+
+/* ========================================
+   LIGHTBOX ENHANCEMENTS
+   ======================================== */
+/* Modal entrance animation */
+.lightbox {
+  transition: opacity 220ms ease;
+}
+
+.lightbox.active .lightbox-media-container {
+  animation: modal-content-enter 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-content-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Media transition */
+.lightbox-image,
+.lightbox-video-wrapper {
+  transition: opacity 280ms ease;
+}
+
+/* Navigation button hover effects */
+.lightbox-prev,
+.lightbox-next {
+  will-change: transform;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .gallery-item:hover .gallery-media {
+    transform: none;
+  }
+
+  .gallery-item,
+  .gallery-media,
+  .gallery-overlay,
+  .gallery-video-play-icon,
+  .lightbox,
+  .lightbox-media-container,
+  .lightbox-image,
+  .lightbox-video-wrapper {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .gallery-item.loading {
+    animation: none;
+  }
+}
+
+/* ========================================
+   TOUCH OPTIMIZATIONS
+   ======================================== */
+@media (hover: none) and (pointer: coarse) {
+  .gallery-item:hover {
+    transform: none;
+  }
+
+  .gallery-overlay {
+    opacity: 0;
+  }
+
+  .gallery-item:active .gallery-overlay {
+    opacity: 1;
+  }
+
+  .filter-chip:active {
+    background: var(--bg-overlay);
+  }
+}
+
+/* ========================================
+   SAFE AREA INSETS (iOS Notch)
+   ======================================== */
+@supports (padding: max(0px)) {
+  .portfolio-hero {
+    padding-left: max(var(--space-6), env(safe-area-inset-left));
+    padding-right: max(var(--space-6), env(safe-area-inset-right));
+  }
+
+  .filter-chips-container {
+    padding-left: max(var(--space-6), env(safe-area-inset-left));
+    padding-right: max(var(--space-6), env(safe-area-inset-right));
+  }
+}
+
+/* ========================================
+   MEDIA FAILURE STATE
+   A tile whose image cannot load (dead CDN, 404) would otherwise stay at
+   opacity 0 and read as an empty box. Show a quiet placeholder instead.
+   ======================================== */
+.gallery-item.media-error {
+  background: var(--bg-dim);
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-item.media-error .gallery-media,
+.gallery-item.media-error .gallery-image,
+.gallery-item.media-error .gallery-overlay,
+.gallery-item.media-error .gallery-video-play-icon {
+  display: none;
+}
+
+.gallery-item.media-error::after {
+  content: "Image unavailable";
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+/* ========================================
+   CENTERED LAYOUT (cinematics / video-heavy sets)
+   Moved here from components.css during the gallery consolidation: this
+   stylesheet is now the single owner of .gallery-grid / .gallery-item.
+   ======================================== */
+.gallery-grid.layout-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.gallery-grid.layout-centered .gallery-item {
+  width: 100%;
+  max-width: 1000px;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Video tiles keep their own ratio outside the centered layout too. */
+.gallery-item--video {
+  aspect-ratio: 16 / 9;
+}

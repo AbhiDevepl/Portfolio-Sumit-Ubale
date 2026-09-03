@@ -1,0 +1,623 @@
+/* ========================================
+   LIGHTBOX VIDEO CONTROLS
+   Enhanced video playback styling
+   ======================================== */
+
+/* Updated fullscreen preview modal */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 3vw, 32px);
+  z-index: var(--z-modal);
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.lightbox.active {
+  opacity: 1;
+}
+
+.lightbox-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.lightbox-content {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 1280px);
+  height: min(100%, 92vh);
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: var(--space-4);
+  transform: scale(0.965) translateY(14px);
+  transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.lightbox.active .lightbox-content {
+  transform: scale(1) translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-content,
+  .lightbox.active .lightbox-content {
+    transform: none;
+    transition: none;
+  }
+}
+
+.lightbox-media-container {
+  position: relative;
+  min-height: 0;
+  border-radius: 28px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 30px 80px -40px rgba(0, 0, 0, 0.85);
+}
+
+.lightbox-image,
+.lightbox-video-wrapper {
+  width: 100%;
+  height: 100%;
+}
+
+.lightbox-image {
+  object-fit: contain;
+}
+
+.lightbox-caption {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0 var(--space-1);
+}
+
+.lightbox-caption-copy h3 {
+  font-family: var(--font-sans);
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #fff;
+}
+
+.lightbox-caption-copy p {
+  margin-top: var(--space-1);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.lightbox-counter {
+  flex: 0 0 auto;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.lightbox-close,
+.lightbox-prev,
+.lightbox-next {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(17, 17, 17, 0.48);
+  box-shadow: 0 20px 40px -24px rgba(0, 0, 0, 0.9);
+  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.lightbox-close:hover,
+.lightbox-prev:hover,
+.lightbox-next:hover {
+  transform: scale(1.05);
+  background: rgba(17, 17, 17, 0.72);
+}
+
+.lightbox-close:active,
+.lightbox-prev:active,
+.lightbox-next:active {
+  transform: scale(0.96);
+}
+
+.lightbox-close:focus-visible,
+.lightbox-prev:focus-visible,
+.lightbox-next:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.lightbox-close {
+  top: clamp(14px, 3vw, 24px);
+  right: clamp(14px, 3vw, 24px);
+  font-size: 1.75rem;
+}
+
+.lightbox-prev,
+.lightbox-next {
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2rem;
+}
+
+.lightbox-prev:hover,
+.lightbox-next:hover {
+  transform: translateY(-50%) scale(1.05);
+}
+
+.lightbox-prev:active,
+.lightbox-next:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+.lightbox-prev {
+  left: clamp(12px, 2vw, 24px);
+}
+
+.lightbox-next {
+  right: clamp(12px, 2vw, 24px);
+}
+
+/* Loading Spinner */
+.lightbox-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  z-index: 10;
+  color: var(--text-primary);
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Video Wrapper */
+.lightbox-video-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.lightbox-video {
+  width: 100%;
+  height: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+}
+
+/* Center Play/Pause Overlay */
+.video-overlay-controls {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  pointer-events: all;
+}
+
+.video-play-pause {
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.video-play-pause:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(1.1);
+}
+
+.video-play-pause svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+/* Video Controls Bar */
+.video-controls-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+  padding: var(--space-8) var(--space-6) var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  z-index: 50;
+}
+
+.video-control-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: var(--space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  border-radius: var(--radius-sm);
+}
+
+.video-control-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.video-control-btn svg {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+/* Progress Container */
+.video-progress-container {
+  flex: 1;
+  position: relative;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.video-progress {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.video-progress-filled {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  pointer-events: none;
+  transition: width 0.1s linear;
+}
+
+.video-progress-container:hover {
+  height: 8px;
+}
+
+.video-progress-container:hover .video-progress-filled {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* Time Display */
+.video-time {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: white;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  min-width: 100px;
+  text-align: center;
+}
+
+/* Volume Slider */
+.volume-slider {
+  width: 80px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.volume-slider:hover::-webkit-slider-thumb {
+  background: var(--accent);
+}
+
+.volume-slider:hover::-moz-range-thumb {
+  background: var(--accent);
+}
+
+/* Playback Speed Select */
+.playback-speed {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.playback-speed:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.playback-speed option {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+@media (max-width: 900px) {
+  .lightbox-content {
+    height: min(100%, 96vh);
+  }
+
+  .lightbox-caption {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .lightbox {
+    padding: 12px;
+  }
+
+  .lightbox-content {
+    gap: var(--space-3);
+  }
+
+  .lightbox-media-container {
+    border-radius: 22px;
+  }
+
+  .lightbox-close,
+  .lightbox-prev,
+  .lightbox-next {
+    width: 48px;
+    height: 48px;
+  }
+
+  .lightbox-prev {
+    left: 8px;
+  }
+
+  .lightbox-next {
+    right: 8px;
+  }
+
+  .lightbox-caption {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .video-play-pause {
+    width: 80px;
+    height: 80px;
+  }
+
+  .video-play-pause svg {
+    width: 60px;
+    height: 60px;
+  }
+
+  .video-controls-bar {
+    padding: var(--space-4) var(--space-3) var(--space-2);
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  .volume-slider {
+    width: 60px;
+  }
+
+  .video-time {
+    font-size: var(--text-xs);
+    min-width: 85px;
+  }
+
+  .playback-speed {
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-2);
+  }
+}
+
+@media (max-width: 480px) {
+  .lightbox-close {
+    top: 8px;
+    right: 8px;
+  }
+
+  .lightbox-prev,
+  .lightbox-next {
+    top: auto;
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    transform: none;
+  }
+
+  .lightbox-prev:hover,
+  .lightbox-next:hover,
+  .lightbox-prev:active,
+  .lightbox-next:active {
+    transform: none;
+  }
+
+  .volume-slider {
+    display: none;
+  }
+
+  .playback-speed {
+    display: none;
+  }
+
+  .video-control-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Gallery Item Video Loading */
+.gallery-item video {
+  cursor: pointer;
+  background-color: #000;
+}
+
+.gallery-item video::cue {
+  color: transparent;
+}
+
+/* Video Play Icon Overlay on Gallery Items */
+.gallery-video-play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0.88;
+  transition: all 0.3s ease;
+  background: rgba(0, 0, 0, 0.58);
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.gallery-item:hover .gallery-video-play-icon {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.1);
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.gallery-video-play-icon svg {
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+}
+
+/* Hide play icon when video is playing on hover */
+.gallery-item video:not([paused]) ~ .gallery-video-play-icon {
+  opacity: 0;
+}
+
+/* Add play icon overlay for gallery videos */
+.gallery-item.loading::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  z-index: 2;
+}
+
+@media (max-width: 480px) {
+  .gallery-video-play-icon {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* ========================================
+   INTERACTION POLISH
+   ======================================== */
+
+/* Kill the 300ms tap delay on the lightbox controls. */
+.lightbox-close,
+.lightbox-prev,
+.lightbox-next {
+  touch-action: manipulation;
+}
+
+/* Core.Lightbox.updateContent() already sets imgEl.style.opacity to 0 on
+   swap and back to 1 on load, but nothing animated between the two, so
+   navigating prev/next hard-cut. This transitions that existing inline
+   opacity change; no JS change. */
+.lightbox-image {
+  transition: opacity 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-close,
+  .lightbox-prev,
+  .lightbox-next {
+    transition: none;
+  }
+  .lightbox-close:hover,
+  .lightbox-prev:hover,
+  .lightbox-next:hover,
+  .lightbox-close:active,
+  .lightbox-prev:active,
+  .lightbox-next:active {
+    transform: none;
+  }
+  .lightbox-image {
+    transition: none;
+  }
+}

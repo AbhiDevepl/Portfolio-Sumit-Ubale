@@ -1,0 +1,424 @@
+/* ========================================
+   LANDING.CSS — SEO landing pages
+
+   One stylesheet replacing the four near-identical inline <style> blocks that
+   used to live in wedding-photographer-shrigonda.html,
+   pre-wedding-shoot-ahilyanagar.html, candid-photographer-maharashtra.html and
+   cinematic-wedding-films-maharashtra.html. Values are ported verbatim.
+
+   The two things that genuinely differed per page — the hero backdrop's
+   focal point and opacity — are custom properties set on the hero element.
+   ======================================== */
+
+.lp-hero {
+  position: relative;
+  min-height: 90vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: var(--editorial-black, #0a0a0a);
+}
+
+.lp-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('https://exdevx.sirv.com/IMG_Hero_peub99.webp?profile=true&w=1400&q=80');
+  background-size: cover;
+  background-position: center var(--lp-hero-focus, 30%);
+  opacity: var(--lp-hero-opacity, 0.45);
+}
+
+/* Cinematic films page only: a left-to-right scrim behind the copy. */
+.lp-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(10, 10, 10, .9) 40%, transparent 100%);
+}
+
+.lp-hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 0 var(--space-6, 1.5rem);
+  max-width: 780px;
+}
+
+.lp-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: var(--space-4, 1rem);
+}
+
+.lp-h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  font-weight: 600;
+  margin-bottom: var(--space-6, 1.5rem);
+}
+
+.lp-hero-sub {
+  font-family: var(--font-sans);
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.7;
+  max-width: 520px;
+  margin-bottom: var(--space-8, 2rem);
+}
+
+.lp-cta-group {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.lp-cta-group--center {
+  justify-content: center;
+}
+
+.lp-cta-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  color: #0a0a0a;
+  padding: 0.9rem 2rem;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 2px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lp-cta-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); }
+
+/* Inverted variant used under the gallery strips ("View Full Portfolio"). */
+.lp-cta-primary--dark {
+  background: var(--editorial-black, #0a0a0a);
+  color: #fff;
+}
+
+.lp-cta-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #25D366;
+  color: #ffffff;
+  padding: 0.9rem 2rem;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 2px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lp-cta-whatsapp:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35); }
+
+/* Sections */
+.lp-section { padding: 5rem 0; }
+.lp-section-alt { padding: 5rem 0; background: var(--editorial-light-gray, #f7f5f2); }
+.lp-section-dark { padding: 5rem 0; background: var(--editorial-black, #0a0a0a); color: #fff; }
+.lp-container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+
+.lp-section-label {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.45;
+  margin-bottom: 0.75rem;
+}
+
+.lp-section-dark .lp-section-label { color: rgba(255, 255, 255, .4); opacity: 1; }
+.lp-section-dark .lp-section-title { color: #fff; }
+
+.lp-section-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+}
+
+.lp-body { font-family: var(--font-sans); font-size: 1.05rem; line-height: 1.8; opacity: 0.75; }
+.lp-body + .lp-body { margin-top: 1rem; }
+.lp-body--note { margin-top: 1.5rem; font-size: .9rem; opacity: .55; }
+
+/* Stats bar */
+.lp-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  background: var(--editorial-black, #0a0a0a);
+  margin: 4rem 0 0;
+}
+
+.lp-stat {
+  background: var(--editorial-black, #0a0a0a);
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.lp-stat-number {
+  font-family: var(--font-serif);
+  font-size: 3.5rem;
+  color: #ffffff;
+  line-height: 1;
+  display: block;
+}
+
+.lp-stat-label {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 0.5rem;
+  display: block;
+}
+
+/* Gallery strip */
+.lp-gallery-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 3rem;
+}
+
+.lp-gallery-strip img {
+  width: 100%;
+  aspect-ratio: 4/5;
+  object-fit: cover;
+  display: block;
+  border-radius: 2px;
+}
+
+/* Cinematic film stills are 16:9. */
+.lp-gallery-strip--wide img { aspect-ratio: 16/9; }
+
+.lp-strip-cta { text-align: center; margin-top: 2rem; }
+
+/* Service list (Shrigonda page) */
+.lp-service-list {
+  list-style: none;
+  margin-top: 2rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.lp-service-list li {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.lp-service-icon { font-size: 1.25rem; }
+
+/* Location cards (pre-wedding page) */
+.lp-locations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+}
+
+.lp-location-card { border: 1px solid rgba(0, 0, 0, .08); padding: 1.75rem; border-radius: 4px; }
+.lp-location-name { font-family: var(--font-serif); font-size: 1.25rem; font-weight: 600; margin-bottom: .5rem; }
+.lp-location-desc { font-family: var(--font-sans); font-size: .875rem; line-height: 1.7; opacity: .6; }
+
+/* City tags (candid page) */
+.lp-cities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.lp-city-tag {
+  border: 1px solid rgba(0, 0, 0, .12);
+  padding: .875rem 1.25rem;
+  border-radius: 4px;
+  font-family: var(--font-sans);
+  font-size: .875rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Packages (cinematic page) */
+.lp-packages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2px;
+  margin-top: 3rem;
+}
+
+.lp-package { background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .08); padding: 2.5rem 2rem; }
+.lp-package--featured { border-color: rgba(201, 169, 110, .4); }
+.lp-package-name { font-family: var(--font-serif); font-size: 1.5rem; font-weight: 600; color: #fff; margin-bottom: .5rem; }
+.lp-package--featured .lp-package-name { color: #c9a96e; }
+.lp-package-sub { font-family: var(--font-sans); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: rgba(255, 255, 255, .4); margin-bottom: 1.5rem; }
+.lp-package-features { list-style: none; display: flex; flex-direction: column; gap: .75rem; }
+.lp-package-features li { font-family: var(--font-sans); font-size: .9rem; color: rgba(255, 255, 255, .65); display: flex; gap: .5rem; align-items: baseline; }
+.lp-package-features li:before { content: '→'; color: rgba(255, 255, 255, .3); flex-shrink: 0; }
+
+/* Process steps (cinematic page) */
+.lp-process {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+  counter-reset: step;
+}
+
+.lp-process-step { counter-increment: step; position: relative; padding-top: 3rem; }
+.lp-process-step:before {
+  content: counter(step);
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: var(--font-serif);
+  font-size: 3rem;
+  font-weight: 600;
+  opacity: .1;
+  line-height: 1;
+}
+.lp-process-title { font-family: var(--font-sans); font-size: .95rem; font-weight: 600; margin-bottom: .5rem; }
+.lp-process-desc { font-family: var(--font-sans); font-size: .875rem; line-height: 1.7; opacity: .65; }
+
+/* Testimonials */
+.lp-testimonials { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-top: 3rem; }
+.lp-testimonial-card { border: 1px solid rgba(0, 0, 0, 0.08); padding: 2rem; border-radius: 4px; }
+.lp-stars { color: #c9a96e; margin-bottom: 0.75rem; font-size: 1rem; }
+.lp-testimonial-text { font-family: var(--font-sans); font-size: 0.95rem; line-height: 1.8; opacity: 0.75; font-style: italic; margin-bottom: 1rem; }
+.lp-testimonial-author { font-family: var(--font-sans); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.5; }
+
+/* FAQ */
+.lp-faq { margin-top: 3rem; }
+.lp-faq-item { border-bottom: 1px solid rgba(0, 0, 0, 0.1); }
+
+.lp-faq-question {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 1.25rem 0;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  color: inherit;
+}
+
+.lp-faq-question:after { content: '+'; font-size: 1.5rem; opacity: 0.4; transition: transform 0.2s; flex-shrink: 0; }
+.lp-faq-item.is-open .lp-faq-question:after { transform: rotate(45deg); }
+
+.lp-faq-answer {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  line-height: 1.8;
+  opacity: 0.65;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, padding 0.2s ease;
+}
+
+.lp-faq-item.is-open .lp-faq-answer { max-height: 400px; padding-bottom: 1.25rem; }
+
+/* Final CTA */
+.lp-final-cta {
+  background: var(--editorial-black, #0a0a0a);
+  padding: 5rem 1.5rem;
+  text-align: center;
+}
+
+.lp-final-cta h2 {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.lp-final-cta p { color: rgba(255, 255, 255, 0.55); margin-bottom: 2rem; font-family: var(--font-sans); }
+
+/* Local SEO footnote */
+.lp-local-seo {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  font-size: 0.8rem;
+  opacity: 0.4;
+  font-family: var(--font-sans, sans-serif);
+  line-height: 1.7;
+}
+
+/* ============================================================
+   Focus, reduced motion and tablet tier.
+   Ported from the UI/UX pass on the static pages: hover states need focus
+   parity, the inline transitions need a reduced-motion guard, and there was
+   nothing between the 640px breakpoint and the 1100px container.
+   ============================================================ */
+
+.lp-cta-primary:focus-visible,
+.lp-cta-whatsapp:focus-visible,
+.lp-faq-question:focus-visible,
+.lp-gallery-strip a:focus-visible {
+  outline: 2px solid var(--editorial-black);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* On the dark hero and dark sections the ring must invert to stay visible. */
+.lp-hero .lp-cta-primary:focus-visible,
+.lp-hero .lp-cta-whatsapp:focus-visible,
+.lp-final-cta .lp-cta-primary:focus-visible,
+.lp-section-dark :focus-visible {
+  outline-color: #fff;
+}
+
+/* Press feedback: these were hover-only, so touch users got nothing. */
+.lp-cta-primary:active,
+.lp-cta-whatsapp:active { transform: scale(0.97); }
+
+@media (max-width: 640px) {
+  .lp-gallery-strip { grid-template-columns: repeat(2, 1fr); }
+  .lp-gallery-strip--wide { grid-template-columns: 1fr; }
+  .lp-stats { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .lp-container { padding: 0 2rem; }
+  .lp-gallery-strip { grid-template-columns: repeat(2, 1fr); }
+  .lp-testimonials { grid-template-columns: repeat(2, 1fr); }
+  .lp-locations-grid,
+  .lp-cities-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-cta-primary,
+  .lp-cta-whatsapp,
+  .lp-testimonial-card,
+  .lp-gallery-strip img,
+  .lp-faq-answer,
+  .lp-location-card {
+    transition: none !important;
+    animation: none !important;
+  }
+  .lp-cta-primary:active,
+  .lp-cta-whatsapp:active { transform: none; }
+  .lp-hero-bg { transform: none !important; }
+}

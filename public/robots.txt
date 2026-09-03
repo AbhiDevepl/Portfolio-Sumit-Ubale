@@ -13,9 +13,8 @@ Disallow: /.env
 Disallow: /.gitignore
 
 # Allow important crawlable paths explicitly
-Allow: /pages/
-Allow: /styles/
-Allow: /scripts/
+Allow: /service/
+Allow: /assets/
 Allow: /data/
 Allow: /images/
 
