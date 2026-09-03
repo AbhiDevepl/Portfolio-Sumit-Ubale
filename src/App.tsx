@@ -29,7 +29,6 @@ export const routes: RouteRecord[] = [
       },
       {
         path: 'service/:slug',
-        // getStaticPaths lives in the route module, derived from services.json.
         lazy: () => import('./routes/Service'),
       },
       {
@@ -47,6 +46,12 @@ export const routes: RouteRecord[] = [
       {
         path: 'candid-photographer-maharashtra',
         lazy: () => import('./routes/CandidPhotographerMaharashtra'),
+      },
+
+      // 404 — must be the last route
+      {
+        path: '*',
+        lazy: () => import('./routes/NotFound'),
       },
     ],
   },
