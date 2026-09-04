@@ -153,7 +153,32 @@ window.Core = {
       `;
       document.body.insertAdjacentHTML('beforeend', html);
       this.state.container = document.getElementById('lightbox');
+      this.cacheElements();
       this.bindEvents();
+    },
+
+    /**
+     * Cache element references once to avoid repetitive DOM tree traversals
+     * during high-frequency lightbox slide transitions and video control toggles.
+     */
+    cacheElements() {
+      if (this.elements) return;
+      const c = this.state.container;
+      if (!c) return;
+      this.elements = {
+        imgEl: c.querySelector('.lightbox-image'),
+        vidWrapper: c.querySelector('.lightbox-video-wrapper'),
+        vidEl: c.querySelector('.lightbox-video'),
+        loadingEl: c.querySelector('.lightbox-loading'),
+        captionTitle: c.querySelector('.lightbox-caption-copy h3'),
+        captionCategory: c.querySelector('.lightbox-caption-copy p'),
+        counterEl: c.querySelector('.lightbox-counter'),
+        playIcons: c.querySelectorAll('.play-icon, .play-icon-small'),
+        pauseIcons: c.querySelectorAll('.pause-icon, .pause-icon-small'),
+        overlay: c.querySelector('.video-overlay-controls'),
+        volumeIcon: c.querySelector('.volume-icon'),
+        muteIcon: c.querySelector('.mute-icon')
+      };
     },
 
     bindEvents() {
@@ -290,7 +315,8 @@ window.Core = {
     },
 
     togglePlayPause() {
-      const video = this.state.container.querySelector('.lightbox-video');
+      this.cacheElements();
+      const video = this.elements ? this.elements.vidEl : this.state.container.querySelector('.lightbox-video');
       if (video.paused) {
         video.play();
       } else {
@@ -299,24 +325,25 @@ window.Core = {
     },
 
     updatePlayPauseIcons(isPlaying) {
-      const container = this.state.container;
-      const playIcons = container.querySelectorAll('.play-icon, .play-icon-small');
-      const pauseIcons = container.querySelectorAll('.pause-icon, .pause-icon-small');
+      this.cacheElements();
+      const playIcons = this.elements ? this.elements.playIcons : this.state.container.querySelectorAll('.play-icon, .play-icon-small');
+      const pauseIcons = this.elements ? this.elements.pauseIcons : this.state.container.querySelectorAll('.pause-icon, .pause-icon-small');
       
       playIcons.forEach(icon => icon.style.display = isPlaying ? 'none' : 'block');
       pauseIcons.forEach(icon => icon.style.display = isPlaying ? 'block' : 'none');
       
       // Hide overlay controls when playing
-      const overlay = container.querySelector('.video-overlay-controls');
+      const overlay = this.elements ? this.elements.overlay : this.state.container.querySelector('.video-overlay-controls');
       if (overlay) {
         overlay.style.opacity = isPlaying ? '0' : '1';
       }
     },
 
     updateMuteButton() {
-      const video = this.state.container.querySelector('.lightbox-video');
-      const volumeIcon = this.state.container.querySelector('.volume-icon');
-      const muteIcon = this.state.container.querySelector('.mute-icon');
+      this.cacheElements();
+      const video = this.elements ? this.elements.vidEl : this.state.container.querySelector('.lightbox-video');
+      const volumeIcon = this.elements ? this.elements.volumeIcon : this.state.container.querySelector('.volume-icon');
+      const muteIcon = this.elements ? this.elements.muteIcon : this.state.container.querySelector('.mute-icon');
       
       volumeIcon.style.display = video.muted ? 'none' : 'block';
       muteIcon.style.display = video.muted ? 'block' : 'none';
@@ -373,13 +400,14 @@ window.Core = {
       const item = this.state.items[this.state.currentIndex];
       if (!item) return;
 
-      const imgEl = this.state.container.querySelector('.lightbox-image');
-      const vidWrapper = this.state.container.querySelector('.lightbox-video-wrapper');
-      const vidEl = this.state.container.querySelector('.lightbox-video');
-      const loadingEl = this.state.container.querySelector('.lightbox-loading');
-      const captionTitle = this.state.container.querySelector('.lightbox-caption-copy h3');
-      const captionCategory = this.state.container.querySelector('.lightbox-caption-copy p');
-      const counterEl = this.state.container.querySelector('.lightbox-counter');
+      this.cacheElements();
+      const imgEl = this.elements ? this.elements.imgEl : this.state.container.querySelector('.lightbox-image');
+      const vidWrapper = this.elements ? this.elements.vidWrapper : this.state.container.querySelector('.lightbox-video-wrapper');
+      const vidEl = this.elements ? this.elements.vidEl : this.state.container.querySelector('.lightbox-video');
+      const loadingEl = this.elements ? this.elements.loadingEl : this.state.container.querySelector('.lightbox-loading');
+      const captionTitle = this.elements ? this.elements.captionTitle : this.state.container.querySelector('.lightbox-caption-copy h3');
+      const captionCategory = this.elements ? this.elements.captionCategory : this.state.container.querySelector('.lightbox-caption-copy p');
+      const counterEl = this.elements ? this.elements.counterEl : this.state.container.querySelector('.lightbox-counter');
 
       const isVid = item.type === 'video';
       
@@ -543,14 +571,20 @@ window.Core = {
       item.setAttribute('aria-label', `${image.title || 'Open preview'}${image.category ? `, ${image.category}` : ''}`);
 
       const openFilteredLightbox = () => {
-        const fallbackItems = allItems.map((entry, entryIndex) => {
-          const newItem = Object.assign({}, entry);
-          newItem.originalIndex = entryIndex;
-          newItem.type = entry.type || 'image';
-          return newItem;
-        });
+        let visibleItems;
+        // Optimization: Lazily evaluate fallback items only when GalleryManager is missing,
+        // preventing unnecessary O(N) mapping of 1,000+ items on every gallery item click.
+        if (window.GalleryManager && typeof window.GalleryManager.getVisibleData === 'function') {
+          visibleItems = window.GalleryManager.getVisibleData();
+        } else {
+          visibleItems = allItems.map((entry, entryIndex) => {
+            const newItem = Object.assign({}, entry);
+            newItem.originalIndex = entryIndex;
+            newItem.type = entry.type || 'image';
+            return newItem;
+          });
+        }
 
-        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : fallbackItems;
         const itemIndex = visibleItems.findIndex((entry) => entry.originalIndex === index);
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
