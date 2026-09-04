@@ -6,6 +6,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const sections = document.querySelectorAll('section');
   if (sections.length === 0) return;
 
+  // Performance Optimization: Respect reduced-motion preferences immediately
+  // to skip creating heavy GSAP contexts, ScrollTriggers, and IntersectionObservers.
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll('.stagger-reveal, .scroll-reveal').forEach(el => {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    });
+    return;
+  }
+
   if (window.gsap) {
     const ctx = gsap.context(() => {
       // 1. Generic Reveal Observer (IntersectionObserver for performance)
@@ -43,22 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           });
         });
-
-        // 3. Gallery Stagger
-        const galleryGrids = document.querySelectorAll('.gallery-grid, .full-gallery-grid');
-        galleryGrids.forEach(grid => {
-          gsap.from(grid.querySelectorAll('.gallery-item'), {
-            opacity: 0,
-            y: 30,
-            duration: 0.8,
-            stagger: 0.05,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: grid,
-              start: "top 85%"
-            }
-          });
-        });
+        // Note: Dynamic gallery items are rendered asynchronously and handled by
+        // page-specific loaders (gallery-loader.js, portfolio-gallery.js) to avoid
+        // querying empty NodeLists on DOMContentLoaded.
       }
     });
   } else {
