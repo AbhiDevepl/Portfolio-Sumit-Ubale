@@ -153,7 +153,35 @@ window.Core = {
       `;
       document.body.insertAdjacentHTML('beforeend', html);
       this.state.container = document.getElementById('lightbox');
+      this.cacheElements();
       this.bindEvents();
+    },
+
+    /**
+     * CACHE LIGHTBOX DOM ELEMENTS
+     * Performance optimization: Caches static DOM references once on initialization
+     * to avoid repeated querySelector/querySelectorAll traversals during slide transitions
+     * and video control toggles.
+     */
+    cacheElements() {
+      const container = this.state.container;
+      if (!container) return;
+      this.elements = {
+        container: container,
+        imgEl: container.querySelector('.lightbox-image'),
+        vidWrapper: container.querySelector('.lightbox-video-wrapper'),
+        vidEl: container.querySelector('.lightbox-video'),
+        loadingEl: container.querySelector('.lightbox-loading'),
+        captionTitle: container.querySelector('.lightbox-caption-copy h3'),
+        captionCategory: container.querySelector('.lightbox-caption-copy p'),
+        counterEl: container.querySelector('.lightbox-counter'),
+        playIcons: container.querySelectorAll('.play-icon, .play-icon-small'),
+        pauseIcons: container.querySelectorAll('.pause-icon, .pause-icon-small'),
+        overlayControls: container.querySelector('.video-overlay-controls'),
+        volumeIcon: container.querySelector('.volume-icon'),
+        muteIcon: container.querySelector('.mute-icon'),
+        controlsBar: container.querySelector('.video-controls-bar')
+      };
     },
 
     bindEvents() {
@@ -276,11 +304,13 @@ window.Core = {
       // Show/hide controls
       let controlsTimeout;
       const showControls = () => {
-        container.querySelector('.video-controls-bar').style.opacity = '1';
+        if (this.elements && this.elements.controlsBar) {
+          this.elements.controlsBar.style.opacity = '1';
+        }
         clearTimeout(controlsTimeout);
         controlsTimeout = setTimeout(() => {
-          if (!video.paused) {
-            container.querySelector('.video-controls-bar').style.opacity = '0';
+          if (!video.paused && this.elements && this.elements.controlsBar) {
+            this.elements.controlsBar.style.opacity = '0';
           }
         }, 3000);
       };
@@ -290,7 +320,7 @@ window.Core = {
     },
 
     togglePlayPause() {
-      const video = this.state.container.querySelector('.lightbox-video');
+      const video = (this.elements && this.elements.vidEl) || this.state.container.querySelector('.lightbox-video');
       if (video.paused) {
         video.play();
       } else {
@@ -299,24 +329,23 @@ window.Core = {
     },
 
     updatePlayPauseIcons(isPlaying) {
-      const container = this.state.container;
-      const playIcons = container.querySelectorAll('.play-icon, .play-icon-small');
-      const pauseIcons = container.querySelectorAll('.pause-icon, .pause-icon-small');
+      const playIcons = (this.elements && this.elements.playIcons) || this.state.container.querySelectorAll('.play-icon, .play-icon-small');
+      const pauseIcons = (this.elements && this.elements.pauseIcons) || this.state.container.querySelectorAll('.pause-icon, .pause-icon-small');
       
       playIcons.forEach(icon => icon.style.display = isPlaying ? 'none' : 'block');
       pauseIcons.forEach(icon => icon.style.display = isPlaying ? 'block' : 'none');
       
       // Hide overlay controls when playing
-      const overlay = container.querySelector('.video-overlay-controls');
+      const overlay = (this.elements && this.elements.overlayControls) || this.state.container.querySelector('.video-overlay-controls');
       if (overlay) {
         overlay.style.opacity = isPlaying ? '0' : '1';
       }
     },
 
     updateMuteButton() {
-      const video = this.state.container.querySelector('.lightbox-video');
-      const volumeIcon = this.state.container.querySelector('.volume-icon');
-      const muteIcon = this.state.container.querySelector('.mute-icon');
+      const video = (this.elements && this.elements.vidEl) || this.state.container.querySelector('.lightbox-video');
+      const volumeIcon = (this.elements && this.elements.volumeIcon) || this.state.container.querySelector('.volume-icon');
+      const muteIcon = (this.elements && this.elements.muteIcon) || this.state.container.querySelector('.mute-icon');
       
       volumeIcon.style.display = video.muted ? 'none' : 'block';
       muteIcon.style.display = video.muted ? 'block' : 'none';
@@ -346,7 +375,7 @@ window.Core = {
       this.state.active = false;
       this.state.container.classList.remove('active');
       this.state.container.setAttribute('aria-hidden', 'true');
-      const video = this.state.container.querySelector('.lightbox-video');
+      const video = (this.elements && this.elements.vidEl) || this.state.container.querySelector('.lightbox-video');
       if (video) { video.pause(); video.src = ''; }
       
       setTimeout(() => {
@@ -364,7 +393,7 @@ window.Core = {
     },
 
     pauseActiveVideo() {
-      const video = this.state.container.querySelector('.lightbox-video');
+      const video = (this.elements && this.elements.vidEl) || this.state.container.querySelector('.lightbox-video');
       if (!video) return;
       video.pause();
     },
@@ -373,13 +402,14 @@ window.Core = {
       const item = this.state.items[this.state.currentIndex];
       if (!item) return;
 
-      const imgEl = this.state.container.querySelector('.lightbox-image');
-      const vidWrapper = this.state.container.querySelector('.lightbox-video-wrapper');
-      const vidEl = this.state.container.querySelector('.lightbox-video');
-      const loadingEl = this.state.container.querySelector('.lightbox-loading');
-      const captionTitle = this.state.container.querySelector('.lightbox-caption-copy h3');
-      const captionCategory = this.state.container.querySelector('.lightbox-caption-copy p');
-      const counterEl = this.state.container.querySelector('.lightbox-counter');
+      const els = this.elements;
+      const imgEl = (els && els.imgEl) || this.state.container.querySelector('.lightbox-image');
+      const vidWrapper = (els && els.vidWrapper) || this.state.container.querySelector('.lightbox-video-wrapper');
+      const vidEl = (els && els.vidEl) || this.state.container.querySelector('.lightbox-video');
+      const loadingEl = (els && els.loadingEl) || this.state.container.querySelector('.lightbox-loading');
+      const captionTitle = (els && els.captionTitle) || this.state.container.querySelector('.lightbox-caption-copy h3');
+      const captionCategory = (els && els.captionCategory) || this.state.container.querySelector('.lightbox-caption-copy p');
+      const counterEl = (els && els.counterEl) || this.state.container.querySelector('.lightbox-counter');
 
       const isVid = item.type === 'video';
       
@@ -543,14 +573,20 @@ window.Core = {
       item.setAttribute('aria-label', `${image.title || 'Open preview'}${image.category ? `, ${image.category}` : ''}`);
 
       const openFilteredLightbox = () => {
-        const fallbackItems = allItems.map((entry, entryIndex) => {
-          const newItem = Object.assign({}, entry);
-          newItem.originalIndex = entryIndex;
-          newItem.type = entry.type || 'image';
-          return newItem;
-        });
+        let visibleItems;
+        // Performance optimization: Lazily evaluate fallbackItems mapping only when
+        // GalleryManager.getVisibleData is missing, avoiding unnecessary O(N) array allocation on 1,000+ items
+        if (window.GalleryManager && window.GalleryManager.getVisibleData) {
+          visibleItems = window.GalleryManager.getVisibleData();
+        } else {
+          visibleItems = allItems.map((entry, entryIndex) => {
+            const newItem = Object.assign({}, entry);
+            newItem.originalIndex = entryIndex;
+            newItem.type = entry.type || 'image';
+            return newItem;
+          });
+        }
 
-        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : fallbackItems;
         const itemIndex = visibleItems.findIndex((entry) => entry.originalIndex === index);
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
