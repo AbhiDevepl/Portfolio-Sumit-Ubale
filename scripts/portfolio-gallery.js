@@ -500,15 +500,17 @@ class FilterController {
   constructor(state, chipsContainer) {
     this.state = state;
     this.chipsContainer = chipsContainer;
+    this.chips = [];
     this.init();
   }
 
   init() {
     if (!this.chipsContainer) return;
 
-    const chips = this.chipsContainer.querySelectorAll('.filter-chip');
+    // Performance Optimization: Cache filter chip elements to avoid repeated DOM traversals on chip clicks
+    this.chips = Array.prototype.slice.call(this.chipsContainer.querySelectorAll('.filter-chip'));
 
-    chips.forEach(chip => {
+    this.chips.forEach(chip => {
       chip.addEventListener('click', () => {
         this.setActiveChip(chip);
         const category = chip.dataset.category;
@@ -529,8 +531,7 @@ class FilterController {
   }
 
   setActiveChip(activeChip) {
-    const chips = this.chipsContainer.querySelectorAll('.filter-chip');
-    chips.forEach(chip => {
+    this.chips.forEach(chip => {
       chip.classList.remove('active');
       chip.setAttribute('aria-selected', 'false');
     });
@@ -610,12 +611,15 @@ class FilterController {
       this.chipsContainer.scrollLeft = scrollLeft - walk;
     });
 
-    // Touch scroll indicator
+    // Touch scroll indicator - prevent duplicate style injections
     this.chipsContainer.style.scrollbarWidth = 'none';
     this.chipsContainer.style.msOverflowStyle = 'none';
-    const style = document.createElement('style');
-    style.textContent = '.filter-chips-container::-webkit-scrollbar { display: none; }';
-    document.head.appendChild(style);
+    if (!document.getElementById('hide-filter-chips-scrollbar')) {
+      const style = document.createElement('style');
+      style.id = 'hide-filter-chips-scrollbar';
+      style.textContent = '.filter-chips-container::-webkit-scrollbar { display: none; }';
+      document.head.appendChild(style);
+    }
   }
 
   selectFromURL() {
@@ -800,10 +804,19 @@ class PortfolioGallery {
   }
 
   formatCategoryName(slug) {
-    return slug
+    // Performance Optimization: Cache formatted category names to eliminate redundant string allocations
+    if (!this._categoryNameCache) {
+      this._categoryNameCache = {};
+    }
+    if (this._categoryNameCache[slug]) {
+      return this._categoryNameCache[slug];
+    }
+    const formatted = slug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+    this._categoryNameCache[slug] = formatted;
+    return formatted;
   }
 
   retry() {
