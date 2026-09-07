@@ -5,12 +5,16 @@ class Navigation {
     this.toggle = document.querySelector('.nav-toggle');
     this.menu = document.querySelector('.mobile-menu');
     this.footer = document.querySelector('.mobile-menu-footer');
+    this.links = [];
     this.isOpen = false;
     this.init();
   }
 
   init() {
     if (!this.toggle || !this.menu) return;
+
+    // Cache mobile nav links during initialization to avoid repeated DOM queries on menu toggles
+    this.links = this.menu.querySelectorAll('.mobile-nav-link');
 
     this.toggle.onclick = () => this.toggleMenu();
 
@@ -31,7 +35,7 @@ class Navigation {
   }
 
   animateOpen() {
-    const links = this.menu.querySelectorAll('.mobile-nav-link');
+    const links = this.links;
     if (window.gsap) {
       gsap.timeline()
         .to(this.menu, { clipPath: "polygon(0 0, 100% 0, 100% 100%, 0% 100%)", duration: 0.8, ease: "power4.inOut" })
@@ -52,7 +56,7 @@ class Navigation {
   }
 
   animateClose() {
-    const links = this.menu.querySelectorAll('.mobile-nav-link');
+    const links = this.links;
     if (window.gsap) {
       gsap.timeline()
         .to([links, this.footer], { y: 20, opacity: 0, duration: 0.4, ease: "power3.in" })
