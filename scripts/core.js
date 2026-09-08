@@ -4,60 +4,87 @@
  */
 
 window.Core = {
+  _portfolioDataPromise: null,
+  _servicesDataPromise: null,
+
   /**
    * CACHED PORTFOLIO FETCH
-   * Utilizes sessionStorage to cache portfolio JSON data across page navigations,
-   * completely bypassing network latency and saving ~291KB of bandwidth per page view.
+   * Combines in-memory Promise deduplication and sessionStorage caching.
+   * Completely eliminates duplicate network fetches and repeated JSON parsing.
    */
-  async fetchPortfolioData(url = '/data/portfolio.json') {
-    const cacheKey = 'sumit_portfolio_data';
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+  fetchPortfolioData(url = '/data/portfolio.json') {
+    if (this._portfolioDataPromise) {
+      return this._portfolioDataPromise;
+    }
+
+    const self = this;
+    this._portfolioDataPromise = (async () => {
+      const cacheKey = 'sumit_portfolio_data';
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      } catch (e) {
+        console.warn('SessionStorage cache access failed:', e);
       }
-    } catch (e) {
-      console.warn('SessionStorage cache access failed:', e);
-    }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Network response was not ok');
-    const data = await res.json();
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Network response was not ok');
+      const data = await res.json();
 
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (e) {
-      console.warn('SessionStorage write failed:', e);
-    }
-    return data;
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      } catch (e) {
+        console.warn('SessionStorage write failed:', e);
+      }
+      return data;
+    })().catch((err) => {
+      self._portfolioDataPromise = null;
+      throw err;
+    });
+
+    return this._portfolioDataPromise;
   },
 
   /**
    * CACHED SERVICES FETCH
-   * Utilizes sessionStorage to cache services JSON data across page navigations,
-   * completely bypassing network latency and saving bandwidth per page view.
+   * Combines in-memory Promise deduplication and sessionStorage caching.
+   * Completely eliminates duplicate network fetches and repeated JSON parsing.
    */
-  async fetchServicesData(url = '/data/services.json') {
-    const cacheKey = 'sumit_services_data';
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+  fetchServicesData(url = '/data/services.json') {
+    if (this._servicesDataPromise) {
+      return this._servicesDataPromise;
+    }
+
+    const self = this;
+    this._servicesDataPromise = (async () => {
+      const cacheKey = 'sumit_services_data';
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      } catch (e) {
+        console.warn('SessionStorage cache access failed:', e);
       }
-    } catch (e) {
-      console.warn('SessionStorage cache access failed:', e);
-    }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Network response was not ok');
-    const data = await res.json();
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Network response was not ok');
+      const data = await res.json();
 
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (e) {
-      console.warn('SessionStorage write failed:', e);
-    }
-    return data;
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      } catch (e) {
+        console.warn('SessionStorage write failed:', e);
+      }
+      return data;
+    })().catch((err) => {
+      self._servicesDataPromise = null;
+      throw err;
+    });
+
+    return this._servicesDataPromise;
   },
 
   /**
