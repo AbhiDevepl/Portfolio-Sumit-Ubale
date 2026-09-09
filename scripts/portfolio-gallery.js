@@ -500,15 +500,17 @@ class FilterController {
   constructor(state, chipsContainer) {
     this.state = state;
     this.chipsContainer = chipsContainer;
+    this.chips = null;
     this.init();
   }
 
   init() {
     if (!this.chipsContainer) return;
 
-    const chips = this.chipsContainer.querySelectorAll('.filter-chip');
+    // Cache chip elements to eliminate repeated querySelectorAll traversals
+    this.chips = this.chipsContainer.querySelectorAll('.filter-chip');
 
-    chips.forEach(chip => {
+    this.chips.forEach(chip => {
       chip.addEventListener('click', () => {
         this.setActiveChip(chip);
         const category = chip.dataset.category;
@@ -529,7 +531,7 @@ class FilterController {
   }
 
   setActiveChip(activeChip) {
-    const chips = this.chipsContainer.querySelectorAll('.filter-chip');
+    const chips = this.chips || this.chipsContainer.querySelectorAll('.filter-chip');
     chips.forEach(chip => {
       chip.classList.remove('active');
       chip.setAttribute('aria-selected', 'false');
@@ -613,9 +615,12 @@ class FilterController {
     // Touch scroll indicator
     this.chipsContainer.style.scrollbarWidth = 'none';
     this.chipsContainer.style.msOverflowStyle = 'none';
-    const style = document.createElement('style');
-    style.textContent = '.filter-chips-container::-webkit-scrollbar { display: none; }';
-    document.head.appendChild(style);
+    if (!document.getElementById('hide-filter-chips-scrollbar')) {
+      const style = document.createElement('style');
+      style.id = 'hide-filter-chips-scrollbar';
+      style.textContent = '.filter-chips-container::-webkit-scrollbar { display: none; }';
+      document.head.appendChild(style);
+    }
   }
 
   selectFromURL() {
@@ -800,10 +805,17 @@ class PortfolioGallery {
   }
 
   formatCategoryName(slug) {
-    return slug
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    if (!slug) return '';
+    if (!this._categoryNameCache) {
+      this._categoryNameCache = {};
+    }
+    if (!this._categoryNameCache[slug]) {
+      this._categoryNameCache[slug] = slug
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+    return this._categoryNameCache[slug];
   }
 
   retry() {
