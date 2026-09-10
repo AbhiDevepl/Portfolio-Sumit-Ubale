@@ -12,6 +12,9 @@ class Navigation {
   init() {
     if (!this.toggle || !this.menu) return;
 
+    // Optimization: Cache mobile nav links NodeList to eliminate repeated DOM query traversals on menu toggles
+    this.links = this.menu.querySelectorAll('.mobile-nav-link');
+
     this.toggle.onclick = () => this.toggleMenu();
 
     // Event delegation for mobile links
@@ -31,7 +34,7 @@ class Navigation {
   }
 
   animateOpen() {
-    const links = this.menu.querySelectorAll('.mobile-nav-link');
+    const links = this.links && this.links.length ? this.links : this.menu.querySelectorAll('.mobile-nav-link');
     if (window.gsap) {
       gsap.timeline()
         .to(this.menu, { clipPath: "polygon(0 0, 100% 0, 100% 100%, 0% 100%)", duration: 0.8, ease: "power4.inOut" })
@@ -52,7 +55,7 @@ class Navigation {
   }
 
   animateClose() {
-    const links = this.menu.querySelectorAll('.mobile-nav-link');
+    const links = this.links && this.links.length ? this.links : this.menu.querySelectorAll('.mobile-nav-link');
     if (window.gsap) {
       gsap.timeline()
         .to([links, this.footer], { y: 20, opacity: 0, duration: 0.4, ease: "power3.in" })
