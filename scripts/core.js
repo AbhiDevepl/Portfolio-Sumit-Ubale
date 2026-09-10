@@ -3,62 +3,88 @@
  * Centralized logic for Lightbox, Video handling, and DOM performance.
  */
 
-window.Core = {
-  /**
-   * CACHED PORTFOLIO FETCH
-   * Utilizes sessionStorage to cache portfolio JSON data across page navigations,
-   * completely bypassing network latency and saving ~291KB of bandwidth per page view.
-   */
-  async fetchPortfolioData(url = '/data/portfolio.json') {
-    const cacheKey = 'sumit_portfolio_data';
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+(function() {
+  let _portfolioDataPromise = null;
+  let _servicesDataPromise = null;
+
+  window.Core = {
+    /**
+     * CACHED PORTFOLIO FETCH
+     * Utilizes in-memory promise caching and sessionStorage to deduplicate fetch requests
+     * and bypass repeated O(N) JSON parsing of the ~291KB dataset across callers.
+     */
+    fetchPortfolioData(url = '/data/portfolio.json') {
+      if (_portfolioDataPromise) {
+        return _portfolioDataPromise;
       }
-    } catch (e) {
-      console.warn('SessionStorage cache access failed:', e);
-    }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Network response was not ok');
-    const data = await res.json();
+      _portfolioDataPromise = (async () => {
+        const cacheKey = 'sumit_portfolio_data';
+        try {
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
+            return JSON.parse(cached);
+          }
+        } catch (e) {
+          console.warn('SessionStorage cache access failed:', e);
+        }
 
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (e) {
-      console.warn('SessionStorage write failed:', e);
-    }
-    return data;
-  },
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
 
-  /**
-   * CACHED SERVICES FETCH
-   * Utilizes sessionStorage to cache services JSON data across page navigations,
-   * completely bypassing network latency and saving bandwidth per page view.
-   */
-  async fetchServicesData(url = '/data/services.json') {
-    const cacheKey = 'sumit_services_data';
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify(data));
+        } catch (e) {
+          console.warn('SessionStorage write failed:', e);
+        }
+        return data;
+      })().catch((err) => {
+        _portfolioDataPromise = null;
+        throw err;
+      });
+
+      return _portfolioDataPromise;
+    },
+
+    /**
+     * CACHED SERVICES FETCH
+     * Utilizes in-memory promise caching and sessionStorage to deduplicate fetch requests
+     * and bypass repeated JSON parsing of the services dataset across callers.
+     */
+    fetchServicesData(url = '/data/services.json') {
+      if (_servicesDataPromise) {
+        return _servicesDataPromise;
       }
-    } catch (e) {
-      console.warn('SessionStorage cache access failed:', e);
-    }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Network response was not ok');
-    const data = await res.json();
+      _servicesDataPromise = (async () => {
+        const cacheKey = 'sumit_services_data';
+        try {
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
+            return JSON.parse(cached);
+          }
+        } catch (e) {
+          console.warn('SessionStorage cache access failed:', e);
+        }
 
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (e) {
-      console.warn('SessionStorage write failed:', e);
-    }
-    return data;
-  },
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
+
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify(data));
+        } catch (e) {
+          console.warn('SessionStorage write failed:', e);
+        }
+        return data;
+      })().catch((err) => {
+        _servicesDataPromise = null;
+        throw err;
+      });
+
+      return _servicesDataPromise;
+    },
 
   /**
    * LIGHTBOX ENGINE
@@ -702,3 +728,4 @@ window.Core = {
     }
   }
 };
+})();
