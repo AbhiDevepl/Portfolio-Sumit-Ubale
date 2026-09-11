@@ -6,6 +6,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const sections = document.querySelectorAll('section');
   if (sections.length === 0) return;
 
+  // Performance Optimization: Check for reduced motion preference early
+  // to avoid creating heavy GSAP contexts and observers when motion is disabled.
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll('.stagger-reveal, .scroll-reveal').forEach(el => {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    });
+    return;
+  }
+
   if (window.gsap) {
     const ctx = gsap.context(() => {
       // 1. Generic Reveal Observer (IntersectionObserver for performance)
@@ -45,19 +55,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // 3. Gallery Stagger
+        // Performance Optimization: Guard against empty grids during initial DOM load
+        // to avoid registering useless ScrollTrigger instances before dynamic items load.
         const galleryGrids = document.querySelectorAll('.gallery-grid, .full-gallery-grid');
         galleryGrids.forEach(grid => {
-          gsap.from(grid.querySelectorAll('.gallery-item'), {
-            opacity: 0,
-            y: 30,
-            duration: 0.8,
-            stagger: 0.05,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: grid,
-              start: "top 85%"
-            }
-          });
+          const items = grid.querySelectorAll('.gallery-item');
+          if (items.length > 0) {
+            gsap.from(items, {
+              opacity: 0,
+              y: 30,
+              duration: 0.8,
+              stagger: 0.05,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: grid,
+                start: "top 85%"
+              }
+            });
+          }
         });
       }
     });
