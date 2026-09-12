@@ -153,7 +153,28 @@ window.Core = {
       `;
       document.body.insertAdjacentHTML('beforeend', html);
       this.state.container = document.getElementById('lightbox');
+      this.cacheElements();
       this.bindEvents();
+    },
+
+    cacheElements() {
+      const container = this.state.container;
+      if (!container) return;
+      this.elements = {
+        img: container.querySelector('.lightbox-image'),
+        vidWrapper: container.querySelector('.lightbox-video-wrapper'),
+        vid: container.querySelector('.lightbox-video'),
+        loading: container.querySelector('.lightbox-loading'),
+        captionTitle: container.querySelector('.lightbox-caption-copy h3'),
+        captionCategory: container.querySelector('.lightbox-caption-copy p'),
+        counter: container.querySelector('.lightbox-counter'),
+        playIcons: container.querySelectorAll('.play-icon, .play-icon-small'),
+        pauseIcons: container.querySelectorAll('.pause-icon, .pause-icon-small'),
+        overlay: container.querySelector('.video-overlay-controls'),
+        volumeIcon: container.querySelector('.volume-icon'),
+        muteIcon: container.querySelector('.mute-icon'),
+        controlsBar: container.querySelector('.video-controls-bar')
+      };
     },
 
     bindEvents() {
@@ -299,27 +320,28 @@ window.Core = {
     },
 
     updatePlayPauseIcons(isPlaying) {
-      const container = this.state.container;
-      const playIcons = container.querySelectorAll('.play-icon, .play-icon-small');
-      const pauseIcons = container.querySelectorAll('.pause-icon, .pause-icon-small');
+      const els = this.elements;
+      const playIcons = els ? els.playIcons : this.state.container.querySelectorAll('.play-icon, .play-icon-small');
+      const pauseIcons = els ? els.pauseIcons : this.state.container.querySelectorAll('.pause-icon, .pause-icon-small');
       
       playIcons.forEach(icon => icon.style.display = isPlaying ? 'none' : 'block');
       pauseIcons.forEach(icon => icon.style.display = isPlaying ? 'block' : 'none');
       
       // Hide overlay controls when playing
-      const overlay = container.querySelector('.video-overlay-controls');
+      const overlay = els ? els.overlay : this.state.container.querySelector('.video-overlay-controls');
       if (overlay) {
         overlay.style.opacity = isPlaying ? '0' : '1';
       }
     },
 
     updateMuteButton() {
-      const video = this.state.container.querySelector('.lightbox-video');
-      const volumeIcon = this.state.container.querySelector('.volume-icon');
-      const muteIcon = this.state.container.querySelector('.mute-icon');
+      const els = this.elements;
+      const video = els ? els.vid : this.state.container.querySelector('.lightbox-video');
+      const volumeIcon = els ? els.volumeIcon : this.state.container.querySelector('.volume-icon');
+      const muteIcon = els ? els.muteIcon : this.state.container.querySelector('.mute-icon');
       
-      volumeIcon.style.display = video.muted ? 'none' : 'block';
-      muteIcon.style.display = video.muted ? 'block' : 'none';
+      if (volumeIcon) volumeIcon.style.display = video.muted ? 'none' : 'block';
+      if (muteIcon) muteIcon.style.display = video.muted ? 'block' : 'none';
     },
 
     formatTime(seconds) {
@@ -373,13 +395,14 @@ window.Core = {
       const item = this.state.items[this.state.currentIndex];
       if (!item) return;
 
-      const imgEl = this.state.container.querySelector('.lightbox-image');
-      const vidWrapper = this.state.container.querySelector('.lightbox-video-wrapper');
-      const vidEl = this.state.container.querySelector('.lightbox-video');
-      const loadingEl = this.state.container.querySelector('.lightbox-loading');
-      const captionTitle = this.state.container.querySelector('.lightbox-caption-copy h3');
-      const captionCategory = this.state.container.querySelector('.lightbox-caption-copy p');
-      const counterEl = this.state.container.querySelector('.lightbox-counter');
+      const els = this.elements || {};
+      const imgEl = els.img || this.state.container.querySelector('.lightbox-image');
+      const vidWrapper = els.vidWrapper || this.state.container.querySelector('.lightbox-video-wrapper');
+      const vidEl = els.vid || this.state.container.querySelector('.lightbox-video');
+      const loadingEl = els.loading || this.state.container.querySelector('.lightbox-loading');
+      const captionTitle = els.captionTitle || this.state.container.querySelector('.lightbox-caption-copy h3');
+      const captionCategory = els.captionCategory || this.state.container.querySelector('.lightbox-caption-copy p');
+      const counterEl = els.counter || this.state.container.querySelector('.lightbox-counter');
 
       const isVid = item.type === 'video';
       
@@ -543,14 +566,14 @@ window.Core = {
       item.setAttribute('aria-label', `${image.title || 'Open preview'}${image.category ? `, ${image.category}` : ''}`);
 
       const openFilteredLightbox = () => {
-        const fallbackItems = allItems.map((entry, entryIndex) => {
-          const newItem = Object.assign({}, entry);
-          newItem.originalIndex = entryIndex;
-          newItem.type = entry.type || 'image';
-          return newItem;
-        });
-
-        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : fallbackItems;
+        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData)
+          ? window.GalleryManager.getVisibleData()
+          : allItems.map((entry, entryIndex) => {
+              const newItem = Object.assign({}, entry);
+              newItem.originalIndex = entryIndex;
+              newItem.type = entry.type || 'image';
+              return newItem;
+            });
         const itemIndex = visibleItems.findIndex((entry) => entry.originalIndex === index);
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
