@@ -670,10 +670,12 @@ window.Core = {
     /**
      * Injects shared nav and footer into sub-pages (gallery, albums, service).
      * Called from page-specific loaders to avoid duplicating markup.
+     * Performance optimization: checks if elements already have child nodes to avoid
+     * redundant innerHTML parsing, DOM recreation, and unnecessary layout invalidation.
      */
     injectGlobalComponents() {
       const nav = document.getElementById('main-nav');
-      if (nav) {
+      if (nav && nav.children.length === 0) {
         nav.innerHTML = `
           <div class="nav-container">
             <a href="/" class="nav-logo">SUMIT UBALE</a>
@@ -692,7 +694,7 @@ window.Core = {
       }
 
       const footer = document.getElementById('main-footer');
-      if (footer) {
+      if (footer && footer.children.length === 0) {
         footer.innerHTML = `
           <div class="container">
             <p>&copy; ${new Date().getFullYear()} Sumit Ubale Photography. All rights reserved.</p>
