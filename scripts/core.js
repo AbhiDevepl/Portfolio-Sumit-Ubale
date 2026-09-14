@@ -3,61 +3,98 @@
  * Centralized logic for Lightbox, Video handling, and DOM performance.
  */
 
+// Private module-level variables for in-memory caching and request deduplication
+let _portfolioDataCache = null;
+let _portfolioDataPromise = null;
+let _servicesDataCache = null;
+let _servicesDataPromise = null;
+
 window.Core = {
   /**
    * CACHED PORTFOLIO FETCH
-   * Utilizes sessionStorage to cache portfolio JSON data across page navigations,
-   * completely bypassing network latency and saving ~291KB of bandwidth per page view.
+   * Utilizes in-memory caching and request deduplication along with sessionStorage to cache portfolio
+   * JSON data, eliminating redundant network requests and synchronous JSON parsing overhead (~291KB).
    */
-  async fetchPortfolioData(url = '/data/portfolio.json') {
-    const cacheKey = 'sumit_portfolio_data';
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+  fetchPortfolioData(url = '/data/portfolio.json') {
+    if (_portfolioDataCache) {
+      return Promise.resolve(_portfolioDataCache);
+    }
+    if (_portfolioDataPromise) {
+      return _portfolioDataPromise;
+    }
+
+    _portfolioDataPromise = (async () => {
+      const cacheKey = 'sumit_portfolio_data';
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          _portfolioDataCache = JSON.parse(cached);
+          return _portfolioDataCache;
+        }
+      } catch (e) {
+        console.warn('SessionStorage cache access failed:', e);
       }
-    } catch (e) {
-      console.warn('SessionStorage cache access failed:', e);
-    }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Network response was not ok');
-    const data = await res.json();
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Network response was not ok');
+      const data = await res.json();
 
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (e) {
-      console.warn('SessionStorage write failed:', e);
-    }
-    return data;
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      } catch (e) {
+        console.warn('SessionStorage write failed:', e);
+      }
+      _portfolioDataCache = data;
+      return data;
+    })().catch((err) => {
+      _portfolioDataPromise = null;
+      throw err;
+    });
+
+    return _portfolioDataPromise;
   },
 
   /**
    * CACHED SERVICES FETCH
-   * Utilizes sessionStorage to cache services JSON data across page navigations,
-   * completely bypassing network latency and saving bandwidth per page view.
+   * Utilizes in-memory caching and request deduplication along with sessionStorage to cache services JSON data.
    */
-  async fetchServicesData(url = '/data/services.json') {
-    const cacheKey = 'sumit_services_data';
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+  fetchServicesData(url = '/data/services.json') {
+    if (_servicesDataCache) {
+      return Promise.resolve(_servicesDataCache);
+    }
+    if (_servicesDataPromise) {
+      return _servicesDataPromise;
+    }
+
+    _servicesDataPromise = (async () => {
+      const cacheKey = 'sumit_services_data';
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          _servicesDataCache = JSON.parse(cached);
+          return _servicesDataCache;
+        }
+      } catch (e) {
+        console.warn('SessionStorage cache access failed:', e);
       }
-    } catch (e) {
-      console.warn('SessionStorage cache access failed:', e);
-    }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Network response was not ok');
-    const data = await res.json();
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Network response was not ok');
+      const data = await res.json();
 
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (e) {
-      console.warn('SessionStorage write failed:', e);
-    }
-    return data;
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      } catch (e) {
+        console.warn('SessionStorage write failed:', e);
+      }
+      _servicesDataCache = data;
+      return data;
+    })().catch((err) => {
+      _servicesDataPromise = null;
+      throw err;
+    });
+
+    return _servicesDataPromise;
   },
 
   /**
@@ -673,7 +710,8 @@ window.Core = {
      */
     injectGlobalComponents() {
       const nav = document.getElementById('main-nav');
-      if (nav) {
+      if (nav && !nav.dataset.injected) {
+        nav.dataset.injected = 'true';
         nav.innerHTML = `
           <div class="nav-container">
             <a href="/" class="nav-logo">SUMIT UBALE</a>
@@ -692,7 +730,8 @@ window.Core = {
       }
 
       const footer = document.getElementById('main-footer');
-      if (footer) {
+      if (footer && !footer.dataset.injected) {
+        footer.dataset.injected = 'true';
         footer.innerHTML = `
           <div class="container">
             <p>&copy; ${new Date().getFullYear()} Sumit Ubale Photography. All rights reserved.</p>
