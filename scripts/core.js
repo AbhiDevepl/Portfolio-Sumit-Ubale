@@ -3,61 +3,90 @@
  * Centralized logic for Lightbox, Video handling, and DOM performance.
  */
 
+let _portfolioDataPromise = null;
+let _servicesDataPromise = null;
+
 window.Core = {
   /**
    * CACHED PORTFOLIO FETCH
+   * Deduplicates concurrent fetch calls and caches the parsed result in memory.
    * Utilizes sessionStorage to cache portfolio JSON data across page navigations,
-   * completely bypassing network latency and saving ~291KB of bandwidth per page view.
+   * completely bypassing network latency and JSON parsing overhead (~291KB).
    */
-  async fetchPortfolioData(url = '/data/portfolio.json') {
-    const cacheKey = 'sumit_portfolio_data';
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+  fetchPortfolioData(url) {
+    var targetUrl = url || '/data/portfolio.json';
+    if (_portfolioDataPromise) {
+      return _portfolioDataPromise;
+    }
+
+    _portfolioDataPromise = (async function() {
+      const cacheKey = 'sumit_portfolio_data';
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      } catch (e) {
+        console.warn('SessionStorage cache access failed:', e);
       }
-    } catch (e) {
-      console.warn('SessionStorage cache access failed:', e);
-    }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Network response was not ok');
-    const data = await res.json();
+      const res = await fetch(targetUrl);
+      if (!res.ok) throw new Error('Network response was not ok');
+      const data = await res.json();
 
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (e) {
-      console.warn('SessionStorage write failed:', e);
-    }
-    return data;
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      } catch (e) {
+        console.warn('SessionStorage write failed:', e);
+      }
+      return data;
+    })().catch(function(err) {
+      _portfolioDataPromise = null;
+      throw err;
+    });
+
+    return _portfolioDataPromise;
   },
 
   /**
    * CACHED SERVICES FETCH
+   * Deduplicates concurrent fetch calls and caches the parsed result in memory.
    * Utilizes sessionStorage to cache services JSON data across page navigations,
-   * completely bypassing network latency and saving bandwidth per page view.
+   * completely bypassing network latency and JSON parsing overhead.
    */
-  async fetchServicesData(url = '/data/services.json') {
-    const cacheKey = 'sumit_services_data';
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+  fetchServicesData(url) {
+    var targetUrl = url || '/data/services.json';
+    if (_servicesDataPromise) {
+      return _servicesDataPromise;
+    }
+
+    _servicesDataPromise = (async function() {
+      const cacheKey = 'sumit_services_data';
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      } catch (e) {
+        console.warn('SessionStorage cache access failed:', e);
       }
-    } catch (e) {
-      console.warn('SessionStorage cache access failed:', e);
-    }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Network response was not ok');
-    const data = await res.json();
+      const res = await fetch(targetUrl);
+      if (!res.ok) throw new Error('Network response was not ok');
+      const data = await res.json();
 
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (e) {
-      console.warn('SessionStorage write failed:', e);
-    }
-    return data;
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      } catch (e) {
+        console.warn('SessionStorage write failed:', e);
+      }
+      return data;
+    })().catch(function(err) {
+      _servicesDataPromise = null;
+      throw err;
+    });
+
+    return _servicesDataPromise;
   },
 
   /**
