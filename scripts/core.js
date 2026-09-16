@@ -153,15 +153,50 @@ window.Core = {
       `;
       document.body.insertAdjacentHTML('beforeend', html);
       this.state.container = document.getElementById('lightbox');
+      this.cacheElements();
       this.bindEvents();
     },
 
+    cacheElements() {
+      const c = this.state.container;
+      if (!c) return;
+      this.elements = {
+        closeBtn: c.querySelector('.lightbox-close'),
+        overlay: c.querySelector('.lightbox-overlay'),
+        prevBtn: c.querySelector('.lightbox-prev'),
+        nextBtn: c.querySelector('.lightbox-next'),
+        mediaContainer: c.querySelector('.lightbox-media-container'),
+        imgEl: c.querySelector('.lightbox-image'),
+        vidWrapper: c.querySelector('.lightbox-video-wrapper'),
+        vidEl: c.querySelector('.lightbox-video'),
+        loadingEl: c.querySelector('.lightbox-loading'),
+        captionTitle: c.querySelector('.lightbox-caption-copy h3'),
+        captionCategory: c.querySelector('.lightbox-caption-copy p'),
+        counterEl: c.querySelector('.lightbox-counter'),
+        playPauseOverlay: c.querySelector('.video-play-pause'),
+        playPauseSmall: c.querySelector('.play-pause-small'),
+        progress: c.querySelector('.video-progress'),
+        progressFilled: c.querySelector('.video-progress-filled'),
+        timeDisplay: c.querySelector('.video-time'),
+        muteBtn: c.querySelector('.mute-btn'),
+        volumeSlider: c.querySelector('.volume-slider'),
+        speedSelect: c.querySelector('.playback-speed'),
+        fullscreenBtn: c.querySelector('.fullscreen-btn'),
+        volumeIcon: c.querySelector('.volume-icon'),
+        muteIcon: c.querySelector('.mute-icon'),
+        videoControlsBar: c.querySelector('.video-controls-bar'),
+        overlayControls: c.querySelector('.video-overlay-controls'),
+        playIcons: c.querySelectorAll('.play-icon, .play-icon-small'),
+        pauseIcons: c.querySelectorAll('.pause-icon, .pause-icon-small')
+      };
+    },
+
     bindEvents() {
-      const { container } = this.state;
-      container.querySelector('.lightbox-close').onclick = () => this.close();
-      container.querySelector('.lightbox-overlay').onclick = () => this.close();
-      container.querySelector('.lightbox-prev').onclick = () => this.nav(-1);
-      container.querySelector('.lightbox-next').onclick = () => this.nav(1);
+      const els = this.elements || {};
+      if (els.closeBtn) els.closeBtn.onclick = () => this.close();
+      if (els.overlay) els.overlay.onclick = () => this.close();
+      if (els.prevBtn) els.prevBtn.onclick = () => this.nav(-1);
+      if (els.nextBtn) els.nextBtn.onclick = () => this.nav(1);
       this.bindTouch();
 
       // Video controls
@@ -180,7 +215,7 @@ window.Core = {
     },
 
     bindTouch() {
-      const mediaContainer = this.state.container.querySelector('.lightbox-media-container');
+      const mediaContainer = this.elements ? this.elements.mediaContainer : null;
       if (!mediaContainer) return;
 
       mediaContainer.addEventListener('touchstart', (e) => {
@@ -207,22 +242,24 @@ window.Core = {
     },
 
     bindVideoControls() {
-      const { container } = this.state;
-      const video = container.querySelector('.lightbox-video');
-      const wrapper = container.querySelector('.lightbox-video-wrapper');
-      const playPauseOverlay = container.querySelector('.video-play-pause');
-      const playPauseSmall = container.querySelector('.play-pause-small');
-      const progress = container.querySelector('.video-progress');
-      const progressFilled = container.querySelector('.video-progress-filled');
-      const timeDisplay = container.querySelector('.video-time');
-      const muteBtn = container.querySelector('.mute-btn');
-      const volumeSlider = container.querySelector('.volume-slider');
-      const speedSelect = container.querySelector('.playback-speed');
-      const fullscreenBtn = container.querySelector('.fullscreen-btn');
+      const els = this.elements || {};
+      const video = els.vidEl;
+      if (!video) return;
+
+      const wrapper = els.vidWrapper;
+      const playPauseOverlay = els.playPauseOverlay;
+      const playPauseSmall = els.playPauseSmall;
+      const progress = els.progress;
+      const progressFilled = els.progressFilled;
+      const timeDisplay = els.timeDisplay;
+      const muteBtn = els.muteBtn;
+      const volumeSlider = els.volumeSlider;
+      const speedSelect = els.speedSelect;
+      const fullscreenBtn = els.fullscreenBtn;
 
       // Play/Pause overlay (center button)
-      playPauseOverlay.onclick = () => this.togglePlayPause();
-      playPauseSmall.onclick = () => this.togglePlayPause();
+      if (playPauseOverlay) playPauseOverlay.onclick = () => this.togglePlayPause();
+      if (playPauseSmall) playPauseSmall.onclick = () => this.togglePlayPause();
       
       // Click video to play/pause
       video.onclick = () => this.togglePlayPause();
@@ -230,44 +267,54 @@ window.Core = {
       // Progress bar
       video.addEventListener('timeupdate', () => {
         const percent = (video.currentTime / video.duration) * 100;
-        progress.value = percent;
-        progressFilled.style.width = `${percent}%`;
-        timeDisplay.textContent = `${this.formatTime(video.currentTime)} / ${this.formatTime(video.duration)}`;
+        if (progress) progress.value = percent;
+        if (progressFilled) progressFilled.style.width = `${percent}%`;
+        if (timeDisplay) timeDisplay.textContent = `${this.formatTime(video.currentTime)} / ${this.formatTime(video.duration)}`;
       });
 
-      progress.addEventListener('input', (e) => {
-        const time = (e.target.value / 100) * video.duration;
-        video.currentTime = time;
-      });
+      if (progress) {
+        progress.addEventListener('input', (e) => {
+          const time = (e.target.value / 100) * video.duration;
+          video.currentTime = time;
+        });
+      }
 
       // Mute/Unmute
-      muteBtn.onclick = () => {
-        video.muted = !video.muted;
-        this.updateMuteButton();
-      };
+      if (muteBtn) {
+        muteBtn.onclick = () => {
+          video.muted = !video.muted;
+          this.updateMuteButton();
+        };
+      }
 
       // Volume
-      volumeSlider.addEventListener('input', (e) => {
-        video.volume = e.target.value / 100;
-        video.muted = video.volume === 0;
-        this.updateMuteButton();
-      });
+      if (volumeSlider) {
+        volumeSlider.addEventListener('input', (e) => {
+          video.volume = e.target.value / 100;
+          video.muted = video.volume === 0;
+          this.updateMuteButton();
+        });
+      }
 
       // Playback speed
-      speedSelect.addEventListener('change', (e) => {
-        video.playbackRate = parseFloat(e.target.value);
-      });
+      if (speedSelect) {
+        speedSelect.addEventListener('change', (e) => {
+          video.playbackRate = parseFloat(e.target.value);
+        });
+      }
 
       // Fullscreen
-      fullscreenBtn.onclick = () => {
-        if (wrapper.requestFullscreen) {
-          wrapper.requestFullscreen();
-        } else if (wrapper.webkitRequestFullscreen) {
-          wrapper.webkitRequestFullscreen();
-        } else if (wrapper.msRequestFullscreen) {
-          wrapper.msRequestFullscreen();
-        }
-      };
+      if (fullscreenBtn && wrapper) {
+        fullscreenBtn.onclick = () => {
+          if (wrapper.requestFullscreen) {
+            wrapper.requestFullscreen();
+          } else if (wrapper.webkitRequestFullscreen) {
+            wrapper.webkitRequestFullscreen();
+          } else if (wrapper.msRequestFullscreen) {
+            wrapper.msRequestFullscreen();
+          }
+        };
+      }
 
       // Update play/pause icons
       video.addEventListener('play', () => this.updatePlayPauseIcons(true));
@@ -276,21 +323,24 @@ window.Core = {
       // Show/hide controls
       let controlsTimeout;
       const showControls = () => {
-        container.querySelector('.video-controls-bar').style.opacity = '1';
+        if (els.videoControlsBar) els.videoControlsBar.style.opacity = '1';
         clearTimeout(controlsTimeout);
         controlsTimeout = setTimeout(() => {
-          if (!video.paused) {
-            container.querySelector('.video-controls-bar').style.opacity = '0';
+          if (!video.paused && els.videoControlsBar) {
+            els.videoControlsBar.style.opacity = '0';
           }
         }, 3000);
       };
 
-      wrapper.addEventListener('mousemove', showControls);
-      wrapper.addEventListener('touchstart', showControls);
+      if (wrapper) {
+        wrapper.addEventListener('mousemove', showControls);
+        wrapper.addEventListener('touchstart', showControls);
+      }
     },
 
     togglePlayPause() {
-      const video = this.state.container.querySelector('.lightbox-video');
+      const video = this.elements ? this.elements.vidEl : null;
+      if (!video) return;
       if (video.paused) {
         video.play();
       } else {
@@ -299,27 +349,22 @@ window.Core = {
     },
 
     updatePlayPauseIcons(isPlaying) {
-      const container = this.state.container;
-      const playIcons = container.querySelectorAll('.play-icon, .play-icon-small');
-      const pauseIcons = container.querySelectorAll('.pause-icon, .pause-icon-small');
-      
-      playIcons.forEach(icon => icon.style.display = isPlaying ? 'none' : 'block');
-      pauseIcons.forEach(icon => icon.style.display = isPlaying ? 'block' : 'none');
+      const els = this.elements || {};
+      if (els.playIcons) els.playIcons.forEach(icon => icon.style.display = isPlaying ? 'none' : 'block');
+      if (els.pauseIcons) els.pauseIcons.forEach(icon => icon.style.display = isPlaying ? 'block' : 'none');
       
       // Hide overlay controls when playing
-      const overlay = container.querySelector('.video-overlay-controls');
-      if (overlay) {
-        overlay.style.opacity = isPlaying ? '0' : '1';
+      if (els.overlayControls) {
+        els.overlayControls.style.opacity = isPlaying ? '0' : '1';
       }
     },
 
     updateMuteButton() {
-      const video = this.state.container.querySelector('.lightbox-video');
-      const volumeIcon = this.state.container.querySelector('.volume-icon');
-      const muteIcon = this.state.container.querySelector('.mute-icon');
-      
-      volumeIcon.style.display = video.muted ? 'none' : 'block';
-      muteIcon.style.display = video.muted ? 'block' : 'none';
+      const els = this.elements || {};
+      const video = els.vidEl;
+      if (!video) return;
+      if (els.volumeIcon) els.volumeIcon.style.display = video.muted ? 'none' : 'block';
+      if (els.muteIcon) els.muteIcon.style.display = video.muted ? 'block' : 'none';
     },
 
     formatTime(seconds) {
@@ -346,7 +391,7 @@ window.Core = {
       this.state.active = false;
       this.state.container.classList.remove('active');
       this.state.container.setAttribute('aria-hidden', 'true');
-      const video = this.state.container.querySelector('.lightbox-video');
+      const video = this.elements ? this.elements.vidEl : null;
       if (video) { video.pause(); video.src = ''; }
       
       setTimeout(() => {
@@ -364,7 +409,7 @@ window.Core = {
     },
 
     pauseActiveVideo() {
-      const video = this.state.container.querySelector('.lightbox-video');
+      const video = this.elements ? this.elements.vidEl : null;
       if (!video) return;
       video.pause();
     },
@@ -373,13 +418,14 @@ window.Core = {
       const item = this.state.items[this.state.currentIndex];
       if (!item) return;
 
-      const imgEl = this.state.container.querySelector('.lightbox-image');
-      const vidWrapper = this.state.container.querySelector('.lightbox-video-wrapper');
-      const vidEl = this.state.container.querySelector('.lightbox-video');
-      const loadingEl = this.state.container.querySelector('.lightbox-loading');
-      const captionTitle = this.state.container.querySelector('.lightbox-caption-copy h3');
-      const captionCategory = this.state.container.querySelector('.lightbox-caption-copy p');
-      const counterEl = this.state.container.querySelector('.lightbox-counter');
+      const els = this.elements || {};
+      const imgEl = els.imgEl;
+      const vidWrapper = els.vidWrapper;
+      const vidEl = els.vidEl;
+      const loadingEl = els.loadingEl;
+      const captionTitle = els.captionTitle;
+      const captionCategory = els.captionCategory;
+      const counterEl = els.counterEl;
 
       const isVid = item.type === 'video';
       
@@ -543,14 +589,14 @@ window.Core = {
       item.setAttribute('aria-label', `${image.title || 'Open preview'}${image.category ? `, ${image.category}` : ''}`);
 
       const openFilteredLightbox = () => {
-        const fallbackItems = allItems.map((entry, entryIndex) => {
-          const newItem = Object.assign({}, entry);
-          newItem.originalIndex = entryIndex;
-          newItem.type = entry.type || 'image';
-          return newItem;
-        });
-
-        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : fallbackItems;
+        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData)
+          ? window.GalleryManager.getVisibleData()
+          : allItems.map((entry, entryIndex) => {
+              const newItem = Object.assign({}, entry);
+              newItem.originalIndex = entryIndex;
+              newItem.type = entry.type || 'image';
+              return newItem;
+            });
         const itemIndex = visibleItems.findIndex((entry) => entry.originalIndex === index);
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
@@ -673,7 +719,7 @@ window.Core = {
      */
     injectGlobalComponents() {
       const nav = document.getElementById('main-nav');
-      if (nav) {
+      if (nav && nav.children.length === 0) {
         nav.innerHTML = `
           <div class="nav-container">
             <a href="/" class="nav-logo">SUMIT UBALE</a>
@@ -692,7 +738,7 @@ window.Core = {
       }
 
       const footer = document.getElementById('main-footer');
-      if (footer) {
+      if (footer && footer.children.length === 0) {
         footer.innerHTML = `
           <div class="container">
             <p>&copy; ${new Date().getFullYear()} Sumit Ubale Photography. All rights reserved.</p>
