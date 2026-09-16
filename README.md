@@ -174,6 +174,93 @@ unavoidable for a static site, and not something to paper over.
 
 ---
 
+## Admin panel (Backblaze B2)
+
+`/admin` is a single-admin panel for the images and videos in one Backblaze B2
+bucket: list, preview, upload (drag & drop, multiple files, progress) and
+delete. It is `noindex, nofollow` and disallowed in `robots.txt`.
+
+### Architecture
+
+```
+React admin UI  ->  Netlify Functions  ->  Backblaze B2 API  ->  bucket
+```
+
+B2 credentials exist only inside the functions. The browser never receives the
+key id, the application key, the bucket id, or an account authorization token.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `/.netlify/functions/admin-login` | password -> HttpOnly session cookie |
+| `/.netlify/functions/admin-logout` | clears the cookie |
+| `/.netlify/functions/b2-list` | files + short-lived signed preview URLs |
+| `/.netlify/functions/b2-upload` | issues a one-shot B2 upload target |
+| `/.netlify/functions/b2-delete` | deletes an object |
+
+Every endpoint except `admin-login`/`admin-logout` requires a valid session and
+answers `401` without one.
+
+### Environment variables
+
+Copy `.env.example` to `.env` for local work, and set the same keys in Netlify
+under **Site configuration -> Environment variables**:
+
+```env
+B2_KEY_ID=
+B2_APPLICATION_KEY=
+B2_BUCKET_ID=
+B2_BUCKET_NAME=
+ADMIN_PASSWORD=
+```
+
+Never prefix these with `VITE_` — that would bundle them into the client. `.env`
+is gitignored; do not commit credentials.
+
+The session cookie is an expiry timestamp signed with HMAC-SHA256, keyed off
+`ADMIN_PASSWORD`. Rotating the password signs everyone out, which is the point.
+
+### Bucket setup
+
+Keep the bucket **private**. Previews use B2 download authorizations that
+expire after an hour, so nothing is publicly readable.
+
+The browser POSTs files directly to B2 — a Netlify Function request body is
+capped near 6 MB, so videos cannot be proxied through one. That requires a CORS
+rule on the bucket. Via the B2 CLI:
+
+```bash
+b2 bucket update <bucket-name> allPrivate --cors-rules '[{
+  "corsRuleName": "adminUpload",
+  "allowedOrigins": ["https://supf.in"],
+  "allowedOperations": ["b2_upload_file"],
+  "allowedHeaders": ["*"],
+  "exposeHeaders": ["x-bz-file-id"],
+  "maxAgeSeconds": 3600
+}]'
+```
+
+Add your Netlify preview/localhost origin to `allowedOrigins` while testing.
+Without this rule, listing, previewing and deleting still work — only uploading
+fails, with a CORS error in the console.
+
+### Local development
+
+```bash
+netlify dev        # serves the site AND the functions with .env loaded
+```
+
+Plain `npm run dev` does not run the functions, so `/admin` will report a
+network error against `/.netlify/functions/*`.
+
+### Accepted files
+
+`.jpg .jpeg .png .webp .gif .mp4 .webm .mov`, up to 500 MB. The server decides
+the object key and content type from its own extension allowlist — the MIME
+type the browser reports is ignored. Uploads land under `images/` or `videos/`
+with a sanitised filename plus a short random suffix.
+
+---
+
 ## Author
 
 **Sumit Ubale** — Photographer, Shrigonda / Ahilyanagar, Maharashtra

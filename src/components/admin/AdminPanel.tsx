@@ -10,7 +10,7 @@ export function AdminPanel({ initialFiles, onSignedOut }: {
   initialFiles: B2File[]
   onSignedOut: () => void
 }) {
-  const [files, setFiles] = useState<B2File[] | null>(initialFiles)
+  const [files, setFiles] = useState<B2File[]>(initialFiles)
   const [error, setError] = useState<string | null>(null)
   const [uploads, setUploads] = useState<UploadProgress[]>([])
   const [uploading, setUploading] = useState(false)
@@ -88,7 +88,7 @@ export function AdminPanel({ initialFiles, onSignedOut }: {
   const onDelete = async (file: B2File) => {
     try {
       await deleteMedia(file)
-      setFiles(current => current?.filter(entry => entry.fileId !== file.fileId) ?? null)
+      setFiles(current => current.filter(entry => entry.fileId !== file.fileId))
       setError(null)
     }
     catch (cause) {
@@ -107,8 +107,8 @@ export function AdminPanel({ initialFiles, onSignedOut }: {
   }
 
   const { images, videos } = useMemo(() => ({
-    images: files?.filter(file => file.kind === 'image') ?? [],
-    videos: files?.filter(file => file.kind === 'video') ?? [],
+    images: files.filter(file => file.kind === 'image'),
+    videos: files.filter(file => file.kind === 'video'),
   }), [files])
 
   return (
@@ -124,14 +124,8 @@ export function AdminPanel({ initialFiles, onSignedOut }: {
 
       <UploadZone onFiles={files_ => void onFiles(files_)} uploads={uploads} busy={uploading} />
 
-      {files === null
-        ? <p className="admin-empty">Loading files…</p>
-        : (
-            <>
-              <MediaGrid title="Images" files={images} onDelete={onDelete} />
-              <MediaGrid title="Videos" files={videos} onDelete={onDelete} />
-            </>
-          )}
+      <MediaGrid title="Images" files={images} onDelete={onDelete} />
+      <MediaGrid title="Videos" files={videos} onDelete={onDelete} />
 
       <footer className="admin-footer">
         <button className="admin-button is-quiet" type="button" onClick={() => void onLogout()}>

@@ -55,6 +55,13 @@ export const routes: RouteRecord[] = [
       },
     ],
   },
+  {
+    // Outside the site Layout on purpose: the admin panel needs no navigation,
+    // footer, smooth scrolling or gallery data, and keeping it separate means
+    // it cannot regress the public routes. noindex is set in the route itself.
+    path: '/admin',
+    lazy: () => import('./routes/Admin'),
+  },
 ]
 
 export default routes

@@ -1,29 +1,35 @@
 import { Link } from 'react-router-dom'
+import { Seo } from '../lib/seo'
 
-export default function NotFound() {
+/**
+ * Client-side 404. Reached when in-app navigation lands on an unknown path.
+ *
+ * Note: a direct hit on an unknown URL is answered by Netlify, not by this
+ * route — there is no dist/404.html yet, so Netlify serves its own page.
+ */
+export function NotFound() {
   return (
-    <main className="min-h-[70vh] flex items-center justify-center px-6">
-      <div className="text-center">
-        <p className="text-sm font-medium uppercase tracking-widest text-gray-500">
-          Error 404
-        </p>
+    <>
+      <Seo
+        title="Page not found — Sumit Ubale Photography"
+        description="The page you are looking for doesn't exist or may have been moved."
+        canonical="https://supf.in/"
+        robots="noindex,follow"
+      />
 
-        <h1 className="mt-4 text-6xl font-bold tracking-tight">
-          Page not found
-        </h1>
-
-        <p className="mt-4 max-w-md text-gray-500">
-          Sorry, the page you are looking for doesn't exist or may have been
-          moved.
-        </p>
-
-        <Link
-          to="/"
-          className="mt-8 inline-flex rounded-full bg-black px-6 py-3 text-sm font-medium text-white transition hover:opacity-80"
-        >
-          Back to Home
-        </Link>
-      </div>
-    </main>
+      <section className="section" style={{ minHeight: '70vh', display: 'grid', placeItems: 'center' }}>
+        <div className="container" style={{ textAlign: 'center' }}>
+          <p className="caption text-gray">Error 404</p>
+          <h1 className="heading-lg">Page not found</h1>
+          <p className="body-lg" style={{ maxWidth: '30rem', margin: '0 auto var(--space-8)' }}>
+            Sorry, the page you are looking for doesn't exist or may have been moved.
+          </p>
+          <Link to="/" className="btn-cta">Back to Home</Link>
+        </div>
+      </section>
+    </>
   )
 }
+
+export const Component = NotFound
+export default NotFound
