@@ -3,61 +3,88 @@
  * Centralized logic for Lightbox, Video handling, and DOM performance.
  */
 
+let _portfolioDataPromise = null;
+let _servicesDataPromise = null;
+
 window.Core = {
   /**
    * CACHED PORTFOLIO FETCH
-   * Utilizes sessionStorage to cache portfolio JSON data across page navigations,
-   * completely bypassing network latency and saving ~291KB of bandwidth per page view.
+   * Utilizes in-memory promise caching and sessionStorage to deduplicate fetches,
+   * completely bypassing network latency and eliminating redundant JSON.parse calls.
    */
-  async fetchPortfolioData(url = '/data/portfolio.json') {
-    const cacheKey = 'sumit_portfolio_data';
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+  fetchPortfolioData(url) {
+    if (!url) url = '/data/portfolio.json';
+    if (_portfolioDataPromise) {
+      return _portfolioDataPromise;
+    }
+
+    _portfolioDataPromise = (async () => {
+      const cacheKey = 'sumit_portfolio_data';
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      } catch (e) {
+        console.warn('SessionStorage cache access failed:', e);
       }
-    } catch (e) {
-      console.warn('SessionStorage cache access failed:', e);
-    }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Network response was not ok');
-    const data = await res.json();
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Network response was not ok');
+      const data = await res.json();
 
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (e) {
-      console.warn('SessionStorage write failed:', e);
-    }
-    return data;
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      } catch (e) {
+        console.warn('SessionStorage write failed:', e);
+      }
+      return data;
+    })().catch((err) => {
+      _portfolioDataPromise = null;
+      throw err;
+    });
+
+    return _portfolioDataPromise;
   },
 
   /**
    * CACHED SERVICES FETCH
-   * Utilizes sessionStorage to cache services JSON data across page navigations,
-   * completely bypassing network latency and saving bandwidth per page view.
+   * Utilizes in-memory promise caching and sessionStorage to deduplicate fetches,
+   * completely bypassing network latency and eliminating redundant JSON.parse calls.
    */
-  async fetchServicesData(url = '/data/services.json') {
-    const cacheKey = 'sumit_services_data';
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+  fetchServicesData(url) {
+    if (!url) url = '/data/services.json';
+    if (_servicesDataPromise) {
+      return _servicesDataPromise;
+    }
+
+    _servicesDataPromise = (async () => {
+      const cacheKey = 'sumit_services_data';
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      } catch (e) {
+        console.warn('SessionStorage cache access failed:', e);
       }
-    } catch (e) {
-      console.warn('SessionStorage cache access failed:', e);
-    }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Network response was not ok');
-    const data = await res.json();
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Network response was not ok');
+      const data = await res.json();
 
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (e) {
-      console.warn('SessionStorage write failed:', e);
-    }
-    return data;
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      } catch (e) {
+        console.warn('SessionStorage write failed:', e);
+      }
+      return data;
+    })().catch((err) => {
+      _servicesDataPromise = null;
+      throw err;
+    });
+
+    return _servicesDataPromise;
   },
 
   /**
@@ -153,7 +180,28 @@ window.Core = {
       `;
       document.body.insertAdjacentHTML('beforeend', html);
       this.state.container = document.getElementById('lightbox');
+      this.cacheElements();
       this.bindEvents();
+    },
+
+    cacheElements() {
+      const container = this.state.container;
+      if (!container) return;
+      this.elements = {
+        imgEl: container.querySelector('.lightbox-image'),
+        vidWrapper: container.querySelector('.lightbox-video-wrapper'),
+        vidEl: container.querySelector('.lightbox-video'),
+        loadingEl: container.querySelector('.lightbox-loading'),
+        captionTitle: container.querySelector('.lightbox-caption-copy h3'),
+        captionCategory: container.querySelector('.lightbox-caption-copy p'),
+        counterEl: container.querySelector('.lightbox-counter'),
+        playIcons: container.querySelectorAll('.play-icon, .play-icon-small'),
+        pauseIcons: container.querySelectorAll('.pause-icon, .pause-icon-small'),
+        overlayControls: container.querySelector('.video-overlay-controls'),
+        volumeIcon: container.querySelector('.volume-icon'),
+        muteIcon: container.querySelector('.mute-icon'),
+        controlsBar: container.querySelector('.video-controls-bar')
+      };
     },
 
     bindEvents() {
@@ -299,27 +347,21 @@ window.Core = {
     },
 
     updatePlayPauseIcons(isPlaying) {
-      const container = this.state.container;
-      const playIcons = container.querySelectorAll('.play-icon, .play-icon-small');
-      const pauseIcons = container.querySelectorAll('.pause-icon, .pause-icon-small');
+      if (!this.elements) this.cacheElements();
+      const els = this.elements;
+      els.playIcons.forEach(icon => icon.style.display = isPlaying ? 'none' : 'block');
+      els.pauseIcons.forEach(icon => icon.style.display = isPlaying ? 'block' : 'none');
       
-      playIcons.forEach(icon => icon.style.display = isPlaying ? 'none' : 'block');
-      pauseIcons.forEach(icon => icon.style.display = isPlaying ? 'block' : 'none');
-      
-      // Hide overlay controls when playing
-      const overlay = container.querySelector('.video-overlay-controls');
-      if (overlay) {
-        overlay.style.opacity = isPlaying ? '0' : '1';
+      if (els.overlayControls) {
+        els.overlayControls.style.opacity = isPlaying ? '0' : '1';
       }
     },
 
     updateMuteButton() {
-      const video = this.state.container.querySelector('.lightbox-video');
-      const volumeIcon = this.state.container.querySelector('.volume-icon');
-      const muteIcon = this.state.container.querySelector('.mute-icon');
-      
-      volumeIcon.style.display = video.muted ? 'none' : 'block';
-      muteIcon.style.display = video.muted ? 'block' : 'none';
+      if (!this.elements) this.cacheElements();
+      const els = this.elements;
+      els.volumeIcon.style.display = els.vidEl.muted ? 'none' : 'block';
+      els.muteIcon.style.display = els.vidEl.muted ? 'block' : 'none';
     },
 
     formatTime(seconds) {
@@ -373,13 +415,15 @@ window.Core = {
       const item = this.state.items[this.state.currentIndex];
       if (!item) return;
 
-      const imgEl = this.state.container.querySelector('.lightbox-image');
-      const vidWrapper = this.state.container.querySelector('.lightbox-video-wrapper');
-      const vidEl = this.state.container.querySelector('.lightbox-video');
-      const loadingEl = this.state.container.querySelector('.lightbox-loading');
-      const captionTitle = this.state.container.querySelector('.lightbox-caption-copy h3');
-      const captionCategory = this.state.container.querySelector('.lightbox-caption-copy p');
-      const counterEl = this.state.container.querySelector('.lightbox-counter');
+      if (!this.elements) this.cacheElements();
+      const els = this.elements;
+      const imgEl = els.imgEl;
+      const vidWrapper = els.vidWrapper;
+      const vidEl = els.vidEl;
+      const loadingEl = els.loadingEl;
+      const captionTitle = els.captionTitle;
+      const captionCategory = els.captionCategory;
+      const counterEl = els.counterEl;
 
       const isVid = item.type === 'video';
       
@@ -543,14 +587,15 @@ window.Core = {
       item.setAttribute('aria-label', `${image.title || 'Open preview'}${image.category ? `, ${image.category}` : ''}`);
 
       const openFilteredLightbox = () => {
-        const fallbackItems = allItems.map((entry, entryIndex) => {
-          const newItem = Object.assign({}, entry);
-          newItem.originalIndex = entryIndex;
-          newItem.type = entry.type || 'image';
-          return newItem;
-        });
+        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData)
+          ? window.GalleryManager.getVisibleData()
+          : allItems.map((entry, entryIndex) => {
+              const newItem = Object.assign({}, entry);
+              newItem.originalIndex = entryIndex;
+              newItem.type = entry.type || 'image';
+              return newItem;
+            });
 
-        const visibleItems = (window.GalleryManager && window.GalleryManager.getVisibleData) ? window.GalleryManager.getVisibleData() : fallbackItems;
         const itemIndex = visibleItems.findIndex((entry) => entry.originalIndex === index);
         const targetIndex = itemIndex >= 0 ? itemIndex : index;
 
@@ -673,7 +718,7 @@ window.Core = {
      */
     injectGlobalComponents() {
       const nav = document.getElementById('main-nav');
-      if (nav) {
+      if (nav && nav.children.length === 0) {
         nav.innerHTML = `
           <div class="nav-container">
             <a href="/" class="nav-logo">SUMIT UBALE</a>
@@ -692,7 +737,7 @@ window.Core = {
       }
 
       const footer = document.getElementById('main-footer');
-      if (footer) {
+      if (footer && footer.children.length === 0) {
         footer.innerHTML = `
           <div class="container">
             <p>&copy; ${new Date().getFullYear()} Sumit Ubale Photography. All rights reserved.</p>
