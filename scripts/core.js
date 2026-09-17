@@ -3,62 +3,85 @@
  * Centralized logic for Lightbox, Video handling, and DOM performance.
  */
 
-window.Core = {
-  /**
-   * CACHED PORTFOLIO FETCH
-   * Utilizes sessionStorage to cache portfolio JSON data across page navigations,
-   * completely bypassing network latency and saving ~291KB of bandwidth per page view.
-   */
-  async fetchPortfolioData(url = '/data/portfolio.json') {
-    const cacheKey = 'sumit_portfolio_data';
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+(function() {
+  var _portfolioDataPromise = null;
+  var _servicesDataPromise = null;
+
+  window.Core = {
+    /**
+     * CACHED PORTFOLIO FETCH
+     * Utilizes in-memory promise caching and sessionStorage to deduplicate requests
+     * and bypass repeated JSON parsing on 291KB payload.
+     */
+    fetchPortfolioData(url) {
+      if (_portfolioDataPromise) {
+        return _portfolioDataPromise;
       }
-    } catch (e) {
-      console.warn('SessionStorage cache access failed:', e);
-    }
+      url = url || '/data/portfolio.json';
+      _portfolioDataPromise = (async function() {
+        const cacheKey = 'sumit_portfolio_data';
+        try {
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
+            return JSON.parse(cached);
+          }
+        } catch (e) {
+          console.warn('SessionStorage cache access failed:', e);
+        }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Network response was not ok');
-    const data = await res.json();
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
 
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (e) {
-      console.warn('SessionStorage write failed:', e);
-    }
-    return data;
-  },
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify(data));
+        } catch (e) {
+          console.warn('SessionStorage write failed:', e);
+        }
+        return data;
+      })().catch(function(err) {
+        _portfolioDataPromise = null;
+        throw err;
+      });
+      return _portfolioDataPromise;
+    },
 
-  /**
-   * CACHED SERVICES FETCH
-   * Utilizes sessionStorage to cache services JSON data across page navigations,
-   * completely bypassing network latency and saving bandwidth per page view.
-   */
-  async fetchServicesData(url = '/data/services.json') {
-    const cacheKey = 'sumit_services_data';
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+    /**
+     * CACHED SERVICES FETCH
+     * Utilizes in-memory promise caching and sessionStorage to deduplicate requests.
+     */
+    fetchServicesData(url) {
+      if (_servicesDataPromise) {
+        return _servicesDataPromise;
       }
-    } catch (e) {
-      console.warn('SessionStorage cache access failed:', e);
-    }
+      url = url || '/data/services.json';
+      _servicesDataPromise = (async function() {
+        const cacheKey = 'sumit_services_data';
+        try {
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
+            return JSON.parse(cached);
+          }
+        } catch (e) {
+          console.warn('SessionStorage cache access failed:', e);
+        }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Network response was not ok');
-    const data = await res.json();
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
 
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (e) {
-      console.warn('SessionStorage write failed:', e);
-    }
-    return data;
-  },
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify(data));
+        } catch (e) {
+          console.warn('SessionStorage write failed:', e);
+        }
+        return data;
+      })().catch(function(err) {
+        _servicesDataPromise = null;
+        throw err;
+      });
+      return _servicesDataPromise;
+    },
 
   /**
    * LIGHTBOX ENGINE
@@ -702,3 +725,4 @@ window.Core = {
     }
   }
 };
+})();
